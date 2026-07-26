@@ -15,4 +15,4 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: AnterSurf-mac-dmg
-          path: dist/*.dmg
+          path: release/*.dmg

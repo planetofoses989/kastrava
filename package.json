@@ -29,6 +29,13 @@
       "target": "portable",
       "icon": "static/logo.ico"
     },
+    "mac": {
+      "target": "dmg",
+      "icon": "static/logo.png"
+    },
+    "dmg": {
+      "artifactName": "AnterSurf-${version}.dmg"
+    },
     "portable": {
       "artifactName": "AnterSurf-${version}.exe"
     }
