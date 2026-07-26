@@ -8,6 +8,7 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: 22 }
       - run: npm install
+      - run: npm run build:prod
       - run: npx electron-builder --mac dmg
       - uses: actions/upload-artifact@v4
         with:
