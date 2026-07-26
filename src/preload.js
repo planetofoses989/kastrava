@@ -1,0 +1,53 @@
+const { contextBridge, ipcRenderer } = require('electron')
+
+contextBridge.exposeInMainWorld('api', {
+  minimize: () => ipcRenderer.invoke('win-minimize'),
+  maximize: () => ipcRenderer.invoke('win-maximize'),
+  close: () => ipcRenderer.invoke('win-close'),
+  isMaximized: () => ipcRenderer.invoke('win-is-maximized'),
+
+  getSettings: () => ipcRenderer.invoke('get-settings'),
+  setSetting: (k, v) => ipcRenderer.invoke('set-setting', k, v),
+
+  getBookmarks: () => ipcRenderer.invoke('get-bookmarks'),
+  addBookmark: (b) => ipcRenderer.invoke('add-bookmark', b),
+  removeBookmark: (id) => ipcRenderer.invoke('remove-bookmark', id),
+
+  getHistory: () => ipcRenderer.invoke('get-history'),
+  addHistory: (h) => ipcRenderer.invoke('add-history', h),
+  clearHistory: () => ipcRenderer.invoke('clear-history'),
+
+  getTopSites: () => ipcRenderer.invoke('get-top-sites'),
+  saveTopSites: (s) => ipcRenderer.invoke('save-top-sites', s),
+
+
+
+
+  savePageIcon: (d) => ipcRenderer.invoke('save-page-icon', d),
+
+  openExternal: (url) => ipcRenderer.invoke('open-external', url),
+
+  saveSession: (tabs) => ipcRenderer.invoke('save-session', tabs),
+  saveSessionSync: (tabs) => ipcRenderer.send('save-session-sync', tabs),
+  loadSession: () => ipcRenderer.invoke('load-session'),
+
+  onWinState: (cb) => { ipcRenderer.on('win-state', (_, s) => cb(s)); ipcRenderer.invoke('win-is-maximized').then(m => cb({maximized: m, minimized: false})) },
+
+  onOpenNewTab: (cb) => ipcRenderer.on('open-new-tab', (_, url) => cb(url)),
+
+  onSaveSessionNow: (cb) => ipcRenderer.on('save-session-now', () => cb()),
+
+  onShowDownloadModal: (cb) => ipcRenderer.on('show-download-modal', (_, d) => cb(d)),
+
+  // AnterGet
+  agStart: (url) => ipcRenderer.invoke('ag-start', url),
+  agPause: (id) => ipcRenderer.invoke('ag-pause', id),
+  agResume: (id) => ipcRenderer.invoke('ag-resume', id),
+  agStop: (id) => ipcRenderer.invoke('ag-stop', id),
+  agClear: (id) => ipcRenderer.invoke('ag-clear', id),
+  agList: () => ipcRenderer.invoke('ag-list'),
+  onAgUpdate: (cb) => ipcRenderer.on('ag-update', (_, d) => cb(d)),
+  onAgCleared: (cb) => ipcRenderer.on('ag-cleared', (_, id) => cb(id)),
+
+  log: (msg) => ipcRenderer.invoke('log', msg)
+})

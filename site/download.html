@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Download AnterSurf</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#06060c;color:#c8c8d4;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:40px 20px}
+a{color:#4fc3f7;text-decoration:none}
+.back{position:fixed;top:20px;left:20px;font-size:14px;color:#666;transition:color .2s}
+.back:hover{color:#4fc3f7}
+.logo{width:56px;height:56px;border-radius:14px;margin-bottom:16px;filter:drop-shadow(0 4px 12px rgba(0,0,0,.3))}
+h1{font-size:32px;font-weight:700;letter-spacing:-.5px;margin-bottom:8px;color:#e0e0ec}
+.sub{font-size:15px;color:#666;margin-bottom:44px}
+.dl-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;width:100%;max-width:900px}
+.dl-card{background:#0a0a14;border:1px solid #14141f;border-radius:18px;padding:44px 28px;display:flex;flex-direction:column;align-items:center;text-align:center;transition:all .25s;cursor:pointer;text-decoration:none;color:inherit;position:relative;overflow:hidden}
+.dl-card:hover{background:#0d0d1a;border-color:#1f1f30;transform:translateY(-4px);box-shadow:0 16px 40px rgba(0,0,0,.35)}
+.dl-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,#4fc3f7,transparent);opacity:0;transition:opacity .3s}
+.dl-card:hover::before{opacity:.6}
+.dl-icon{width:64px;height:64px;object-fit:contain;margin-bottom:20px}
+.dl-name{font-size:22px;font-weight:700;color:#e0e0ec;margin-bottom:10px}
+.dl-desc{font-size:15px;color:#777;margin-bottom:26px;line-height:1.6}
+.dl-btn{display:inline-block;padding:14px 32px;border-radius:12px;font-size:15px;font-weight:600;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);color:#999;transition:all .2s;font-family:inherit}
+.dl-card:hover .dl-btn{background:rgba(79,195,247,.1);border-color:rgba(79,195,247,.3);color:#4fc3f7}
+.footer-note{margin-top:32px;font-size:18px;color:#666;text-align:center;letter-spacing:.3px}
+
+/* CAPTCHA OVERLAY */
+.captcha-overlay{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.75);backdrop-filter:blur(12px);display:none;align-items:center;justify-content:center;padding:20px}
+.captcha-overlay.show{display:flex}
+.captcha-box{background:#0e0e1a;border:1px solid #1a1a28;border-radius:20px;padding:36px 32px;width:420px;max-width:100%;text-align:center}
+.captcha-box h3{font-size:20px;font-weight:700;color:#e0e0ec;margin-bottom:6px;letter-spacing:-.3px}
+.captcha-sub{font-size:13px;color:#666;margin-bottom:24px;letter-spacing:.5px}
+.captcha-challenge{margin-bottom:24px}
+.captcha-prompt{font-size:15px;color:#ccc;margin-bottom:16px;line-height:1.5}
+.captcha-input-row{display:flex;gap:10px;justify-content:center;margin-bottom:16px}
+.captcha-input{width:100%;max-width:260px;padding:14px 18px;border-radius:10px;border:1px solid #222;background:#111;color:#e0e0ec;font-size:18px;outline:none;text-align:center;font-family:inherit;transition:border-color .2s}
+.captcha-input:focus{border-color:#4fc3f7}
+.captcha-submit{padding:12px 32px;border-radius:10px;border:none;background:linear-gradient(135deg,#4fc3f7,#0288d1);color:#fff;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .2s}
+.captcha-submit:hover{box-shadow:0 4px 16px rgba(79,195,247,.3);transform:translateY(-1px)}
+.captcha-submit:disabled{opacity:.5;cursor:not-allowed;transform:none;box-shadow:none}
+
+/* ICON PICK GRID */
+.captcha-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;max-width:280px;margin:0 auto}
+.captcha-tile{width:100%;aspect-ratio:1;border-radius:12px;border:2px solid #222;background:#111;display:flex;align-items:center;justify-content:center;font-size:32px;cursor:pointer;transition:all .2s;user-select:none}
+.captcha-tile:hover{border-color:#4fc3f7;background:#151528}
+.captcha-tile.selected{border-color:#4fc3f7;background:rgba(79,195,247,.1)}
+.captcha-tile.correct{border-color:#4caf50;background:rgba(76,175,80,.15)}
+.captcha-tile.wrong{border-color:#e74c3c;background:rgba(231,76,60,.15)}
+
+/* DISPLAY WORD */
+.captcha-math{font-size:36px;font-weight:700;color:#e0e0ec;letter-spacing:2px;margin-bottom:20px}
+
+/* STATUS */
+.captcha-status{font-size:13px;color:#666;margin-top:12px;min-height:18px}
+.captcha-status.success{color:#4caf50}
+.captcha-status.error{color:#e74c3c}
+.captcha-cancel{background:none;border:1px solid #222;color:#555;font-size:11px;cursor:pointer;padding:7px 18px;border-radius:8px;margin-top:14px;font-family:inherit;transition:all .2s}
+.captcha-cancel:hover{border-color:#444;color:#999}
+.captcha-loading{display:none;width:24px;height:24px;border:2px solid transparent;border-top-color:#4fc3f7;border-radius:50%;animation:spin .8s linear infinite;margin:16px auto 0}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+@media(max-width:500px){
+  .dl-grid{grid-template-columns:1fr;max-width:400px}
+  .dl-card{flex-direction:row;text-align:left;padding:32px 24px;gap:20px}
+  .dl-icon{margin-bottom:0;width:56px;height:56px}
+  .captcha-box{padding:24px 20px}
+}
+</style>
+</head>
+<body>
+
+<a href="index.html" class="back">&larr; Back to AnterSurf</a>
+<img class="logo" src="logo.png" alt="AnterSurf">
+<h1>Download AnterSurf</h1>
+<p class="sub">Choose your platform</p>
+
+<div class="dl-grid">
+  <a href="#" class="dl-card" data-url="https://www.mediafire.com/file/ph5vvmfr7m1ql04/AnterSurf-26.1.0.AppImage/file">
+    <img class="dl-icon" src="tux.png" alt="">
+    <div class="dl-name">Linux (AppImage)</div>
+    <div class="dl-desc">Arch / openSUSE / Fedora</div>
+    <span class="dl-btn">Download</span>
+  </a>
+  <a href="#" class="dl-card" data-url="https://www.mediafire.com/file/rlowbam94b82mt0/antersurf_26.1.0_amd64.deb/file">
+    <img class="dl-icon" src="deb.png" alt="">
+    <div class="dl-name">Linux (Debian)</div>
+    <div class="dl-desc">Debian / Ubuntu / Mint</div>
+    <span class="dl-btn">Download</span>
+  </a>
+  <a href="#" class="dl-card" data-url="https://www.mediafire.com/file/g56rbx71cu6g4xd/AnterSurf-26.1.0.exe/file">
+    <img class="dl-icon" src="win.png" alt="">
+    <div class="dl-name">Windows</div>
+    <div class="dl-desc">Some features may be missing</div>
+    <span class="dl-btn">Download</span>
+  </a>
+  <a href="#" class="dl-card" data-url="https://www.mediafire.com/file/iu0qwh2oj9blvic/AnterSurf-26.1.0.apk/file">
+    <img class="dl-icon" src="robot.png" alt="">
+    <div class="dl-name">Android</div>
+    <div class="dl-desc">Some features may be missing</div>
+    <span class="dl-btn">Download</span>
+  </a>
+  <a href="#" class="dl-card" data-url="https://github.com/planetofoses989/antersurf/releases">
+    <img class="dl-icon" src="github.png" alt="">
+    <div class="dl-name">GitHub</div>
+    <div class="dl-desc">All Old Releases</div>
+    <span class="dl-btn">Open</span>
+  </a>
+  <div class="dl-card">
+    <img class="dl-icon" src="mac.png" alt="">
+    <div class="dl-name">macOS</div>
+    <div class="dl-desc">Unreleased</div>
+    <span class="dl-btn">Coming Soon</span>
+  </div>
+</div>
+
+<div class="captcha-overlay" id="captcha-overlay">
+  <div class="captcha-box">
+    <h3>antCaptcha</h3>
+    <div class="captcha-sub">Complete the challenge to continue</div>
+    <div class="captcha-challenge" id="captcha-challenge"></div>
+    <div class="captcha-loading" id="captcha-loading"></div>
+    <div class="captcha-status" id="captcha-status"></div>
+    <button class="captcha-cancel" id="captcha-cancel">Cancel</button>
+  </div>
+</div>
+
+<script>
+(function(){
+"use strict";
+
+var EMOJIS=["🍎","🍊","🍋","🍇","🍉","🍓","🫐","🍒","🍑","🥝","🌻","🌹","🌺","🌸","⚡","🔥","❄️","🌊","🎵","⭐","🌙","☀️","💎","🎯","🎲","🧠","🔑","🐱","🐶","🦊","🐼","🦁","🐸","🦋","🐝","🐢","🐙","🦄","🐯","🦉","🦂","🕷️","🦜","🐬","🦩","🍄","🌵","🌴","🎋","🎍","🎪","🎭","🎨","🧩","♟️","🎰","🎳","🎸","🎺","🎻","🎹"];
+var CATEGORIES=[
+  {name:"Animals",icons:["🐱","🐶","🦊","🐼","🦁","🐸","🐢","🐙","🦄","🐯","🦉","🐝","🦋","🦂","🕷️","🦜","🐬","🦩","🦢","🐖"]},
+  {name:"Fruits",icons:["🍎","🍊","🍋","🍇","🍉","🍓","🫐","🍒","🍑","🥝","🍈","🍌","🥭","🍍","🥑"]},
+  {name:"Nature",icons:["🌻","🌹","🌺","🌸","☀️","🌙","⭐","🌈","❄️","🌊","🔥","⚡","🌊","🌀","🌪️"]},
+  {name:"Music",icons:["🎵","🎸","🎺","🎻","🎹","🥁","🎷","🎶","🎤","🎧"]},
+  {name:"Sports",icons:["⚽","🏀","🏈","⚾","🎾","🏐","🎯","🏓","🎿","⛳"]},
+  {name:"Space",icons:["☀️","🌙","⭐","🌟","✨","💫","🪐","🌠","☄️","🌌"]},
+  {name:"Weather",icons:["❄️","🌧️","⛈️","🌈","☀️","🌤️","❄️","💨","🌊","🌀"]},
+  {name:"Gems",icons:["💎","🔴","🔵","🟢","🟡","🟣","🟠","🔶","🔷","💠"]},
+  {name:"Food",icons:["🍎","🍊","🍋","🍇","🍉","🍓","🫐","🍒","🍑","🥝","🧀","🍕","🍔","🌮","🍣"]},
+  {name:"Transport",icons:["🚗","🚲","✈️","🚂","🚀","⛵","🚁","🏍️","🚌","🚑"]}
+];
+var TYPE_WORDS=[
+  "antersurf","privacy","browser","secure","shield","freedom","private","safety",
+  "browse","stealth","cipher","vault","guard","watch","scout","ranger",
+  "titan","nexus","fusion","vector","quantum","binary","crypto","cypher",
+  "shadow","phantom","ghost","wraith","specter","oracle","zenith","apex",
+  "forge","spark","pulse","drift","flame","frost","storm","thunder",
+  "aurora","nebula","comet","mars","jupiter","saturn","pluto","venus",
+  "alpha","bravo","delta","gamma","omega","sigma","theta","zeta",
+  "pixel","voxel","hexel","bit","byte","code","hack","debug",
+  "cipher","enigma","trojan","daemon","kernel","matrix","neural","system",
+  "chrome","render","syntax","module","branch","commit","docker","linux",
+  "copper","silver","golden","platinum","obsidian","emerald","sapphire","ruby",
+  "atlas","spartan","odin","zeus","thor","loki","ares","hermes",
+  "prism","helix","quasar","pulsar","vortex","nebula","quasar","zenith",
+  "anchor","bridge","castle","dragon","eagle","falcon","goblin","hammer",
+  "island","jungle","lagoon","mountain","ocean","planet","river","valley",
+  "amber","coral","ivory","jade","onyx","pearl","topaz","opal",
+  "breeze","cloud","creek","dawn","dusk","echo","fog","hail",
+  "inferno","lava","magma","tornado","tsunami","typhoon","whirlwind","blizzard",
+  "binary","cipher","decode","encode","format","kernel","launch","patch",
+  "rocket","satellite","orbit","module","cargo","capsule","thruster","vector",
+  "compass","horizon","meridian","paradox","phoenix","riddle","sphinx","oracle",
+  "cactus","fern","moss","reed","sage","thorn","vine","willow",
+  "bison","crane","heron","lynx","mantis","otter","panda","robin",
+  "cedar","maple","oak","pine","birch","elm","hazel","ivy",
+  "coral","delta","fjord","geyser","oasis","reef","spring","summit",
+  "anvil","blade","claw","dagger","fang","glaive","javelin","lance",
+  "beacon","cipher","glyph","hedge","knot","latch","rune","sigil",
+  "azure","crimson","golden","indigo","ivory","magenta","scarlet","violet",
+  "atlas","bison","crane","dragon","eagle","falcon","goblin","hammer",
+  "island","jungle","lagoon","mountain","ocean","planet","river","valley",
+  "anchor","bridge","castle","dagger","fang","glaive","javelin","lance",
+  "beacon","glyph","hedge","knot","latch","rune","sigil","charm",
+  "breeze","cloud","creek","dawn","dusk","echo","fog","hail",
+  "copper","silver","platinum","obsidian","emerald","sapphire","ruby","topaz",
+  "prism","helix","pulsar","vortex","zenith","quasar","comet","nova",
+  "inferno","lava","magma","tornado","tsunami","typhoon","blizzard","avalanche",
+  "binary","decode","encode","format","launch","patch","deploy","reboot",
+  "rocket","satellite","orbit","module","cargo","capsule","thruster","pilot",
+  "compass","horizon","meridian","paradox","phoenix","riddle","sphinx","oracle",
+  "cedar","maple","oak","pine","birch","elm","hazel","willow",
+  "bison","crane","heron","lynx","mantis","otter","panda","robin",
+  "coral","fjord","geyser","oasis","reef","spring","summit","delta"
+];
+var pendingUrl="";
+var wrongCount=0;
+var blocked=false;
+var selectedAnswer=null;
+var currentCorrect=null;
+
+function pick(arr){return arr[Math.floor(Math.random()*arr.length)]}
+function shuffle(arr){var a=arr.slice();for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t}return a}
+function randInt(min,max){return Math.floor(Math.random()*(max-min+1))+min}
+
+function disableAll(){
+  document.querySelectorAll("#captcha-challenge .captcha-tile,#captcha-verify-btn,#captcha-answer").forEach(function(el){
+    el.style.pointerEvents="none";el.style.opacity=".4";
+  });
+}
+
+function enableAll(){
+  document.querySelectorAll("#captcha-challenge .captcha-tile,#captcha-verify-btn,#captcha-answer").forEach(function(el){
+    el.style.pointerEvents="auto";el.style.opacity="1";
+  });
+}
+
+function onWrong(){
+  wrongCount++;
+  var status=document.getElementById("captcha-status");
+  var remaining=5-wrongCount;
+  if(wrongCount>=5){
+    blocked=true;
+    disableAll();
+    var secs=30;
+    status.className="captcha-status error";
+    status.textContent="Too many attempts. Blocked for "+secs+"s";
+    var timer=setInterval(function(){
+      secs--;
+      if(secs<=0){
+        clearInterval(timer);
+        blocked=false;
+        wrongCount=0;
+        status.textContent="";
+        status.className="captcha-status";
+        enableAll();
+        runChallenge();
+      }else{
+        status.textContent="Too many attempts. Blocked for "+secs+"s";
+      }
+    },1000);
+  }else{
+    status.textContent="Incorrect. "+remaining+" attempts left";
+    status.className="captcha-status error";
+    setTimeout(function(){
+      status.textContent="";
+      status.className="captcha-status";
+      runChallenge();
+    },1000);
+  }
+}
+
+function onCorrect(){
+  wrongCount=0;
+  var status=document.getElementById("captcha-status");
+  status.textContent="Verified!";
+  status.className="captcha-status success";
+  disableAll();
+  setTimeout(function(){
+    document.getElementById("captcha-overlay").classList.remove("show");
+    window.open(pendingUrl,"_blank");
+  },1000);
+}
+
+/* CHALLENGE 1: ICON PICK */
+function iconPickChallenge(){
+  var set=pick(ICON_SETS);
+  var target=pick(set);
+  var others=[];var used={};
+  while(others.length<3){var e=pick(EMOJIS);if(!used[e]&&set.indexOf(e)<0){used[e]=true;others.push(e)}}
+  var options=shuffle(set.concat(others));
+  selectedAnswer=null;currentCorrect=target;
+  var el=document.getElementById("captcha-challenge");
+  el.innerHTML='<div class="captcha-prompt">Click the <strong>'+target+'</strong> icon</div><div class="captcha-grid" id="captcha-grid"></div><div style="margin-top:16px;text-align:center"><button class="captcha-submit" id="captcha-verify-btn">Submit</button></div>';
+  var grid=document.getElementById("captcha-grid");
+  options.forEach(function(icon){
+    var tile=document.createElement("div");
+    tile.className="captcha-tile";
+    tile.textContent=icon;
+    tile.onclick=function(){
+      grid.querySelectorAll(".captcha-tile").forEach(function(t){t.classList.remove("selected")});
+      tile.classList.add("selected");
+      selectedAnswer=icon;
+    };
+    grid.appendChild(tile);
+  });
+  document.getElementById("captcha-verify-btn").onclick=function(){
+    if(!selectedAnswer)return;
+    if(selectedAnswer===currentCorrect)onCorrect();
+    else onWrong();
+  };
+}
+
+/* CHALLENGE 2: SELECT ALL (category pick) */
+function categoryChallenge(){
+  var cat=pick(CATEGORIES);
+  var correctIcons=shuffle(cat.icons).slice(0,randInt(3,5));
+  var distractors=[];var used={};
+  correctIcons.forEach(function(e){used[e]=true});
+  while(distractors.length<4){var e=pick(EMOJIS);if(!used[e]){used[e]=true;distractors.push(e)}}
+  var options=shuffle(correctIcons.concat(distractors));
+  selectedAnswer=[];currentCorrect=correctIcons;
+  var el=document.getElementById("captcha-challenge");
+  el.innerHTML='<div class="captcha-prompt">Select all <strong>'+cat.name+'</strong> icons</div><div class="captcha-grid" id="captcha-grid" style="grid-template-columns:repeat(4,1fr);max-width:300px"></div><div style="margin-top:16px;text-align:center"><button class="captcha-submit" id="captcha-verify-btn">Submit</button></div>';
+  var grid=document.getElementById("captcha-grid");
+  options.forEach(function(icon){
+    var tile=document.createElement("div");
+    tile.className="captcha-tile";
+    tile.textContent=icon;
+    tile.style.fontSize="28px";
+    tile.onclick=function(){
+      tile.classList.toggle("selected");
+      var idx=selectedAnswer.indexOf(icon);
+      if(idx>=0)selectedAnswer.splice(idx,1);
+      else selectedAnswer.push(icon);
+    };
+    grid.appendChild(tile);
+  });
+  document.getElementById("captcha-verify-btn").onclick=function(){
+    var sorted=selectedAnswer.slice().sort().join(",");
+    var expected=currentCorrect.slice().sort().join(",");
+    if(sorted===expected)onCorrect();
+    else onWrong();
+  };
+}
+
+/* CHALLENGE 3: MATCH PAIRS */
+function matchPairsChallenge(){
+  var counts=[4,5,6,7,8];
+  var count=pick(counts);
+  var icons=shuffle(EMOJIS).slice(0,count);
+  var pairs=shuffle(icons.concat(icons));
+  var first=null,matched=0;
+  currentCorrect=count;
+  var cols=count<=4?4:count<=6?4:4;
+  var el=document.getElementById("captcha-challenge");
+  el.innerHTML='<div class="captcha-prompt">Match all pairs &mdash; click two matching icons, then Submit</div><div class="captcha-grid" id="captcha-grid" style="grid-template-columns:repeat('+cols+',1fr);max-width:320px"></div><div style="margin-top:16px;text-align:center"><button class="captcha-submit" id="captcha-verify-btn">Submit</button></div>';
+  var grid=document.getElementById("captcha-grid");
+  pairs.forEach(function(icon){
+    var tile=document.createElement("div");
+    tile.className="captcha-tile";
+    tile.textContent=icon;
+    tile.style.fontSize="28px";
+    tile.dataset.icon=icon;
+    tile.onclick=function(){
+      if(tile.classList.contains("correct"))return;
+      if(first===null){first=tile;tile.classList.add("selected")}
+      else{
+        if(first===tile){first.classList.remove("selected");first=null;return}
+        if(first.dataset.icon===tile.dataset.icon){
+          first.classList.remove("selected");first.classList.add("correct");tile.classList.add("correct");
+          matched++;first=null;
+        }else{
+          var a=first,b=tile;a.classList.remove("selected");
+          a.classList.add("wrong");b.classList.add("wrong");
+          setTimeout(function(){a.classList.remove("wrong");b.classList.remove("wrong")},600);
+          first=null;
+        }
+      }
+    };
+    grid.appendChild(tile);
+  });
+  document.getElementById("captcha-verify-btn").onclick=function(){
+    if(matched>=count)onCorrect();
+    else{
+      var status=document.getElementById("captcha-status");
+      status.textContent="Match all pairs first!";
+      status.className="captcha-status error";
+      setTimeout(function(){status.textContent="";status.className="captcha-status"},1200);
+    }
+  };
+}
+
+/* CHALLENGE 4: TYPE THIS */
+function typeChallenge(){
+  var word=pick(TYPE_WORDS);
+  var display=word.toUpperCase();
+  selectedAnswer=null;currentCorrect=word;
+  var el=document.getElementById("captcha-challenge");
+  el.innerHTML='<div class="captcha-prompt">Type the word below exactly:</div><div class="captcha-math" style="letter-spacing:8px;font-size:32px">'+display+'</div><div class="captcha-input-row"><input class="captcha-input" id="captcha-answer" type="text" placeholder="Type here..." autocomplete="off" autocapitalize="off" spellcheck="false"><button class="captcha-submit" id="captcha-verify-btn">Submit</button></div>';
+  document.getElementById("captcha-answer").focus();
+  document.getElementById("captcha-verify-btn").onclick=function(){
+    var val=document.getElementById("captcha-answer").value.trim().toLowerCase();
+    if(!val)return;
+    if(val===currentCorrect)onCorrect();
+    else onWrong();
+  };
+  document.getElementById("captcha-answer").addEventListener("keydown",function(e){
+    if(e.key==="Enter"){e.preventDefault();document.getElementById("captcha-verify-btn").click()}
+  });
+}
+
+var CHALLENGES=[iconPickChallenge,categoryChallenge,matchPairsChallenge,typeChallenge];
+
+function showCaptcha(url){
+  if(blocked)return;
+  pendingUrl=url;
+  wrongCount=0;
+  selectedAnswer=null;
+  var overlay=document.getElementById("captcha-overlay");
+  var loading=document.getElementById("captcha-loading");
+  var status=document.getElementById("captcha-status");
+  overlay.classList.add("show");
+  loading.style.display="none";
+  status.textContent="";
+  status.className="captcha-status";
+  runChallenge();
+}
+
+function runChallenge(){
+  if(blocked)return;
+  var loading=document.getElementById("captcha-loading");
+  var status=document.getElementById("captcha-status");
+  selectedAnswer=null;
+  var challenge=pick(CHALLENGES);
+  challenge();
+}
+
+document.querySelectorAll(".dl-card").forEach(function(card){
+  card.addEventListener("click",function(e){
+    e.preventDefault();
+    var url=card.dataset.url;
+    if(url)showCaptcha(url);
+  });
+});
+
+document.getElementById("captcha-cancel").addEventListener("click",function(){
+  document.getElementById("captcha-overlay").classList.remove("show");
+  wrongCount=0;blocked=false;
+});
+document.getElementById("captcha-overlay").addEventListener("click",function(e){
+  if(e.target===this){this.classList.remove("show");wrongCount=0;blocked=false}
+});
+
+})();
+</script>
+</body>
+</html>

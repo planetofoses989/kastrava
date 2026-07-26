@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AnterSurf — The Most Private Browser</title>
+<meta name="description" content="AnterSurf is the most private, most advanced privacy-first browser. Zero telemetry. Zero tracking. Zero data collection.">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{font-family:'Inter',sans-serif;background:#06060c;color:#c8c8d4;line-height:1.7;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+canvas#bg{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none}
+section{position:relative;z-index:1}
+.container{max-width:960px;margin:0 auto;padding:0 24px}
+.reveal{opacity:0;transform:translateY(24px);transition:all .6s cubic-bezier(.22,1,.36,1)}
+.reveal.show{opacity:1;transform:translateY(0)}
+.section-label{font-size:11px;color:#4fc3f7;letter-spacing:3px;text-transform:uppercase;font-weight:600;margin-bottom:8px;position:relative;display:inline-block;padding-left:40px}
+.section-label::before{content:'';position:absolute;left:0;top:50%;width:28px;height:1px;background:linear-gradient(90deg,#4fc3f7,transparent)}
+.section-title{font-size:28px;font-weight:700;letter-spacing:-.5px;margin-bottom:20px;line-height:1.3;color:#e0e0ec}
+
+header{min-height:100vh;display:flex;align-items:center;justify-content:center;text-align:center;position:relative;overflow:hidden}
+header::before{content:'';position:absolute;top:-50%;left:-50%;width:200%;height:200%;background:radial-gradient(ellipse at 30% 40%,rgba(79,195,247,.04) 0%,transparent 60%),radial-gradient(ellipse at 70% 60%,rgba(2,136,209,.03) 0%,transparent 50%);animation:drifting 20s ease-in-out infinite}
+@keyframes drifting{0%,100%{transform:translate(0,0)}50%{transform:translate(20px,-20px)}}
+header img{width:80px;height:80px;filter:drop-shadow(0 0 40px rgba(79,195,247,.25));position:relative}
+header h1{font-size:72px;font-weight:900;letter-spacing:-3px;margin:14px 0 6px;background:linear-gradient(135deg,#4fc3f7,#0288d1);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;position:relative;text-shadow:0 0 60px rgba(79,195,247,.15)}
+header .version-badge{display:inline-block;font-size:11px;font-weight:500;color:#4fc3f7;background:rgba(79,195,247,.06);border:1px solid rgba(79,195,247,.12);padding:3px 12px;border-radius:20px;margin-bottom:16px;letter-spacing:.5px}
+header .tagline{font-size:16px;color:#666;font-weight:400;letter-spacing:1px;position:relative;margin-bottom:6px}
+header .subline{font-size:12px;color:#444;font-weight:500;letter-spacing:4px;text-transform:uppercase;position:relative}
+header .scroll-hint{position:absolute;bottom:32px;left:50%;transform:translateX(-50%);color:#333;font-size:11px;animation:bounce 2s infinite;letter-spacing:2px}
+@keyframes bounce{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(6px)}}
+
+.hero{padding:80px 0}
+.hero h2{font-size:40px;font-weight:800;letter-spacing:-1px;line-height:1.15;margin-bottom:16px;color:#e0e0ec}
+.hero h2 span{background:linear-gradient(135deg,#4fc3f7,#0288d1);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero p{font-size:15px;color:#7a7a88;max-width:520px;margin-bottom:28px;line-height:1.8}
+
+.btns{display:flex;gap:10px;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:14px 32px;border-radius:10px;font-size:14px;font-weight:600;text-decoration:none;cursor:pointer;transition:all .25s;border:none;font-family:inherit}
+.btn-primary{background:linear-gradient(135deg,#4fc3f7,#0288d1);color:#fff}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(79,195,247,.25)}
+.btn-secondary{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);color:#999}
+.btn-secondary:hover{background:rgba(255,255,255,.06);transform:translateY(-2px)}
+
+.features-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;padding:64px 0}
+.feature{background:#0a0a14;border:1px solid #14141f;border-radius:12px;padding:28px 24px;transition:all .3s cubic-bezier(.22,1,.36,1);position:relative;overflow:hidden}
+.feature::after{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--accent,#4fc3f7),transparent);opacity:0;transition:opacity .3s}
+.feature:hover::after{opacity:1}
+.feature:hover{background:#0d0d1a;border-color:#1f1f30;transform:translateY(-4px);box-shadow:0 12px 40px rgba(0,0,0,.3)}
+.feature .ico{font-size:16px;width:40px;height:40px;display:flex;align-items:center;justify-content:center;border-radius:10px;background:rgba(79,195,247,.05);border:1px solid rgba(79,195,247,.08);margin-bottom:14px;color:#4fc3f7;font-weight:700}
+.feature h3{font-size:15px;font-weight:600;margin-bottom:6px;color:#e0e0ec}
+.feature p{font-size:13px;color:#6a6a7a;line-height:1.7}
+
+.advantage-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;padding:32px 0 64px}
+.advantage{background:linear-gradient(135deg,#0a0a14,#08081a);border:1px solid #14141f;border-radius:14px;padding:32px 28px;position:relative;overflow:hidden;transition:all .3s}
+.advantage::before{content:'';position:absolute;top:0;left:0;width:100%;height:2px;background:linear-gradient(90deg,transparent,#4fc3f7,transparent);opacity:0;transition:opacity .3s}
+.advantage:hover::before{opacity:.6}
+.advantage:hover{border-color:#1f1f30;transform:translateY(-2px)}
+.advantage .num{font-size:36px;font-weight:800;background:linear-gradient(135deg,#4fc3f7,#0288d1);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1;margin-bottom:8px}
+.advantage h3{font-size:16px;font-weight:600;color:#e0e0ec;margin-bottom:6px}
+.advantage p{font-size:13px;color:#6a6a7a;line-height:1.7}
+
+.stats-row{display:flex;justify-content:center;gap:12px;margin:48px auto}
+.stat{background:#0a0a14;border:1px solid #14141f;border-radius:12px;padding:36px 28px;text-align:center;flex:0 1 200px;transition:all .3s;position:relative;overflow:hidden}
+.stat::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 50% 0%,rgba(79,195,247,.03),transparent 70%)}
+.stat:hover{background:#0d0d1a;transform:translateY(-3px);box-shadow:0 12px 32px rgba(0,0,0,.3)}
+.stat .num{font-size:32px;font-weight:700;background:linear-gradient(135deg,#4fc3f7,#0288d1);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.stat .lbl{font-size:11px;color:#555;text-transform:uppercase;letter-spacing:2px;margin-top:4px}
+
+.about-section{padding:64px 0}
+.about-section p{font-size:14px;color:#8a8a9a;line-height:1.9;margin-bottom:14px}
+.about-section h3{font-size:17px;font-weight:600;color:#e0e0ec;margin:28px 0 10px;position:relative;display:inline-block}
+.about-section h3::after{content:'';position:absolute;bottom:-4px;left:0;width:100%;height:2px;background:linear-gradient(90deg,#4fc3f7,transparent);border-radius:1px}
+.about-section ul{padding-left:18px;margin-bottom:14px}
+.about-section li{font-size:13px;color:#8a8a9a;line-height:1.8;margin-bottom:3px}
+.about-section li strong{color:#c0c4d0}
+
+.architecture-section{padding:64px 0}
+.arch-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+.arch-card{background:#0a0a14;border:1px solid #14141f;border-radius:12px;padding:24px;position:relative;overflow:hidden;transition:all .3s}
+.arch-card:hover{border-color:#1f1f30;transform:translateY(-2px)}
+.arch-card h4{font-size:11px;font-weight:700;color:#4fc3f7;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px}
+.arch-card p{font-size:12px;color:#6a6a7a;line-height:1.7}
+
+.compare-section{padding:64px 0;overflow-x:auto}
+.compare-section table{width:100%;border-collapse:collapse;font-size:13px;min-width:500px}
+.compare-section th,.compare-section td{padding:12px 16px;text-align:left;border-bottom:1px solid #14141f;position:relative}
+.compare-section tr:hover td{background:rgba(79,195,247,.02)}
+.compare-section th{color:#4fc3f7;font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:1px}
+.compare-section td{color:#8a8a9a}
+.compare-section td:first-child{font-weight:600;color:#c0c4d0}
+.compare-section .yes{color:#4caf50}
+.compare-section .no{color:#e74c3c}
+.compare-section .partial{color:#ff9800}
+
+.security-section{padding:64px 0}
+.security-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}
+.security-card{background:linear-gradient(135deg,#0a0a14,#08081a);border:1px solid #14141f;border-radius:14px;padding:32px 28px;transition:all .3s}
+.security-card:hover{border-color:#1f1f30;transform:translateY(-2px)}
+.security-card .icon{width:48px;height:48px;border-radius:12px;background:rgba(79,195,247,.05);border:1px solid rgba(79,195,247,.1);display:flex;align-items:center;justify-content:center;margin-bottom:16px;color:#4fc3f7;font-size:20px}
+.security-card h3{font-size:16px;font-weight:600;color:#e0e0ec;margin-bottom:8px}
+.security-card p{font-size:13px;color:#6a6a7a;line-height:1.7}
+.security-card ul{margin-top:10px;padding-left:16px}
+.security-card li{font-size:12px;color:#7a7a8a;line-height:1.8;margin-bottom:2px}
+
+.download-section{text-align:center;padding:96px 0}
+.download-section h2{font-size:36px;font-weight:800;letter-spacing:-.5px;margin-bottom:8px;color:#e0e0ec}
+.download-section p{font-size:15px;color:#666;margin-bottom:32px}
+
+footer{text-align:center;padding:40px 0;border-top:1px solid #14141f;margin-top:32px;position:relative}
+footer::before{content:'';position:absolute;top:-1px;left:50%;transform:translateX(-50%);width:200px;height:1px;background:linear-gradient(90deg,transparent,#4fc3f7,transparent)}
+footer p{font-size:12px;color:#444}
+footer a{color:#4fc3f7;text-decoration:none}
+
+@media(max-width:768px){
+  header h1{font-size:40px}
+  .hero h2{font-size:28px}
+  .stats-row{flex-direction:column;align-items:center}
+  .features-grid{grid-template-columns:1fr}
+  .advantage-grid{grid-template-columns:1fr}
+  .security-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<canvas id="bg"></canvas>
+
+<header>
+  <div class="container">
+    <img src="logo.png" alt="AnterSurf">
+    <h1>AnterSurf</h1>
+    <div class="version-badge">v26.1</div>
+    <div class="tagline">The most private browser ever built.</div>
+    <div class="subline">Zero telemetry &middot; Zero tracking &middot; Zero compromise</div>
+  </div>
+  <div class="scroll-hint">SCROLL</div>
+</header>
+
+<section class="hero">
+  <div class="container reveal">
+    <h2>Privacy isn't a feature.<br>It's the <span>only thing</span> that matters.</h2>
+    <p>AnterSurf was built from zero for one purpose: absolute privacy. Every byte stays on your machine. No exceptions. No asterisks. No "opt-out" buried in settings nobody reads.</p>
+    <div class="btns">
+      <a href="download.html" class="btn btn-primary">Download Free</a>
+      <a href="#security" class="btn btn-secondary">How We Protect You</a>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="container">
+    <div class="features-grid">
+      <div class="feature reveal"><div class="ico">0</div><h3>Zero Telemetry</h3><p>No analytics, no crash reports, no phone-home. AnterSurf sends exactly zero bytes to anyone. Ever.</p></div>
+      <div class="feature reveal"><div class="ico">&bull;</div><h3>No Data Collection</h3><p>We don't collect, store, sell, or access your browsing data. Not now. Not ever. There's nothing to collect.</p></div>
+      <div class="feature reveal"><div class="ico">&infin;</div><h3>Zero Accounts</h3><p>No sign-up. No sync. No cloud. No "Sign in with Google." Your browser doesn't need to know who you are.</p></div>
+      <div class="feature reveal"><div class="ico">&gt;</div><h3>Blazing Fast</h3><p>Built on Electron with minimal overhead. No background services, no telemetry daemons, no crypto miners.</p></div>
+      <div class="feature reveal"><div class="ico">#</div><h3>Download Manager</h3><p>Built-in AnterGet handles all downloads with pause, resume, speed control, and progress tracking.</p></div>
+      <div class="feature reveal"><div class="ico">~</div><h3>Local-First</h3><p>All data in local SQLite. Bookmarks, history, settings, sessions &mdash; yours, on your disk, nowhere else.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="container stats-row">
+  <div class="stat reveal"><div class="num">0</div><div class="lbl">Telemetry Requests</div></div>
+  <div class="stat reveal"><div class="num">0</div><div class="lbl">External Connections</div></div>
+  <div class="stat reveal"><div class="num">100%</div><div class="lbl">Local Data</div></div>
+</section>
+
+<section class="container" id="security">
+  <div class="security-section">
+    <p class="section-label reveal">Security Architecture</p>
+    <h2 class="section-title reveal">How AnterSurf Protects You</h2>
+    <div class="security-grid">
+      <div class="security-card reveal">
+        <div class="icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+        <h3>No Tracking Headers</h3>
+        <p>AnterSurf never sends tracking headers, fingerprinting signals, or unique identifiers. Your browsing sessions are invisible.</p>
+        <ul>
+          <li>No client ID headers</li>
+          <li>No telemetry beacons</li>
+          <li>No crash reporting with device info</li>
+          <li>No referrer leakage</li>
+        </ul>
+      </div>
+      <div class="security-card reveal">
+        <div class="icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></div>
+        <h3>Encrypted Local Storage</h3>
+        <p>All your data &mdash; bookmarks, history, sessions &mdash; is stored locally in an encrypted SQLite database. No cloud sync means no cloud breach.</p>
+        <ul>
+          <li>AES-256 encrypted database</li>
+          <li>No network-accessible storage</li>
+          <li>No shared browser profiles</li>
+          <li>Full user control over data</li>
+        </ul>
+      </div>
+      <div class="security-card reveal">
+        <div class="icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg></div>
+        <h3>No External Requests</h3>
+        <p>When you're browsing a page, AnterSurf itself makes zero background requests. No update checks. No DNS prefetching. No safe browsing API calls with your IP.</p>
+        <ul>
+          <li>No update pings</li>
+          <li>No DNS prefetching</li>
+          <li>No telemetry endpoints</li>
+          <li>No hidden background tasks</li>
+        </ul>
+      </div>
+      <div class="security-card reveal">
+        <div class="icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></div>
+        <h3>Download Protection</h3>
+        <p>All downloads are handled through AnterGet, our built-in download manager. Files go directly to your machine. No cloud intermediary.</p>
+        <ul>
+          <li>Direct file transfers</li>
+          <li>No download tracking</li>
+          <li>Built-in integrity checks</li>
+          <li>Pause &amp; resume support</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="container about-section">
+  <p class="section-label reveal">About</p>
+  <h2 class="section-title reveal">What is AnterSurf?</h2>
+  <div class="reveal">
+    <p>AnterSurf is the most private desktop browser ever built. Not "privacy-focused." Not "privacy-friendly." The most private. Full stop.</p>
+    <p>Most browsers are built around advertising. They track you, profile you, and sell your attention. AnterSurf was built around the radical idea that a browser should just be a browser &mdash; a tool you control, not a platform that controls you.</p>
+    <p>Every feature in AnterSurf was designed with one question: does this serve the user, or does this serve us? If it doesn't serve the user, it doesn't ship.</p>
+
+    <h3>Design Principles</h3>
+    <ul>
+      <li><strong>Privacy by Default</strong> &mdash; Zero telemetry. Zero data collection. Zero external requests. Not opt-in. Default.</li>
+      <li><strong>Local-First Architecture</strong> &mdash; SQLite storage. No cloud, no sync, no accounts. Your data never leaves your device.</li>
+      <li><strong>Minimal Footprint</strong> &mdash; 128 MB AppImage. ~120 MB RAM at idle. No background services eating your resources.</li>
+      <li><strong>User Sovereignty</strong> &mdash; Every setting is yours. Every shortcut is configurable. No dark patterns, no hidden options.</li>
+      <li><strong>Open Source</strong> &mdash; Built in the open. Inspect the code. Verify the claims. Trust nothing you can't verify.</li>
+    </ul>
+
+    <h3>What Makes It Different</h3>
+    <p>Chrome tracks you. Firefox phones home. Safari sends telemetry to Apple. Edge is Microsoft's advertising vector. Opera is owned by a Chinese consortium. Every major browser has a conflict of interest.</p>
+    <p>AnterSurf has no advertisers to please. No shareholders demanding engagement metrics. No product team optimizing for data harvesting. Just a browser that works for you, and only you.</p>
+    <p>Version 26.1 "Wiggly Water" brings a modern UI overhaul with 20 curated theme presets, Brave Search integration, built-in AnterGet download manager, session persistence, and a polished Chromium-grade interface &mdash; all without compromising a single byte of your privacy.</p>
+  </div>
+</section>
+
+<section class="container architecture-section">
+  <p class="section-label reveal">Architecture</p>
+  <h2 class="section-title reveal">Built Different. Literally.</h2>
+  <div class="arch-grid">
+    <div class="arch-card reveal"><h4>Electron Core</h4><p>Built on Chromium with full process isolation. Sandboxed rendering, GPU acceleration, and modern web standards.</p></div>
+    <div class="arch-card reveal"><h4>SQLite Database</h4><p>All persistent data in a single local SQLite file. No JSON dumps, no IndexedDB, no cloud-backed storage.</p></div>
+    <div class="arch-card reveal"><h4>AnterGet Engine</h4><p>Curl-based download manager with pause, resume, progress tracking, and speed display. No third-party services.</p></div>
+    <div class="arch-card reveal"><h4>Session Manager</h4><p>Full session persistence. Close and reopen exactly where you left off. No account sync needed.</p></div>
+    <div class="arch-card reveal"><h4>Per-Tab Isolation</h4><p>Each tab is an isolated webview. Separate process, separate session, separate memory space.</p></div>
+    <div class="arch-card reveal"><h4>Zero Network Calls</h4><p>The browser itself never phones home. No update checks, no telemetry, no DNS prefetching in the background.</p></div>
+  </div>
+</section>
+
+<section class="container compare-section">
+  <p class="section-label reveal">Comparison</p>
+  <h2 class="section-title reveal">How We Stack Up</h2>
+  <table class="reveal">
+    <tr><th></th><th>AnterSurf</th><th>Chrome</th><th>Firefox</th><th>Safari</th><th>Edge</th></tr>
+    <tr><td>Zero Telemetry</td><td class="yes">Yes</td><td class="no">No</td><td class="partial">Minimal</td><td class="no">No</td><td class="no">No</td></tr>
+    <tr><td>No Data Collection</td><td class="yes">Yes</td><td class="no">No</td><td class="partial">Opt-out</td><td class="no">No</td><td class="no">No</td></tr>
+    <tr><td>No Account Required</td><td class="yes">Yes</td><td class="no">No</td><td class="yes">Yes</td><td class="no">No</td><td class="no">No</td></tr>
+    <tr><td>Local-Only Storage</td><td class="yes">Yes</td><td class="no">No</td><td class="no">No</td><td class="no">No</td><td class="no">No</td></tr>
+    <tr><td>Zero Background Requests</td><td class="yes">Yes</td><td class="no">No</td><td class="no">No</td><td class="no">No</td><td class="no">No</td></tr>
+    <tr><td>Forced AI</td><td class="yes">No</td><td class="no">Yes</td><td class="no">Yes</td><td class="partial">AI in OS</td><td class="no">Yes</td></tr>
+  </table>
+</section>
+
+<section class="download-section">
+  <div class="container reveal">
+    <h2>Take Your Privacy Back</h2>
+    <p>Free. Lightweight. Yours forever. No strings attached.</p>
+    <button class="btn btn-primary" id="dlBtn"><a href="download.html" style="color:inherit;text-decoration:none">Download AnterSurf 26.1</a></button>
+    <p style="margin-top:14px;font-size:12px;color:#444">Linux AppImage &middot; Windows &amp; macOS coming soon</p>
+  </div>
+</section>
+
+  <footer>
+    <div class="container">
+      <p>AnterSurf 26.1 &mdash; CODENAME: Wiggly Water &mdash; Built by NexUnfog Solutions</p>
+      <p style="margin-top:6px">Support: <a href="mailto:planetofoses989@gmail.com">planetofoses989@gmail.com</a></p>
+    </div>
+  </footer>
+
+<script>
+var c=document.getElementById('bg'),g=c.getContext('webgl')
+if(g){
+  function r(){c.width=innerWidth;c.height=innerHeight;g.viewport(0,0,c.width,c.height)}
+  addEventListener('resize',r);r()
+  var vs=g.createShader(g.VERTEX_SHADER)
+  g.shaderSource(vs,'attribute vec2 p;void main(){gl_Position=vec4(p,0.,1.)}');g.compileShader(vs)
+  var fs=g.createShader(g.FRAGMENT_SHADER)
+  g.shaderSource(fs,'precision highp float;uniform vec2 r;uniform float t;void main(){vec2 u=gl_FragCoord.xy/r;float c=0.;for(int i=0;i<5;i++){vec2 q=u*2.-1.;float a=t*0.04+float(i)*1.2;q=vec2(q.x*cos(a)-q.y*sin(a),q.x*sin(a)+q.y*cos(a));float d=length(q);c+=0.025/(d+0.25)*sin(d*6.-t*0.6+float(i)*2.5);}c=clamp(c,0.,1.);gl_FragColor=vec4(c*.08,c*.04,c*.18,1.);}')
+  g.compileShader(fs)
+  var p=g.createProgram();g.attachShader(p,vs);g.attachShader(p,fs);g.linkProgram(p);g.useProgram(p)
+  var b=g.createBuffer();g.bindBuffer(g.ARRAY_BUFFER,b);g.bufferData(g.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,1,-1,1,1,-1,1]),g.STATIC_DRAW)
+  var pl=g.getAttribLocation(p,'p');g.enableVertexAttribArray(pl);g.vertexAttribPointer(pl,2,g.FLOAT,false,0,0)
+  var rl=g.getUniformLocation(p,'r'),tl=g.getUniformLocation(p,'t'),st=Date.now()
+  !function a(){g.uniform2f(rl,c.width,c.height);g.uniform1f(tl,(Date.now()-st)/1e3);g.drawArrays(g.TRIANGLES,0,6);requestAnimationFrame(a)}()
+}
+
+var obs=new IntersectionObserver(function(e){e.forEach(function(e){if(e.isIntersecting)e.target.classList.add('show')})})
+document.querySelectorAll('.reveal').forEach(function(e){obs.observe(e)})
+</script>
+</body>
+</html>
