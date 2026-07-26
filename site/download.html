@@ -377,8 +377,9 @@ function showPhase4(){
       clearInterval(interval);
       setTimeout(function(){
         document.getElementById("captcha-overlay").classList.remove("show");
-        window.open(pendingUrl,"_blank");
+        var url=pendingUrl;
         resetAll();
+        window.open(url,"_blank");
       },500);
     }else{
       bar.style.width=progress+"%";
