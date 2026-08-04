@@ -19,6 +19,16 @@ h1{font-size:32px;font-weight:700;letter-spacing:-.5px;margin-bottom:8px;color:#
 .dl-card:hover{background:#0d0d1a;border-color:#1f1f30;transform:translateY(-4px);box-shadow:0 16px 40px rgba(0,0,0,.35)}
 .dl-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,#4fc3f7,transparent);opacity:0;transition:opacity .3s}
 .dl-card:hover::before{opacity:.6}
+.dl-card.dl-wide{grid-column:1/-1;cursor:default;padding:44px 28px 36px}
+.dl-card.dl-wide:hover{transform:none;box-shadow:none;background:#0a0a14;border-color:#14141f}
+.dl-card.dl-wide::before{opacity:0}
+.dl-subs{display:flex;flex-direction:column;gap:8px;width:100%;max-width:560px}
+.dl-sub{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:13px 18px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);color:inherit;text-decoration:none;transition:all .2s;cursor:pointer}
+.dl-sub:hover{background:rgba(79,195,247,.1);border-color:rgba(79,195,247,.3)}
+.dl-sub .s-info{display:flex;align-items:center;gap:10px;min-width:0}
+.dl-sub b{color:#e0e0ec;font-size:14px;flex-shrink:0}
+.dl-sub span{color:#777;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dl-sub .arr{color:#4fc3f7;font-size:15px;flex-shrink:0}
 .dl-icon{width:64px;height:64px;object-fit:contain;margin-bottom:20px}
 .dl-name{font-size:22px;font-weight:700;color:#e0e0ec;margin-bottom:10px}
 .dl-desc{font-size:15px;color:#777;margin-bottom:26px;line-height:1.6}
@@ -96,28 +106,26 @@ h1{font-size:32px;font-weight:700;letter-spacing:-.5px;margin-bottom:8px;color:#
 <p class="sub">Choose your platform</p>
 
 <div class="dl-grid">
-  <a href="#" class="dl-card" data-url="https://www.mediafire.com/file/ph5vvmfr7m1ql04/AnterSurf-26.1.0.AppImage/file">
+  <div class="dl-card dl-wide">
     <img class="dl-icon" src="tux.png" alt="">
-    <div class="dl-name">Linux (AppImage)</div>
-    <div class="dl-desc">Arch / Fedora 36+ / openSUSE 15.4+</div>
-    <span class="dl-btn">Download</span>
-  </a>
-  <a href="#" class="dl-card" data-url="https://www.mediafire.com/file/rlowbam94b82mt0/antersurf_26.1.0_amd64.deb/file">
-    <img class="dl-icon" src="deb.png" alt="">
-    <div class="dl-name">Linux (Debian)</div>
-    <div class="dl-desc">Debian 11+ / Ubuntu 22.04+ / Mint 21+</div>
-    <span class="dl-btn">Download</span>
-  </a>
-  <a href="#" class="dl-card" data-url="https://www.mediafire.com/file/g56rbx71cu6g4xd/AnterSurf-26.1.0.exe/file">
+    <div class="dl-name">Linux</div>
+    <div class="dl-desc">Choose your distribution</div>
+    <div class="dl-subs">
+      <div class="dl-sub" data-url="https://www.mediafire.com/file/XXXXXXXXXXXX/antersurf-27.0.0-1-x86_64.pkg.tar.zst/file"><span class="s-info"><b>Arch</b><span>antersurf-27.0.0-1-x86_64.pkg.tar.zst</span></span><span class="arr">&rarr;</span></div>
+      <div class="dl-sub" data-url="https://www.mediafire.com/file/rlowbam94b82mt0/antersurf_27.0.0_amd64.deb/file"><span class="s-info"><b>Debian</b><span>antersurf_27.0.0_amd64.deb</span></span><span class="arr">&rarr;</span></div>
+      <div class="dl-sub" data-url="https://www.mediafire.com/file/XXXXXXXXXXXX/antersurf-27.0.0.x86_64.rpm/file"><span class="s-info"><b>Fedora</b><span>antersurf-27.0.0.x86_64.rpm</span></span><span class="arr">&rarr;</span></div>
+    </div>
+  </div>
+  <a href="#" class="dl-card" data-url="https://www.mediafire.com/file/g56rbx71cu6g4xd/AnterSurf-27.0.0.exe/file">
     <img class="dl-icon" src="win.png" alt="">
     <div class="dl-name">Windows</div>
     <div class="dl-desc">Windows 10+ — Some features may be missing</div>
     <span class="dl-btn">Download</span>
   </a>
-  <a href="#" class="dl-card" data-url="https://www.mediafire.com/file/iu0qwh2oj9blvic/AnterSurf-26.1.0.apk/file">
-    <img class="dl-icon" src="robot.png" alt="">
-    <div class="dl-name">Android</div>
-    <div class="dl-desc">Android 7.0+ — Some features may be missing</div>
+  <a href="#" class="dl-card" data-url="https://www.mediafire.com/file/glm93ybrtzzy1x1/AnterSurf-27.0.0.dmg/file">
+    <img class="dl-icon" src="mac.png" alt="">
+    <div class="dl-name">macOS</div>
+    <div class="dl-desc">macOS 10.15+ — Some features may be missing</div>
     <span class="dl-btn">Download</span>
   </a>
   <a href="#" class="dl-card" data-url="https://github.com/planetofoses989/antersurf/releases">
@@ -125,12 +133,6 @@ h1{font-size:32px;font-weight:700;letter-spacing:-.5px;margin-bottom:8px;color:#
     <div class="dl-name">GitHub</div>
     <div class="dl-desc">All Old Releases</div>
     <span class="dl-btn">Open</span>
-  </a>
-  <a href="#" class="dl-card" data-url="https://www.mediafire.com/file/glm93ybrtzzy1x1/AnterSurf-26.1.0.dmg/file">
-    <img class="dl-icon" src="mac.png" alt="">
-    <div class="dl-name">macOS</div>
-    <div class="dl-desc">macOS 10.15+ — Some features may be missing</div>
-    <span class="dl-btn">Download</span>
   </a>
 </div>
 
@@ -394,11 +396,11 @@ function showPhase4(){
   },100);
 }
 
-/* Attach to download cards */
-document.querySelectorAll(".dl-card").forEach(function(card){
-  card.addEventListener("click",function(e){
+/* Attach to download cards and sub-entries */
+document.querySelectorAll(".dl-sub, .dl-card[data-url]").forEach(function(el){
+  el.addEventListener("click",function(e){
     e.preventDefault();
-    var url=card.dataset.url;
+    var url=el.dataset.url;
     if(url)showCaptcha(url);
   });
 });

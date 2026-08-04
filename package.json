@@ -1,7 +1,11 @@
 {
   "name": "antersurf",
-  "version": "26.1.0",
+  "version": "27.0.0",
   "description": "Privacy-first browser",
+  "author": {
+    "name": "Antereg Solutions",
+    "email": "planetofoses989@gmail.com"
+  },
   "main": "dist/main.js",
   "scripts": {
     "start": "npm run build:dev && electron . --no-sandbox",
@@ -21,7 +25,10 @@
       "static/**/*"
     ],
     "linux": {
-      "target": "AppImage",
+      "target": [
+        "deb",
+        "rpm"
+      ],
       "category": "Network",
       "icon": "static/logo.png"
     },
@@ -38,6 +45,12 @@
     },
     "portable": {
       "artifactName": "AnterSurf-${version}.exe"
+    },
+    "deb": {
+      "artifactName": "antersurf_${version}_amd64.deb"
+    },
+    "rpm": {
+      "artifactName": "antersurf-${version}.x86_64.rpm"
     }
   },
   "devDependencies": {

@@ -49,5 +49,17 @@ contextBridge.exposeInMainWorld('api', {
   onAgUpdate: (cb) => ipcRenderer.on('ag-update', (_, d) => cb(d)),
   onAgCleared: (cb) => ipcRenderer.on('ag-cleared', (_, id) => cb(id)),
 
-  log: (msg) => ipcRenderer.invoke('log', msg)
+  log: (msg) => ipcRenderer.invoke('log', msg),
+
+  // Screenshots
+  saveScreenshot: (d) => ipcRenderer.invoke('save-screenshot', d),
+
+  // Bookmarks import/export
+  exportBookmarks: (html) => ipcRenderer.invoke('export-bookmarks', html),
+  importBookmarks: () => ipcRenderer.invoke('import-bookmarks'),
+
+  // Tracking Radar
+  radarGet: (wcId) => ipcRenderer.invoke('radar-get', wcId),
+  radarClear: (wcId) => ipcRenderer.invoke('radar-clear', wcId),
+  onRadarUpdate: (cb) => ipcRenderer.on('radar-update', (_, wcId, ev) => cb(wcId, ev))
 })

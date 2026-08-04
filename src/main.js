@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, Menu, nativeImage, clipboard, shell } = require('electron')
+const { app, BrowserWindow, ipcMain, Menu, nativeImage, clipboard, shell, dialog } = require('electron')
 const path = require('path')
 const fs = require('fs')
 const { spawn, spawnSync } = require('child_process')
@@ -83,6 +83,31 @@ function createWindow() {
       url: item.getURL(),
       filename: item.getFilename()
     })
+  })
+
+  // Tracking Radar: live per-tab tracker monitoring
+  ses.webRequest.onBeforeRequest((details, callback) => {
+    callback({})
+    if (!details.webContentsId || details.resourceType === 'mainFrame') return
+    try {
+      const u = new URL(details.url)
+      if (u.protocol === 'http:' || u.protocol === 'https:') {
+        radarAdd(details.webContentsId, { kind: 'req', host: u.hostname, t: Date.now() })
+      }
+    } catch {}
+  })
+  ses.webRequest.onHeadersReceived((details, callback) => {
+    callback({})
+    if (!details.webContentsId || !details.responseHeaders) return
+    for (const k in details.responseHeaders) {
+      if (k.toLowerCase() === 'set-cookie') {
+        try {
+          const u = new URL(details.url)
+          radarAdd(details.webContentsId, { kind: 'cookie', host: u.hostname, t: Date.now() })
+        } catch {}
+        break
+      }
+    }
   })
 
   mainWindow = new BrowserWindow({
@@ -420,4 +445,69 @@ ipcMain.handle('web-inspect', async (_, { tabId }) => {
       if (wc.id === tabId) { wc.inspectElement(0, 0); break }
     }
   } catch {}
+})
+
+// Tracking Radar data
+const radarMap = new Map()
+function radarAdd(wcId, ev) {
+  if (!wcId) return
+  if (!radarMap.has(wcId)) radarMap.set(wcId, [])
+  const arr = radarMap.get(wcId)
+  if (arr.length > 200) arr.shift()
+  arr.push(ev)
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send('radar-update', wcId, ev)
+  }
+}
+ipcMain.handle('radar-get', (_, wcId) => radarMap.get(wcId) || [])
+ipcMain.handle('radar-clear', (_, wcId) => { radarMap.delete(wcId); return true })
+
+// Screenshots
+ipcMain.handle('save-screenshot', async (_, { pngDataUrl }) => {
+  try {
+    const img = nativeImage.createFromDataURL(pngDataUrl)
+    const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19)
+    const p = path.join(app.getPath('downloads'), `AnterSurf-${ts}.png`)
+    fs.writeFileSync(p, img.toPNG())
+    return p
+  } catch { return null }
+})
+
+// Bookmark export (Netscape HTML)
+ipcMain.handle('export-bookmarks', async (_, html) => {
+  try {
+    const r = await dialog.showSaveDialog(mainWindow, {
+      defaultPath: 'antersurf-bookmarks.html',
+      filters: [{ name: 'HTML', extensions: ['html'] }]
+    })
+    if (r.canceled || !r.filePath) return null
+    fs.writeFileSync(r.filePath, html)
+    return r.filePath
+  } catch { return null }
+})
+
+// Bookmark import (Netscape HTML)
+ipcMain.handle('import-bookmarks', async () => {
+  try {
+    const r = await dialog.showOpenDialog(mainWindow, {
+      filters: [{ name: 'HTML', extensions: ['html', 'htm'] }],
+      properties: ['openFile']
+    })
+    if (r.canceled || !r.filePaths.length) return 0
+    const txt = fs.readFileSync(r.filePaths[0], 'utf-8')
+    const re = /<a\s[^>]*href=["']([^"']+)["'][^>]*>(.*?)<\/a>/gi
+    let m, count = 0
+    while ((m = re.exec(txt))) {
+      const url = m[1].trim()
+      const title = (m[2] || '').replace(/<[^>]+>/g, '').trim() || url
+      if (/^https?:\/\//i.test(url)) {
+        const exists = all('SELECT id FROM bookmarks WHERE url = ? LIMIT 1', [url])
+        if (!exists.length) {
+          run('INSERT INTO bookmarks (title, url) VALUES (?, ?)', [title, url])
+          count++
+        }
+      }
+    }
+    return count
+  } catch { return 0 }
 })
