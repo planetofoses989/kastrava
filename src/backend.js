@@ -1,0 +1,201 @@
+const { app } = require('electron')
+const fs = require('fs')
+const path = require('path')
+
+const DEFAULTS = {
+  searchEngine: 'duckduckgo',
+  customEngine: '',
+  accent: '#8ab4f8',
+  theme: '',
+  homepage: '',
+  startup: 'last',
+  confirmClose: 'off',
+  bookmarkBar: 'auto',
+  suggest: 'on',
+  fontSize: '12',
+  reduceAnimations: 'off',
+  hwAcc: 'on',
+  dnt: 'on',
+  tracking: 'standard',
+  cookies: 'off',
+  location: 'block',
+  zoom: '100',
+  uiRadius: 'medium',
+  speedDial: 'comfortable',
+  showHomeBtn: 'off',
+  showCopyBtn: 'on',
+  showNtpClock: 'on',
+  showNtpLogo: 'on',
+  shortcuts: {},
+  maxSuggestions: '8',
+  launchMaximized: 'off',
+  sendReferrer: 'off',
+  cursorFx: 'off',
+  cursorFxMode: 'rainbow',
+  cursorFxColor: '#ff5f6d',
+  cursorFxForce: 'medium',
+  cursorFxSize: 'medium',
+  blobFx: 'off',
+  blobColor: '#5227FF',
+  blobCount: '3',
+  blobSize: 'medium',
+  blobOpacity: '0.6',
+  blobShape: 'circle',
+  glassFx: 'off',
+  glassColor: '#4a6cf7',
+  glassShape: 'sphere',
+  glassSize: 'medium',
+  glassOpacity: '0.5',
+  particleFx: 'off',
+  particleColor: '#ffd166',
+  particleSize: 'medium',
+  particleDensity: 'medium',
+  clickSparkFx: 'off',
+  clickSparkColor: '#ffffff',
+  clickSparkSize: 'medium',
+  clickSparkCount: '8',
+  clickSparkDuration: '400',
+  pixelTrailFx: 'off',
+  pixelTrailColor: '#ffffff',
+  pixelTrailGrid: 'medium',
+  pixelTrailTrail: 'medium',
+  ribbonsFx: 'off',
+  ribbonsColor: '#FC8EAC',
+  ribbonsThickness: 'medium',
+  ribbonsPoints: '50',
+  cursorStyle: 'system',
+  cursorStyleColor: '#ffffff',
+  migrateDdg: ''
+}
+
+const PREFS_KEYS = ['hwAcc', 'dnt']
+
+function prefsPath() {
+  return path.join(app.getPath('userData'), 'prefs.json')
+}
+
+function readPrefsSync() {
+  try {
+    const raw = fs.readFileSync(prefsPath(), 'utf-8')
+    const o = JSON.parse(raw)
+    return typeof o === 'object' && o ? o : {}
+  } catch { return {} }
+}
+
+function writePrefsSync(prefs) {
+  try {
+    fs.mkdirSync(path.dirname(prefsPath()), { recursive: true })
+    fs.writeFileSync(prefsPath(), JSON.stringify(prefs, null, 2))
+  } catch {}
+}
+
+function initPreReady() {
+  const prefs = readPrefsSync()
+  if (prefs.hwAcc === 'off') {
+    try { app.disableHardwareAcceleration() } catch {}
+  }
+  return prefs
+}
+
+function createSettingsBackend({ all, run }) {
+  const cache = Object.assign({}, DEFAULTS)
+
+  function load() {
+    const rows = all('SELECT key, value FROM settings')
+    const stored = {}
+    for (const r of rows) {
+      try { stored[r.key] = JSON.parse(r.value) } catch { stored[r.key] = r.value }
+    }
+    for (const k in stored) {
+      if (stored[k] !== undefined && stored[k] !== null && k !== 'session') {
+        cache[k] = stored[k]
+      }
+    }
+    if (cache.migrateDdg !== '1' && (cache.searchEngine === 'brave' || cache.searchEngine === 'google')) {
+      cache.searchEngine = 'duckduckgo'
+      cache.migrateDdg = '1'
+      if (run) {
+        run('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)', ['searchEngine', JSON.stringify(cache.searchEngine)])
+        run('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)', ['migrateDdg', JSON.stringify('1')])
+      }
+    }
+    return Object.assign({}, cache)
+  }
+
+  function getAll() {
+    return Object.assign({}, cache)
+  }
+
+  function set(key, value) {
+    cache[key] = value
+    if (run) run('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)', [key, JSON.stringify(value)])
+    if (PREFS_KEYS.includes(key)) {
+      const prefs = readPrefsSync()
+      prefs[key] = value
+      writePrefsSync(prefs)
+    }
+  }
+
+  function get(key) {
+    return cache[key]
+  }
+
+  return { load, getAll, set, get }
+}
+
+function createRadarBackend({ send }) {
+  const map = new Map()
+  const mainHost = new Map()
+  const MAX_EVENTS = 300
+
+  function setMain(wcId, host) {
+    if (!wcId || !host) return
+    mainHost.set(wcId, host)
+  }
+
+  function isThird(wcId, host) {
+    const mh = mainHost.get(wcId)
+    if (!mh) return false
+    return host !== mh
+  }
+
+  function add(wcId, ev) {
+    if (!wcId) return
+    ev = Object.assign({ third: isThird(wcId, ev.host) }, ev)
+    if (!map.has(wcId)) map.set(wcId, [])
+    const arr = map.get(wcId)
+    if (arr.length >= MAX_EVENTS) arr.shift()
+    arr.push(ev)
+    if (send) send(wcId, ev)
+  }
+
+  function get(wcId) {
+    return map.get(wcId) || []
+  }
+
+  function clear(wcId) {
+    map.delete(wcId)
+    mainHost.delete(wcId)
+  }
+
+  function stats(wcId) {
+    const mh = mainHost.get(wcId)
+    const doms = {}
+    let reqs = 0, cookies = 0, third = 0
+    for (const e of get(wcId)) {
+      reqs++
+      if (e.kind === 'cookie') cookies++
+      const host = e.host || 'unknown'
+      if (!doms[host]) doms[host] = { req: 0, cookie: 0, third: 0 }
+      doms[host].req++
+      if (e.kind === 'cookie') doms[host].cookie++
+      if (e.third) { doms[host].third++; third++ }
+    }
+    const score = Math.max(0, 100 - reqs * 0.4 - cookies * 2)
+    return { mh, doms, reqs, cookies, third, score: Math.round(score) }
+  }
+
+  return { setMain, isThird, add, get, clear, stats }
+}
+
+module.exports = { DEFAULTS, readPrefsSync, writePrefsSync, initPreReady, createSettingsBackend, createRadarBackend }

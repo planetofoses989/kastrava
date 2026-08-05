@@ -1,10 +1,14 @@
-const { app, BrowserWindow, ipcMain, Menu, nativeImage, clipboard, shell, dialog } = require('electron')
+const { app, BrowserWindow, ipcMain, Menu, nativeTheme, nativeImage, clipboard, shell, dialog } = require('electron')
 const path = require('path')
 const fs = require('fs')
 const { spawn, spawnSync } = require('child_process')
+const backend = require('./backend')
 
+const preReadyPrefs = backend.initPreReady()
 
 let db
+let settingsBackend
+let radar
 async function initDatabase() {
   try {
     const initSqlJs = require('sql.js')
@@ -65,6 +69,29 @@ function saveDb() {
   } catch (e) { console.error('[DB] save error:', e) }
 }
 
+function applyNativeTheme(theme) {
+  try {
+    if (typeof theme === 'string' && theme.indexOf('dark') === 0) nativeTheme.themeSource = 'dark'
+    else if (typeof theme === 'string' && theme.indexOf('light') === 0) nativeTheme.themeSource = 'light'
+    else nativeTheme.themeSource = 'system'
+  } catch (e) {
+    console.error('[Theme] applyNativeTheme error:', e)
+  }
+}
+
+function initBackend() {
+  settingsBackend = backend.createSettingsBackend({ all, run })
+  settingsBackend.load()
+  applyNativeTheme(settingsBackend.get('theme'))
+  radar = backend.createRadarBackend({
+    send: (wcId, ev) => {
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('radar-update', wcId, ev)
+      }
+    }
+  })
+}
+
 let mainWindow
 
 function sendWinState() {
@@ -88,27 +115,72 @@ function createWindow() {
   // Tracking Radar: live per-tab tracker monitoring
   ses.webRequest.onBeforeRequest((details, callback) => {
     callback({})
-    if (!details.webContentsId || details.resourceType === 'mainFrame') return
+    let host = ''
     try {
       const u = new URL(details.url)
-      if (u.protocol === 'http:' || u.protocol === 'https:') {
-        radarAdd(details.webContentsId, { kind: 'req', host: u.hostname, t: Date.now() })
-      }
+      if (u.protocol === 'http:' || u.protocol === 'https:') host = u.hostname
     } catch {}
+    if (!host || !details.webContentsId) return
+    if (details.resourceType === 'mainFrame') {
+      radar.setMain(details.webContentsId, host)
+      return
+    }
+    radar.add(details.webContentsId, { kind: 'req', host, t: Date.now() })
   })
   ses.webRequest.onHeadersReceived((details, callback) => {
-    callback({})
-    if (!details.webContentsId || !details.responseHeaders) return
-    for (const k in details.responseHeaders) {
-      if (k.toLowerCase() === 'set-cookie') {
-        try {
-          const u = new URL(details.url)
-          radarAdd(details.webContentsId, { kind: 'cookie', host: u.hostname, t: Date.now() })
-        } catch {}
-        break
+    const rh = details.responseHeaders
+    const cookiesOff = settingsBackend && settingsBackend.get('cookies') === 'off'
+    let hasSetCookie = false
+    if (rh) {
+      const filtered = {}
+      for (const k in rh) {
+        if (k.toLowerCase() === 'set-cookie') {
+          hasSetCookie = true
+          if (cookiesOff) continue
+        }
+        filtered[k] = rh[k]
+      }
+      if (cookiesOff && hasSetCookie) {
+        callback({ responseHeaders: filtered })
+        return
       }
     }
+    callback({})
+    if (!details.webContentsId || !rh || !hasSetCookie) return
+    try {
+      const u = new URL(details.url)
+      radar.add(details.webContentsId, { kind: 'cookie', host: u.hostname, t: Date.now() })
+    } catch {}
   })
+  ses.webRequest.onBeforeSendHeaders((details, callback) => {
+    const requestHeaders = details.requestHeaders || {}
+    if (settingsBackend) {
+      if (settingsBackend.get('dnt') === 'on') requestHeaders['DNT'] = '1'
+      if (settingsBackend.get('cookies') === 'off') {
+        delete requestHeaders['Cookie']
+        delete requestHeaders['cookie']
+      }
+      if (settingsBackend.get('sendReferrer') === 'off') {
+        delete requestHeaders['Referer']
+        delete requestHeaders['Referrer']
+      }
+    }
+    callback({ requestHeaders })
+  })
+
+  // Privacy by default: deny sensitive permissions, keep fullscreen
+  ses.setPermissionRequestHandler((wc, permission, callback) => {
+    if (permission === 'fullscreen') return callback(true)
+    if (permission === 'geolocation') {
+      return callback(settingsBackend ? settingsBackend.get('location') === 'allow' : false)
+    }
+    callback(false)
+  })
+
+  // Remove all stored cookies when private-cookies mode is active
+  if (settingsBackend && settingsBackend.get('cookies') === 'off') {
+    ses.clearStorageData({ storages: ['cookies'] }).catch(() => {})
+  }
 
   mainWindow = new BrowserWindow({
     width: 1200,
@@ -128,6 +200,10 @@ function createWindow() {
   })
 
   mainWindow.loadFile(path.join(__dirname, 'browser.html'))
+
+  if (settingsBackend && settingsBackend.get('launchMaximized') === 'on') {
+    mainWindow.maximize()
+  }
 
   mainWindow.on('maximize', sendWinState)
   mainWindow.on('unmaximize', sendWinState)
@@ -152,9 +228,17 @@ let lastSessionData = null
 
 app.whenReady().then(async () => {
   await initDatabase()
+  initBackend()
 
   app.on('web-contents-created', (_, wc) => {
     wc.setWindowOpenHandler(({ url }) => {
+      try {
+        const proto = new URL(url).protocol
+        if (proto !== 'http:' && proto !== 'https:') {
+          shell.openExternal(url)
+          return { action: 'deny' }
+        }
+      } catch {}
       if (mainWindow) mainWindow.webContents.send('open-new-tab', url)
       return { action: 'deny' }
     })
@@ -200,16 +284,24 @@ ipcMain.handle('win-maximize', () => {
 ipcMain.handle('win-close', () => mainWindow?.close())
 ipcMain.handle('win-is-maximized', () => mainWindow?.isMaximized())
 ipcMain.handle('get-settings', () => {
-  const rows = all('SELECT key, value FROM settings')
-  const out = {}
-  for (const r of rows) {
-    try { out[r.key] = JSON.parse(r.value) } catch { out[r.key] = r.value }
-  }
-  return out
+  return settingsBackend ? settingsBackend.getAll() : {}
 })
 
 ipcMain.handle('set-setting', (_, key, value) => {
-  run('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)', [key, JSON.stringify(value)])
+  if (settingsBackend) settingsBackend.set(key, value)
+  if (key === 'theme') applyNativeTheme(value)
+  if (key === 'cookies' && value === 'off') {
+    try {
+      const ses = require('electron').session.fromPartition('persist:antersurf')
+      ses.cookies.remove(undefined, undefined).catch(() => {})
+    } catch {}
+  }
+  return true
+})
+
+ipcMain.handle('set-referrer', (_, value) => {
+  if (settingsBackend) settingsBackend.set('sendReferrer', value)
+  return true
 })
 
 ipcMain.handle('get-bookmarks', () => {
@@ -268,6 +360,14 @@ ipcMain.handle('save-page-icon', async (_, { url, dataUrl }) => {
 
 ipcMain.handle('log', (_, msg) => console.log('Renderer:', msg))
 
+ipcMain.handle('open-external', (_, url) => {
+  try { shell.openExternal(String(url)) } catch {}
+})
+
+ipcMain.handle('open-path', (_, p) => {
+  try { shell.openPath(String(p)) } catch {}
+})
+
 // Session restore
 ipcMain.handle('save-session', (_, tabs) => {
   lastSessionData = tabs
@@ -292,7 +392,7 @@ function agSend(id) {
   mainWindow.webContents.send('ag-update', {
     id: d.id, filename: d.filename, url: d.url,
     received: d.received, total: d.total,
-    speed: d.speed, state: d.state
+    speed: d.speed, state: d.state, outputPath: d.outputPath
   })
 }
 
@@ -448,19 +548,9 @@ ipcMain.handle('web-inspect', async (_, { tabId }) => {
 })
 
 // Tracking Radar data
-const radarMap = new Map()
-function radarAdd(wcId, ev) {
-  if (!wcId) return
-  if (!radarMap.has(wcId)) radarMap.set(wcId, [])
-  const arr = radarMap.get(wcId)
-  if (arr.length > 200) arr.shift()
-  arr.push(ev)
-  if (mainWindow && !mainWindow.isDestroyed()) {
-    mainWindow.webContents.send('radar-update', wcId, ev)
-  }
-}
-ipcMain.handle('radar-get', (_, wcId) => radarMap.get(wcId) || [])
-ipcMain.handle('radar-clear', (_, wcId) => { radarMap.delete(wcId); return true })
+ipcMain.handle('radar-get', (_, wcId) => radar ? radar.get(wcId) : [])
+ipcMain.handle('radar-clear', (_, wcId) => { if (radar) radar.clear(wcId); return true })
+ipcMain.handle('radar-stats', (_, wcId) => radar ? radar.stats(wcId) : { reqs: 0, cookies: 0, third: 0, doms: {}, score: 100 })
 
 // Screenshots
 ipcMain.handle('save-screenshot', async (_, { pngDataUrl }) => {

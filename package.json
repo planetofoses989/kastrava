@@ -3,7 +3,7 @@
   "version": "27.0.0",
   "description": "Privacy-first browser",
   "author": {
-    "name": "Antereg Solutions",
+    "name": "PlanetOfOSes",
     "email": "planetofoses989@gmail.com"
   },
   "main": "dist/main.js",
@@ -33,7 +33,7 @@
       "icon": "static/logo.png"
     },
     "win": {
-      "target": "portable",
+      "target": "nsis",
       "icon": "static/logo.ico"
     },
     "mac": {
@@ -45,6 +45,18 @@
     },
     "portable": {
       "artifactName": "AnterSurf-${version}.exe"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "allowElevation": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "AnterSurf",
+      "artifactName": "AnterSurf-Setup-${version}.exe",
+      "deleteAppDataOnUninstall": false,
+      "runAfterFinish": true
     },
     "deb": {
       "artifactName": "antersurf_${version}_amd64.deb"

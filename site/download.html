@@ -14,25 +14,27 @@ a{color:#4fc3f7;text-decoration:none}
 .logo{width:56px;height:56px;border-radius:14px;margin-bottom:16px;filter:drop-shadow(0 4px 12px rgba(0,0,0,.3))}
 h1{font-size:32px;font-weight:700;letter-spacing:-.5px;margin-bottom:8px;color:#e0e0ec}
 .sub{font-size:15px;color:#666;margin-bottom:44px}
-.dl-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;width:100%;max-width:900px}
+.dl-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;width:100%;max-width:1100px}
 .dl-card{background:#0a0a14;border:1px solid #14141f;border-radius:18px;padding:44px 28px;display:flex;flex-direction:column;align-items:center;text-align:center;transition:all .25s;cursor:pointer;text-decoration:none;color:inherit;position:relative;overflow:hidden}
 .dl-card:hover{background:#0d0d1a;border-color:#1f1f30;transform:translateY(-4px);box-shadow:0 16px 40px rgba(0,0,0,.35)}
-.dl-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,#4fc3f7,transparent);opacity:0;transition:opacity .3s}
+.dl-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--accent,#4fc3f7),transparent);opacity:0;transition:opacity .3s}
 .dl-card:hover::before{opacity:.6}
-.dl-card.dl-wide{grid-column:1/-1;cursor:default;padding:44px 28px 36px}
-.dl-card.dl-wide:hover{transform:none;box-shadow:none;background:#0a0a14;border-color:#14141f}
-.dl-card.dl-wide::before{opacity:0}
+.dl-card.linux{--accent:#7fb069}
+.dl-card.win{--accent:#4fc3f7}
+.dl-card.mac{--accent:#b0a9d8}
+.dl-ver.win{color:#4fc3f7;background:rgba(79,195,247,.12);border-color:rgba(79,195,247,.25)}
+.dl-ver.linux{color:#7fb069;background:rgba(127,176,105,.12);border-color:rgba(127,176,105,.25)}
+.dl-sub .tag{font-size:10px;font-weight:700;background:var(--accent,#4fc3f7);color:#06060c;padding:2px 7px;border-radius:10px;letter-spacing:.4px;margin-left:8px}
+.dl-sub:hover .tag{background:#fff}
+.dl-ver{font-size:12px;font-weight:600;color:#4fc3f7;background:rgba(79,195,247,.12);border:1px solid rgba(79,195,247,.25);padding:3px 10px;border-radius:20px;margin-bottom:14px;letter-spacing:.3px}
 .dl-subs{display:flex;flex-direction:column;gap:8px;width:100%;max-width:560px}
-.dl-sub{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:13px 18px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);color:inherit;text-decoration:none;transition:all .2s;cursor:pointer}
-.dl-sub:hover{background:rgba(79,195,247,.1);border-color:rgba(79,195,247,.3)}
-.dl-sub .s-info{display:flex;align-items:center;gap:10px;min-width:0}
-.dl-sub b{color:#e0e0ec;font-size:14px;flex-shrink:0}
-.dl-sub span{color:#777;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.dl-sub .arr{color:#4fc3f7;font-size:15px;flex-shrink:0}
+.dl-sub{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:11px 16px;border-radius:10px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);color:inherit;text-decoration:none;transition:all .2s;cursor:pointer;font-size:14px;font-weight:600;color:#c8c8d4}
+.dl-sub:hover{background:rgba(79,195,247,.12);border-color:rgba(79,195,247,.35)}
+.dl-sub .arr{color:#4fc3f7;font-size:13px;flex-shrink:0}
 .dl-icon{width:64px;height:64px;object-fit:contain;margin-bottom:20px}
 .dl-name{font-size:22px;font-weight:700;color:#e0e0ec;margin-bottom:10px}
 .dl-desc{font-size:15px;color:#777;margin-bottom:26px;line-height:1.6}
-.dl-btn{display:inline-block;padding:14px 32px;border-radius:12px;font-size:15px;font-weight:600;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);color:#999;transition:all .2s;font-family:inherit}
+.dl-btn{display:inline-block;padding:14px 32px;border-radius:12px;font-size:15px;font-weight:600;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);color:#e0e0ec;transition:all .2s;font-family:inherit}
 .dl-card:hover .dl-btn{background:rgba(79,195,247,.1);border-color:rgba(79,195,247,.3);color:#4fc3f7}
 .footer-note{margin-top:32px;font-size:18px;color:#666;text-align:center;letter-spacing:.3px}
 
@@ -90,6 +92,9 @@ h1{font-size:32px;font-weight:700;letter-spacing:-.5px;margin-bottom:8px;color:#
 
 @keyframes fadeSlideIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
 
+@media(max-width:900px){
+  .dl-grid{grid-template-columns:repeat(2,1fr)}
+}
 @media(max-width:500px){
   .dl-grid{grid-template-columns:1fr;max-width:400px}
   .dl-card{flex-direction:row;text-align:left;padding:32px 24px;gap:20px}
@@ -106,26 +111,32 @@ h1{font-size:32px;font-weight:700;letter-spacing:-.5px;margin-bottom:8px;color:#
 <p class="sub">Choose your platform</p>
 
 <div class="dl-grid">
-  <div class="dl-card dl-wide">
+  <div class="dl-card linux">
     <img class="dl-icon" src="tux.png" alt="">
     <div class="dl-name">Linux</div>
+    <div class="dl-ver linux">v27.0.0 — Latest</div>
     <div class="dl-desc">Choose your distribution</div>
     <div class="dl-subs">
-      <div class="dl-sub" data-url="https://www.mediafire.com/file/XXXXXXXXXXXX/antersurf-27.0.0-1-x86_64.pkg.tar.zst/file"><span class="s-info"><b>Arch</b><span>antersurf-27.0.0-1-x86_64.pkg.tar.zst</span></span><span class="arr">&rarr;</span></div>
-      <div class="dl-sub" data-url="https://www.mediafire.com/file/rlowbam94b82mt0/antersurf_27.0.0_amd64.deb/file"><span class="s-info"><b>Debian</b><span>antersurf_27.0.0_amd64.deb</span></span><span class="arr">&rarr;</span></div>
-      <div class="dl-sub" data-url="https://www.mediafire.com/file/XXXXXXXXXXXX/antersurf-27.0.0.x86_64.rpm/file"><span class="s-info"><b>Fedora</b><span>antersurf-27.0.0.x86_64.rpm</span></span><span class="arr">&rarr;</span></div>
+      <div class="dl-sub" data-url="https://www.mediafire.com/file/qyxssfmvyfr7kaj/antersurf-27.0.0-1-x86_64.pkg.tar.zst/file"><span>Arch</span><span class="arr">&rarr;</span></div>
+      <div class="dl-sub" data-url="https://www.mediafire.com/file/ut03cujx32s5a3s/antersurf_27.0.0_amd64.deb/file"><span>Debian</span><span class="arr">&rarr;</span></div>
+      <div class="dl-sub" data-url="https://www.mediafire.com/file/e29pt0rldgqus86/antersurf-27.0.0.x86_64.rpm/file"><span>Fedora</span><span class="arr">&rarr;</span></div>
     </div>
   </div>
-  <a href="#" class="dl-card" data-url="https://www.mediafire.com/file/g56rbx71cu6g4xd/AnterSurf-27.0.0.exe/file">
+  <div class="dl-card win">
     <img class="dl-icon" src="win.png" alt="">
     <div class="dl-name">Windows</div>
+    <div class="dl-ver win">v27.0.0 — Latest</div>
     <div class="dl-desc">Windows 10+ — Some features may be missing</div>
-    <span class="dl-btn">Download</span>
-  </a>
-  <a href="#" class="dl-card" data-url="https://www.mediafire.com/file/glm93ybrtzzy1x1/AnterSurf-27.0.0.dmg/file">
+    <div class="dl-subs">
+      <div class="dl-sub" data-url="https://www.mediafire.com/file/9fmw8pxzbstms6d/AnterSurf-Setup-27.0.0.exe/file"><span>Installer<span class="tag">Recommended</span></span><span class="arr">&rarr;</span></div>
+      <div class="dl-sub" data-url="https://www.mediafire.com/file/9jcmb3u1y07o1pt/AnterSurf-27.0.0.exe/file"><span>Portable</span><span class="arr">&rarr;</span></div>
+    </div>
+  </div>
+  <a href="#" class="dl-card mac" data-url="https://www.mediafire.com/file/glm93ybrtzzy1x1/AnterSurf-26.1.0.dmg/file">
     <img class="dl-icon" src="mac.png" alt="">
     <div class="dl-name">macOS</div>
-    <div class="dl-desc">macOS 10.15+ — Some features may be missing</div>
+    <div class="dl-ver">v26.1.0</div>
+    <div class="dl-desc">macOS 10.15+ — newer versions coming soon</div>
     <span class="dl-btn">Download</span>
   </a>
   <a href="#" class="dl-card" data-url="https://github.com/planetofoses989/antersurf/releases">

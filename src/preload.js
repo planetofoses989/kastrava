@@ -8,6 +8,7 @@ contextBridge.exposeInMainWorld('api', {
 
   getSettings: () => ipcRenderer.invoke('get-settings'),
   setSetting: (k, v) => ipcRenderer.invoke('set-setting', k, v),
+  setReferrer: (v) => ipcRenderer.invoke('set-referrer', v),
 
   getBookmarks: () => ipcRenderer.invoke('get-bookmarks'),
   addBookmark: (b) => ipcRenderer.invoke('add-bookmark', b),
@@ -26,6 +27,7 @@ contextBridge.exposeInMainWorld('api', {
   savePageIcon: (d) => ipcRenderer.invoke('save-page-icon', d),
 
   openExternal: (url) => ipcRenderer.invoke('open-external', url),
+  openPath: (p) => ipcRenderer.invoke('open-path', p),
 
   saveSession: (tabs) => ipcRenderer.invoke('save-session', tabs),
   saveSessionSync: (tabs) => ipcRenderer.send('save-session-sync', tabs),
@@ -61,5 +63,6 @@ contextBridge.exposeInMainWorld('api', {
   // Tracking Radar
   radarGet: (wcId) => ipcRenderer.invoke('radar-get', wcId),
   radarClear: (wcId) => ipcRenderer.invoke('radar-clear', wcId),
+  radarStats: (wcId) => ipcRenderer.invoke('radar-stats', wcId),
   onRadarUpdate: (cb) => ipcRenderer.on('radar-update', (_, wcId, ev) => cb(wcId, ev))
 })
