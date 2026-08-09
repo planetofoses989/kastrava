@@ -2,8 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:webview_flutter/webview_flutter.dart';
 
 import '../models/browser_tab.dart';
 import '../services/anterget_service.dart';
@@ -17,7 +17,7 @@ class BrowserController extends ChangeNotifier {
   int _nextId = 1;
   int _activeId = 0;
 
-  final Map<int, WebViewController> _controllers = {};
+  final Map<int, InAppWebViewController> _controllers = {};
 
   bool radarVisible = false;
   bool findVisible = false;
@@ -38,13 +38,25 @@ class BrowserController extends ChangeNotifier {
     return tabs.isEmpty ? null : tabs.first;
   }
 
-  WebViewController? get activeController => _controllers[_activeId];
+  InAppWebViewController? get activeController => _controllers[_activeId];
 
   int get activeId => _activeId;
 
   int get tabCount => tabs.length;
 
   List<BrowserTab> get allTabs => List.unmodifiable(tabs);
+
+  int get activeIndexInList {
+    final idx = tabs.indexWhere((t) => t.id == _activeId);
+    return idx < 0 ? 0 : idx;
+  }
+
+  BrowserTab? _tabById(int id) {
+    for (final t in tabs) {
+      if (t.id == id) return t;
+    }
+    return null;
+  }
 
   Future<void> restore() async {
     final s = SettingsService.instance.settings;
@@ -94,54 +106,103 @@ class BrowserController extends ChangeNotifier {
     tabs.add(tab);
     _activeId = id;
 
-    late final WebViewController controller;
-    controller = WebViewController()
-      ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..setBackgroundColor(const Color(0xFF0A0A14))
-      ..setNavigationDelegate(NavigationDelegate(
-        onProgress: (p) {
-          tab.progress = p / 100;
-          tab.loading = p < 100;
-          notifyListeners();
-        },
-        onPageStarted: (url) {
-          tab.loading = true;
-          tab.url = url;
-          tab.isNewTab = false;
-          _radarEvent(url);
-          notifyListeners();
-        },
-        onPageFinished: (url) {
-          tab.loading = false;
-          tab.isNewTab = false;
-          _captureTitle(tab, controller);
-          notifyListeners();
-        },
-        onUrlChange: (change) {
-          if (change.url != null && change.url != tab.url) {
-            tab.url = change.url!;
-            notifyListeners();
-          }
-        },
-        onWebResourceError: (error) {
-          tab.loading = false;
-          tab.title = "Page failed to load";
-          notifyListeners();
-        },
-      ));
-
-    _controllers[id] = controller;
-
     if (loadUrl != null && loadUrl.isNotEmpty) {
       final url = SearchService.instance.toSearchUrl(loadUrl);
-      controller.loadRequest(Uri.parse(url));
+      tab.url = url;
+      tab.isNewTab = false;
+      tab.loading = true;
       _recordHistory(tab, url);
     }
     notifyListeners();
   }
 
-  Future<void> _captureTitle(BrowserTab tab, WebViewController c) async {
+  void registerWebView(int tabId, InAppWebViewController c) {
+    _controllers[tabId] = c;
+  }
+
+  void onProgress(int tabId, int progress) {
+    final tab = _tabById(tabId);
+    if (tab == null) return;
+    tab.progress = progress / 100;
+    tab.loading = progress < 100;
+    notifyListeners();
+  }
+
+  void onPageStarted(int tabId, String url) {
+    final tab = _tabById(tabId);
+    if (tab == null) return;
+    tab.loading = true;
+    tab.url = url;
+    tab.isNewTab = false;
+    _radarEvent(url);
+    notifyListeners();
+  }
+
+  void onPageFinished(int tabId, String url) {
+    final tab = _tabById(tabId);
+    if (tab == null) return;
+    tab.loading = false;
+    tab.isNewTab = false;
+    _captureTitle(tab);
+    notifyListeners();
+  }
+
+  void onTitle(int tabId, String? title) {
+    final tab = _tabById(tabId);
+    if (tab == null || title == null || title.isEmpty) return;
+    tab.title = title;
+    notifyListeners();
+  }
+
+  void onUrlChanged(int tabId, String url) {
+    final tab = _tabById(tabId);
+    if (tab == null) return;
+    if (url.isNotEmpty && url != tab.url) {
+      tab.url = url;
+      notifyListeners();
+    }
+  }
+
+  void onWebResourceError(int tabId) {
+    final tab = _tabById(tabId);
+    if (tab == null) return;
+    tab.loading = false;
+    tab.title = "Page failed to load";
+    notifyListeners();
+  }
+
+  Future<NavigationActionPolicy?> onDownloadStart(
+      int tabId, DownloadStartRequest request) async {
+    var name = (request.suggestedFilename ?? '').trim();
+    if (name.isEmpty) {
+      name = _fileNameFromContentDisposition(request.contentDisposition) ?? '';
+    }
+    final url = request.url.toString();
+    if (url.isNotEmpty) {
+      await AnterGetService.instance.start(url,
+          suggestedName: name.isEmpty ? null : name);
+    }
+    return null;
+  }
+
+  static String? _fileNameFromContentDisposition(String? cd) {
+    if (cd == null || cd.isEmpty) return null;
+    final star =
+        RegExp(r"filename\*\s*=\s*UTF-8''([^;]+)").firstMatch(cd);
+    if (star != null) {
+      try {
+        return Uri.decodeComponent(star.group(1)!.trim());
+      } catch (_) {}
+    }
+    final m = RegExp(r'filename="?([^";]+)"?').firstMatch(cd);
+    if (m != null) return m.group(1)!.trim();
+    return null;
+  }
+
+  Future<void> _captureTitle(BrowserTab tab) async {
     try {
+      final c = _controllers[tab.id];
+      if (c == null) return;
       final title = await c.getTitle();
       if (title != null && title.isNotEmpty) {
         tab.title = title;
@@ -216,24 +277,26 @@ class BrowserController extends ChangeNotifier {
     final c = activeController;
     if (c == null) return;
     try {
-      await c.runJavaScript('window.stop();');
+      await c.evaluateJavascript(source: 'window.stop();');
     } catch (_) {}
   }
 
   Future<void> navigate(String input) async {
     final t = activeTab;
-    final c = activeController;
-    if (t == null || c == null) return;
+    if (t == null) return;
     final url = SearchService.instance.toSearchUrl(input);
     t.url = url;
     t.isNewTab = false;
     t.loading = true;
     notifyListeners();
-    try {
-      await c.loadRequest(Uri.parse(url));
-    } catch (_) {
-      t.loading = false;
-      notifyListeners();
+    final c = activeController;
+    if (c != null) {
+      try {
+        await c.loadUrl(urlRequest: URLRequest(url: WebUri(url)));
+      } catch (_) {
+        t.loading = false;
+        notifyListeners();
+      }
     }
     _recordHistory(t, url);
   }
@@ -249,18 +312,12 @@ class BrowserController extends ChangeNotifier {
 
   Future<void> showNewTab() async {
     final t = activeTab;
-    final c = activeController;
     if (t == null) return;
     t.url = "";
     t.title = "New Tab";
     t.isNewTab = true;
     t.loading = false;
     notifyListeners();
-    if (c != null) {
-      try {
-        await c.loadRequest(Uri.parse('about:blank'));
-      } catch (_) {}
-    }
   }
 
   Future<void> _recordHistory(BrowserTab tab, String url) async {
@@ -323,7 +380,7 @@ class BrowserController extends ChangeNotifier {
     if (c == null) return;
     final js = _esc(q);
     try {
-      final result = await c.runJavaScriptReturningResult('''
+      final result = await c.evaluateJavascript(source: '''
         (function(){
           var found = window.find("$js", false, false, true);
           return found;

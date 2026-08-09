@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:webview_flutter/webview_flutter.dart';
+import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 
 import '../app_theme.dart';
 import '../controllers/browser_controller.dart';
+import '../models/browser_tab.dart';
 import '../widgets/omni_bar.dart';
 import '../widgets/bottom_toolbar.dart';
 import '../widgets/tab_strip.dart';
@@ -104,10 +105,16 @@ class _BrowserScreenState extends State<BrowserScreen> {
                 key: _webAreaKey,
                 child: Stack(
                   children: [
-                    if (isNew || ctrl == null)
+                    if (controller.tabs.isEmpty)
                       NewTabPage(controller: controller)
                     else
-                      _buildWebView(ctrl),
+                      IndexedStack(
+                        index: controller.activeIndexInList,
+                        children: [
+                          for (final t in controller.allTabs)
+                            _buildTabSlot(t),
+                        ],
+                      ),
                     if (controller.findVisible) _buildFindBar(),
                     if (controller.settingsVisible)
                       SettingsScreen(controller: controller),
@@ -128,8 +135,34 @@ class _BrowserScreenState extends State<BrowserScreen> {
     );
   }
 
-  Widget _buildWebView(WebViewController ctrl) {
-    return WebViewWidget(controller: ctrl);
+  Widget _buildTabSlot(BrowserTab t) {
+    if (t.url.isEmpty) {
+      return NewTabPage(controller: controller);
+    }
+    return InAppWebView(
+      key: ValueKey('webview-${t.id}'),
+      initialUrlRequest: URLRequest(url: WebUri(t.url)),
+      initialSettings: InAppWebViewSettings(
+        javaScriptEnabled: true,
+        useOnDownloadStart: true,
+        mediaPlaybackRequiresUserGesture: true,
+        domStorageEnabled: true,
+        verticalScrollBarEnabled: true,
+        horizontalScrollBarEnabled: true,
+      ),
+      onWebViewCreated: (c) => controller.registerWebView(t.id, c),
+      onLoadStart: (c, url) =>
+          controller.onPageStarted(t.id, url?.toString() ?? ''),
+      onLoadStop: (c, url) =>
+          controller.onPageFinished(t.id, url?.toString() ?? ''),
+      onProgressChanged: (c, p) => controller.onProgress(t.id, p),
+      onTitleChanged: (c, title) => controller.onTitle(t.id, title),
+      onUpdateVisitedHistory: (c, url, isReload) =>
+          controller.onUrlChanged(t.id, url?.toString() ?? ''),
+      onReceivedError: (c, req, error) => controller.onWebResourceError(t.id),
+      onDownloadStartRequest: (c, req) =>
+          controller.onDownloadStart(t.id, req),
+    );
   }
 
   Widget _buildFindBar() {
