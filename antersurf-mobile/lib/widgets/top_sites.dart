@@ -89,78 +89,49 @@ class _TopSitesGridState extends State<TopSitesGrid> {
     final s = SettingsService.instance.settings;
     final cols = s.speedDial == 'compact' ? 5 : 4;
 
-    return Column(
-      children: [
-        Row(
-          children: [
-            Text(
-              "Top Sites",
-              style: TextStyle(
-                fontSize: 13,
-                color: scheme.onSurface,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            const Spacer(),
-            IconButton(
-              icon: const Icon(Icons.add, size: 18),
-              onPressed: _addShortcut,
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        if (!_loaded)
-          const SizedBox(
-            height: 120,
-            child: Center(child: CircularProgressIndicator()),
-          )
-        else if (_sites.isEmpty)
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 24),
-            child: Text(
-              "No shortcuts yet — tap + to add one",
-              style: TextStyle(fontSize: 13, color: scheme.onSurface),
-            ),
-          )
-        else
-          GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: cols,
-              mainAxisSpacing: 14,
-              crossAxisSpacing: 14,
-              childAspectRatio: 0.82,
-            ),
-            itemCount: _sites.length + 1,
-            itemBuilder: (context, i) {
-              if (i == _sites.length) {
-                return _SiteTile(
-                  icon: Icons.add,
-                  label: "Add",
-                  color: scheme.surfaceContainerHighest,
-                  onTap: _addShortcut,
-                );
-              }
-              final b = _sites[i];
-              return _SiteTile(
-                icon: Icons.public,
-                label: b.title.isEmpty ? b.host : b.title,
-                color: _color(b.url),
-                initial: SearchService.instance.initialFor(b.title),
-                onTap: () => widget.controller.navigate(b.url),
-                onLongPress: () => _remove(b),
-              );
-            },
-          ),
-      ],
+    if (!_loaded) {
+      return const SizedBox(
+        height: 120,
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: cols,
+        mainAxisSpacing: 8,
+        crossAxisSpacing: 12,
+        childAspectRatio: 1.1,
+      ),
+      itemCount: _sites.length + 1,
+      itemBuilder: (context, i) {
+        if (i == _sites.length) {
+          return _SiteTile(
+            icon: Icons.add,
+            label: "Add shortcut",
+            color: scheme.surfaceContainerHighest,
+            onTap: _addShortcut,
+          );
+        }
+        final b = _sites[i];
+        return _SiteTile(
+          icon: Icons.public,
+          label: b.title.isEmpty ? b.host : b.title,
+          color: _color(b.url),
+          initial: SearchService.instance.initialFor(b.title),
+          onTap: () => widget.controller.navigate(b.url),
+          onLongPress: () => _remove(b),
+        );
+      },
     );
   }
 
   Color _color(String url) {
     final seed = url.hashCode.abs();
     final hue = seed % 360;
-    return HSLColor.fromAHSL(0.9, hue.toDouble(), 0.5, 0.55).toColor();
+    return HSLColor.fromAHSL(0.85, hue.toDouble(), 0.5, 0.45).toColor();
   }
 }
 
@@ -188,36 +159,34 @@ class _SiteTile extends StatelessWidget {
       onTap: onTap,
       onLongPress: onLongPress,
       child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Container(
-            width: 52,
-            height: 52,
+            width: 32,
+            height: 32,
             decoration: BoxDecoration(
               color: color,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: const [
-                BoxShadow(color: Colors.black26, blurRadius: 6),
-              ],
+              shape: BoxShape.circle,
             ),
             child: Center(
               child: initial.isNotEmpty
                   ? Text(
                       initial,
                       style: const TextStyle(
-                        fontSize: 20,
+                        fontSize: 14,
                         fontWeight: FontWeight.w600,
                         color: Colors.white,
                       ),
                     )
-                  : Icon(icon, size: 24, color: Colors.white),
+                  : Icon(icon, size: 16, color: Colors.white),
             ),
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 8),
           Text(
             label,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: TextStyle(fontSize: 11, color: scheme.onSurface),
+            style: TextStyle(fontSize: 10, color: scheme.onSurface),
           ),
         ],
       ),

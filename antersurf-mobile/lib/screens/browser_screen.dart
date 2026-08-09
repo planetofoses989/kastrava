@@ -23,6 +23,7 @@ class BrowserScreen extends StatefulWidget {
 
 class _BrowserScreenState extends State<BrowserScreen> {
   final BrowserController controller = BrowserController();
+  final GlobalKey<OmniBarState> _omniKey = GlobalKey<OmniBarState>();
   final GlobalKey _webAreaKey = GlobalKey();
   final TextEditingController findCtrl = TextEditingController();
 
@@ -95,13 +96,17 @@ class _BrowserScreenState extends State<BrowserScreen> {
             children: [
               if (!isNew && ctrl != null && (tab?.loading ?? false))
                 _ProgressBar(progress: tab?.progress ?? 0),
-              OmniBar(controller: controller),
+              OmniBar(key: _omniKey, controller: controller),
               Expanded(
                 key: _webAreaKey,
                 child: Stack(
                   children: [
                     if (controller.tabs.isEmpty)
-                      NewTabPage(controller: controller)
+                      NewTabPage(
+                        controller: controller,
+                        onFocusSearch: () =>
+                            _omniKey.currentState?.focusField(),
+                      )
                     else
                       IndexedStack(
                         index: controller.activeIndexInList,
@@ -132,7 +137,10 @@ class _BrowserScreenState extends State<BrowserScreen> {
 
   Widget _buildTabSlot(BrowserTab t) {
     if (t.url.isEmpty) {
-      return NewTabPage(controller: controller);
+      return NewTabPage(
+        controller: controller,
+        onFocusSearch: () => _omniKey.currentState?.focusField(),
+      );
     }
     return InAppWebView(
       key: ValueKey('webview-${t.id}'),

@@ -16,15 +16,17 @@ class OmniBar extends StatefulWidget {
   const OmniBar({super.key, required this.controller});
 
   @override
-  State<OmniBar> createState() => _OmniBarState();
+  State<OmniBar> createState() => OmniBarState();
 }
 
-class _OmniBarState extends State<OmniBar> {
+class OmniBarState extends State<OmniBar> {
   final TextEditingController _text = TextEditingController();
   final FocusNode _focus = FocusNode();
   Timer? _debounce;
   List<String> _suggestions = [];
   bool _suggesting = false;
+
+  void focusField() => _focus.requestFocus();
 
   @override
   void initState() {

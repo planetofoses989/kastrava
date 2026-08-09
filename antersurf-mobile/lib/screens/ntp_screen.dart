@@ -9,7 +9,12 @@ import '../widgets/top_sites.dart';
 
 class NewTabPage extends StatefulWidget {
   final BrowserController controller;
-  const NewTabPage({super.key, required this.controller});
+  final VoidCallback? onFocusSearch;
+  const NewTabPage({
+    super.key,
+    required this.controller,
+    this.onFocusSearch,
+  });
 
   @override
   State<NewTabPage> createState() => _NewTabPageState();
@@ -53,55 +58,103 @@ class _NewTabPageState extends State<NewTabPage> {
 
     return Container(
       color: scheme.background,
-      child: SingleChildScrollView(
-        physics: const BouncingScrollPhysics(),
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 48, 20, 24),
-          child: Column(
-            children: [
-              if (s.showNtpClock) ...[
-                Text(
-                  timeStr,
-                  style: TextStyle(
-                    fontSize: 48,
-                    fontWeight: FontWeight.w700,
-                    color: scheme.onSurface,
-                    height: 1.1,
-                    letterSpacing: 1,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          return SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: constraints.maxHeight),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  SizedBox(height: constraints.maxHeight * 0.06),
+                  if (s.showNtpClock) ...[
+                    Text(
+                      timeStr,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 40,
+                        fontWeight: FontWeight.w700,
+                        color: scheme.onSurface,
+                        height: 1.1,
+                        letterSpacing: 1,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      dateStr,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 12, color: scheme.onSurface),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      greeting,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: scheme.primary,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 22),
+                  ],
+                  if (s.showNtpLogo)
+                    Center(
+                      child: Image.asset(
+                        'assets/logo.png',
+                        width: 88,
+                        height: 88,
+                        fit: BoxFit.contain,
+                      ),
+                    ),
+                  const SizedBox(height: 18),
+                  GestureDetector(
+                    onTap: widget.onFocusSearch,
+                    child: Container(
+                      height: 50,
+                      margin: const EdgeInsets.symmetric(horizontal: 32),
+                      padding: const EdgeInsets.symmetric(horizontal: 18),
+                      decoration: BoxDecoration(
+                        color: scheme.surfaceContainerHighest,
+                        borderRadius: BorderRadius.circular(25),
+                        boxShadow: const [
+                          BoxShadow(
+                            color: Colors.black26,
+                            blurRadius: 8,
+                            offset: Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.search,
+                            size: 20,
+                            color: scheme.onSurface.withValues(alpha: .55),
+                          ),
+                          const SizedBox(width: 12),
+                          Text(
+                            "Search or type URL",
+                            style: TextStyle(
+                              fontSize: 15,
+                              color: scheme.onSurface.withValues(alpha: .6),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  dateStr,
-                  style: TextStyle(fontSize: 13, color: scheme.onSurface),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  greeting,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: scheme.primary,
-                    fontWeight: FontWeight.w500,
+                  const SizedBox(height: 44),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: TopSitesGrid(controller: widget.controller),
                   ),
-                ),
-              ],
-              const SizedBox(height: 28),
-              if (s.showNtpLogo)
-                Container(
-                  width: 64,
-                  height: 64,
-                  decoration: BoxDecoration(
-                    color: scheme.surfaceContainerHighest,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: scheme.outlineVariant),
-                  ),
-                  child: Icon(Icons.public, size: 34, color: scheme.primary),
-                ),
-              const SizedBox(height: 24),
-              TopSitesGrid(controller: widget.controller),
-            ],
-          ),
-        ),
+                  const SizedBox(height: 40),
+                ],
+              ),
+            ),
+          );
+        },
       ),
     );
   }
