@@ -175,9 +175,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               groupValue: s.searchEngine,
               onChanged: (v) {
                 if (v != null) {
-                  SettingsService.instance.set('searchEngine', v
-      onBack: () => setState(() => _page = 0),
-    );
+                  SettingsService.instance.set('searchEngine', v);
                 }
               },
               title: Text(name),
@@ -199,6 +197,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
         ],
       ),
+      onBack: () => setState(() => _page = 0),
     );
   }
 
@@ -230,9 +229,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               groupValue: s.theme,
               onChanged: (v) {
                 if (v != null) {
-                  SettingsService.instance.set('theme', v
-      onBack: () => setState(() => _page = 0),
-    );
+                  SettingsService.instance.set('theme', v);
                 }
               },
               title: Text(name),
@@ -291,6 +288,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const SizedBox(height: 24),
         ],
       ),
+      onBack: () => setState(() => _page = 0),
     );
   }
 
@@ -304,9 +302,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             value: 'last',
             groupValue: s.startup,
             onChanged: (v) {
-              if (v != null) SettingsService.instance.set('startup', v
-      onBack: () => setState(() => _page = 0),
-    );
+              if (v != null) SettingsService.instance.set('startup', v);
             },
             title: const Text("Restore last session"),
             subtitle: const Text("Reopen tabs from previous run"),
@@ -342,6 +338,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
         ],
       ),
+      onBack: () => setState(() => _page = 0),
     );
   }
 
@@ -362,9 +359,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               groupValue: s.tracking,
               onChanged: (v) {
                 if (v != null) {
-                  SettingsService.instance.set('tracking', v
-      onBack: () => setState(() => _page = 0),
-    );
+                  SettingsService.instance.set('tracking', v);
                 }
               },
               title: Text(name),
@@ -382,6 +377,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           }),
         ],
       ),
+      onBack: () => setState(() => _page = 0),
     );
   }
 
@@ -402,9 +398,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               groupValue: s.location,
               onChanged: (v) {
                 if (v != null) {
-                  SettingsService.instance.set('location', v
-      onBack: () => setState(() => _page = 0),
-    );
+                  SettingsService.instance.set('location', v);
                 }
               },
               title: Text(name),
@@ -412,6 +406,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
         ],
       ),
+      onBack: () => setState(() => _page = 0),
     );
   }
 
@@ -460,9 +455,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               groupValue: s.speedDial,
               onChanged: (v) {
                 if (v != null) {
-                  SettingsService.instance.set('speedDial', v
-      onBack: () => setState(() => _page = 0),
-    );
+                  SettingsService.instance.set('speedDial', v);
                 }
               },
               title: Text(name),
@@ -470,6 +463,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
         ],
       ),
+      onBack: () => setState(() => _page = 0),
     );
   }
 

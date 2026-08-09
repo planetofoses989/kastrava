@@ -1,6 +1,6 @@
 class DownloadTask {
   int id;
-  final String url;
+  String url;
   String fileName;
   String path;
   int received;

@@ -13,6 +13,14 @@ class Bookmark {
     required this.createdAt,
   });
 
+  String get host {
+    try {
+      return Uri.parse(url).host;
+    } catch (_) {
+      return '';
+    }
+  }
+
   Map<String, dynamic> toMap() => {
         'id': id,
         'title': title,

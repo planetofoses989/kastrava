@@ -12,6 +12,7 @@ import 'settings_screen.dart';
 import 'side_panel_screen.dart';
 import 'radar_screen.dart';
 import 'downloads_screen.dart';
+import '../services/settings_service.dart';
 
 class BrowserScreen extends StatefulWidget {
   const BrowserScreen({super.key});

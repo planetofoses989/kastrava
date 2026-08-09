@@ -94,7 +94,8 @@ class BrowserController extends ChangeNotifier {
     tabs.add(tab);
     _activeId = id;
 
-    final controller = WebViewController()
+    late final WebViewController controller;
+    controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setBackgroundColor(const Color(0xFF0A0A14))
       ..setNavigationDelegate(NavigationDelegate(
@@ -107,16 +108,13 @@ class BrowserController extends ChangeNotifier {
           tab.loading = true;
           tab.url = url;
           tab.isNewTab = false;
+          _radarEvent(url);
           notifyListeners();
         },
         onPageFinished: (url) {
           tab.loading = false;
           tab.isNewTab = false;
           _captureTitle(tab, controller);
-          notifyListeners();
-        },
-        onTitleChanged: (title) {
-          tab.title = title.isEmpty ? tab.host : title;
           notifyListeners();
         },
         onUrlChange: (change) {
@@ -130,11 +128,6 @@ class BrowserController extends ChangeNotifier {
           tab.title = "Page failed to load";
           notifyListeners();
         },
-        onDownloadRequest: (req) {
-          AnterGetService.instance.start(req.url);
-        },
-        onHttpRequest: _radarEvent,
-        onHttpError: (err) {},
       ));
 
     _controllers[id] = controller;
@@ -223,7 +216,7 @@ class BrowserController extends ChangeNotifier {
     final c = activeController;
     if (c == null) return;
     try {
-      await c.stopLoading();
+      await c.runJavaScript('window.stop();');
     } catch (_) {}
   }
 
@@ -280,17 +273,17 @@ class BrowserController extends ChangeNotifier {
     ));
   }
 
-  void _radarEvent(HttpRequest request) {
+  void _radarEvent(String url) {
     final t = activeTab;
     if (t == null) return;
     if (t.isNewTab) return;
-    final host = request.uri.host;
+    final host = Uri.tryParse(url)?.host ?? '';
     final mainHost = t.host;
     final third = host.isNotEmpty && mainHost.isNotEmpty && host != mainHost;
     radarEvents.insert(0, {
       'host': host,
       'third': third,
-      'kind': request.requestKind.name,
+      'kind': 'main',
       'ts': DateTime.now().millisecondsSinceEpoch,
     });
     if (radarEvents.length > 300) radarEvents.removeLast();

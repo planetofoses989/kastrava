@@ -5,6 +5,7 @@ import '../controllers/browser_controller.dart';
 import '../models/bookmark.dart';
 import '../services/app_database.dart';
 import '../services/search_service.dart';
+import '../services/settings_service.dart';
 
 class TopSitesGrid extends StatefulWidget {
   final BrowserController controller;

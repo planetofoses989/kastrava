@@ -89,7 +89,7 @@ class AnterGetService extends ChangeNotifier {
     var fileName = (suggestedName == null || suggestedName.isEmpty)
         ? _fileNameFromUrl(url)
         : suggestedName;
-    fileName = _uniqueName(dir, fileName);
+    fileName = _uniqueName(dir.path, fileName);
 
     final task = DownloadTask(
       url: url,
@@ -301,7 +301,7 @@ class AnterGetService extends ChangeNotifier {
           if (crTotal > 0) t.total = crTotal;
           final body = res.body;
           if (body.isEmpty) break;
-          await raf.writeFrom(body);
+          await raf!.writeFrom(body);
           offset += body.length;
           t.received = offset;
           _markSpeed(t);
@@ -316,7 +316,7 @@ class AnterGetService extends ChangeNotifier {
           // Server ignored Range. If a partial file exists, restart from
           // scratch (like curl -C - falling back to a fresh download).
           if (offset > 0) {
-            raf.close();
+            raf!.close();
             _handles.remove(id);
             await File(t.path).delete();
             raf = await File(t.path).open(mode: FileMode.append);
@@ -326,7 +326,7 @@ class AnterGetService extends ChangeNotifier {
           }
           final body = res.body;
           if (body.isEmpty) break;
-          await raf.writeFrom(body);
+          await raf!.writeFrom(body);
           t.received = body.length;
           t.total = body.length;
           offset = t.received;
