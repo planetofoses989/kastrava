@@ -7,7 +7,6 @@ import '../controllers/browser_controller.dart';
 import '../models/browser_tab.dart';
 import '../widgets/omni_bar.dart';
 import '../widgets/bottom_toolbar.dart';
-import '../widgets/tab_strip.dart';
 import 'ntp_screen.dart';
 import 'settings_screen.dart';
 import 'side_panel_screen.dart';
@@ -24,7 +23,6 @@ class BrowserScreen extends StatefulWidget {
 
 class _BrowserScreenState extends State<BrowserScreen> {
   final BrowserController controller = BrowserController();
-  final ScrollController tabScroll = ScrollController();
   final GlobalKey _webAreaKey = GlobalKey();
   final TextEditingController findCtrl = TextEditingController();
 
@@ -45,7 +43,6 @@ class _BrowserScreenState extends State<BrowserScreen> {
   void dispose() {
     controller.removeListener(_onControllerChange);
     controller.dispose();
-    tabScroll.dispose();
     findCtrl.dispose();
     super.dispose();
   }
@@ -99,8 +96,6 @@ class _BrowserScreenState extends State<BrowserScreen> {
               if (!isNew && ctrl != null && (tab?.loading ?? false))
                 _ProgressBar(progress: tab?.progress ?? 0),
               OmniBar(controller: controller),
-              if (!isNew)
-                TabStrip(controller: controller, scroll: tabScroll),
               Expanded(
                 key: _webAreaKey,
                 child: Stack(

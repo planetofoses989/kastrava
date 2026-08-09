@@ -9,6 +9,7 @@ import '../models/bookmark.dart';
 import '../services/app_database.dart';
 import '../services/search_service.dart';
 import '../services/settings_service.dart';
+import 'tab_switcher.dart';
 
 class OmniBar extends StatefulWidget {
   final BrowserController controller;
@@ -20,15 +21,43 @@ class OmniBar extends StatefulWidget {
 
 class _OmniBarState extends State<OmniBar> {
   final TextEditingController _text = TextEditingController();
+  final FocusNode _focus = FocusNode();
   Timer? _debounce;
   List<String> _suggestions = [];
   bool _suggesting = false;
 
   @override
+  void initState() {
+    super.initState();
+    _focus.addListener(_onFocusChanged);
+  }
+
+  @override
   void dispose() {
     _debounce?.cancel();
+    _focus.removeListener(_onFocusChanged);
+    _focus.dispose();
     _text.dispose();
     super.dispose();
+  }
+
+  void _onFocusChanged() {
+    if (_focus.hasFocus) {
+      final tab = widget.controller.activeTab;
+      final url = tab?.url ?? "";
+      if (url.isNotEmpty) {
+        _text.text = url;
+        _text.selection =
+            TextSelection(baseOffset: 0, extentOffset: url.length);
+      } else {
+        _text.clear();
+      }
+      setState(() {});
+    } else {
+      _suggesting = false;
+      _suggestions = [];
+      setState(() {});
+    }
   }
 
   void _onChanged(String value) {
@@ -59,8 +88,22 @@ class _OmniBarState extends State<OmniBar> {
     _submit(s);
   }
 
+  Widget _menuTile({
+    required IconData icon,
+    required String title,
+    required VoidCallback onTap,
+  }) {
+    return ListTile(
+      leading: Icon(icon),
+      title: Text(title),
+      onTap: onTap,
+    );
+  }
+
   void _showMenu(BuildContext context) {
     final tab = widget.controller.activeTab;
+    final loading = tab?.loading ?? false;
+    final s = SettingsService.instance.settings;
     showModalBottomSheet(
       context: context,
       backgroundColor: AppTheme.scheme().surface,
@@ -69,49 +112,106 @@ class _OmniBarState extends State<OmniBar> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              ListTile(
-                leading: const Icon(Icons.bookmarks_outlined),
-                title: const Text("Bookmark this page"),
+              _menuTile(
+                icon: Icons.add,
+                title: "New tab",
                 onTap: () {
                   Navigator.pop(ctx);
-                  _toggleBookmark(ctx, tab);
+                  widget.controller.newTab();
                 },
               ),
-              ListTile(
-                leading: const Icon(Icons.share),
-                title: const Text("Share"),
+              _menuTile(
+                icon: Icons.tab,
+                title: "Tab overview",
                 onTap: () {
                   Navigator.pop(ctx);
-                  _share(ctx, tab);
+                  showTabSwitcher(context, widget.controller);
                 },
               ),
-              ListTile(
-                leading: const Icon(Icons.radar),
-                title: const Text("Tracking Radar"),
+              const Divider(height: 1),
+              _menuTile(
+                icon: Icons.arrow_forward,
+                title: "Forward",
                 onTap: () {
                   Navigator.pop(ctx);
-                  widget.controller.toggleRadar();
+                  widget.controller.goForward();
                 },
               ),
-              ListTile(
-                leading: const Icon(Icons.download_outlined),
-                title: const Text("Downloads (AnterGet)"),
+              _menuTile(
+                icon: loading ? Icons.close : Icons.refresh,
+                title: loading ? "Stop" : "Reload",
                 onTap: () {
                   Navigator.pop(ctx);
-                  widget.controller.toggleDownloads();
+                  if (loading) {
+                    widget.controller.stop();
+                  } else {
+                    widget.controller.reload();
+                  }
                 },
               ),
-              ListTile(
-                leading: const Icon(Icons.manage_search),
-                title: const Text("Find in page"),
+              if (s.showHomeBtn)
+                _menuTile(
+                  icon: Icons.home_outlined,
+                  title: "Home",
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    widget.controller.goHome();
+                  },
+                ),
+              if (s.showCopyBtn)
+                _menuTile(
+                  icon: Icons.content_copy,
+                  title: "Copy URL",
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    final url = tab?.url as String? ?? "";
+                    if (url.isNotEmpty) _copyToClipboard(context, url);
+                  },
+                ),
+              const Divider(height: 1),
+              _menuTile(
+                icon: Icons.bookmarks_outlined,
+                title: "Bookmark this page",
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _toggleBookmark(context, tab);
+                },
+              ),
+              _menuTile(
+                icon: Icons.share,
+                title: "Share",
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _share(context, tab);
+                },
+              ),
+              _menuTile(
+                icon: Icons.manage_search,
+                title: "Find in page",
                 onTap: () {
                   Navigator.pop(ctx);
                   widget.controller.toggleFind();
                 },
               ),
-              ListTile(
-                leading: const Icon(Icons.settings_outlined),
-                title: const Text("Settings"),
+              _menuTile(
+                icon: Icons.download_outlined,
+                title: "Downloads (AnterGet)",
+                onTap: () {
+                  Navigator.pop(ctx);
+                  widget.controller.toggleDownloads();
+                },
+              ),
+              _menuTile(
+                icon: Icons.radar,
+                title: "Tracking Radar",
+                onTap: () {
+                  Navigator.pop(ctx);
+                  widget.controller.toggleRadar();
+                },
+              ),
+              _menuTile(
+                icon: Icons.settings_outlined,
+                title: "Settings",
                 onTap: () {
                   Navigator.pop(ctx);
                   widget.controller.toggleSettings();
@@ -152,8 +252,6 @@ class _OmniBarState extends State<OmniBar> {
     final url = tab?.url as String? ?? "";
     if (url.isEmpty) return;
     try {
-      // Use WebView's share-independent fallback via share sheet is not wired;
-      // copy to clipboard as a lightweight substitute.
       await _copyToClipboard(ctx, url);
     } catch (_) {}
   }
@@ -170,87 +268,133 @@ class _OmniBarState extends State<OmniBar> {
 
   @override
   Widget build(BuildContext context) {
-    final s = SettingsService.instance.settings;
     final scheme = AppTheme.scheme();
     final tab = widget.controller.activeTab;
     final isNew = tab?.isNewTab ?? true;
     final url = tab?.url ?? "";
-    final radius = s.uiRadius == 'large'
-        ? 22.0
-        : s.uiRadius == 'small'
-            ? 6.0
-            : 12.0;
+    final host = tab?.host ?? "";
+    final loading = tab?.loading ?? false;
+    final focused = _focus.hasFocus;
+    final editing = focused || _suggesting;
+    final https = url.startsWith('https://');
 
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(12, 8, 8, 8),
+          padding: const EdgeInsets.fromLTRB(4, 6, 4, 6),
           child: Row(
             children: [
+              IconButton(
+                icon: const Icon(Icons.arrow_back),
+                tooltip: "Back",
+                onPressed: isNew ? null : widget.controller.goBack,
+              ),
+              const SizedBox(width: 2),
               Expanded(
                 child: Container(
-                  height: 44,
-                  padding: const EdgeInsets.symmetric(horizontal: 14),
+                  height: 46,
+                  padding: const EdgeInsets.only(left: 12, right: 4),
                   decoration: BoxDecoration(
                     color: scheme.surfaceContainerHighest,
-                    borderRadius: BorderRadius.circular(radius),
-                    border: Border.all(color: scheme.outlineVariant),
+                    borderRadius: BorderRadius.circular(23),
                   ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        isNew ? Icons.search : Icons.lock_outline,
-                        size: 16,
-                        color: isNew ? scheme.onSurface : scheme.primary,
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: TextField(
-                          controller: _text,
-                          onChanged: _onChanged,
-                          onSubmitted: _submit,
-                          onTap: () {
-                            _text.selection = TextSelection(
-                                baseOffset: 0, extentOffset: _text.text.length);
-                          },
-                          style: TextStyle(fontSize: 15, color: scheme.onSurface),
-                          decoration: const InputDecoration(
-                            isDense: true,
-                            border: InputBorder.none,
-                            filled: false,
-                            hintText: "Search or type a URL",
-                            contentPadding: EdgeInsets.zero,
-                          ),
-                          textInputAction: TextInputAction.go,
-                        ),
-                      ),
-                      if (s.showCopyBtn && url.isNotEmpty && !isNew)
-                        IconButton(
-                          icon: const Icon(Icons.content_copy, size: 16),
-                          onPressed: () => _copyToClipboard(context, url),
-                          visualDensity: VisualDensity.compact,
-                          padding: EdgeInsets.zero,
-                          constraints:
-                              const BoxConstraints(minWidth: 32, minHeight: 32),
-                        ),
-                    ],
-                  ),
+                  child: editing
+                      ? _buildField(scheme, isNew, https)
+                      : _buildIdlePill(scheme, isNew, https, host, url,
+                          loading),
                 ),
               ),
-              if (s.showHomeBtn)
-                IconButton(
-                  icon: const Icon(Icons.home_outlined),
-                  onPressed: widget.controller.goHome,
-                ),
+              const SizedBox(width: 2),
               IconButton(
                 icon: const Icon(Icons.more_vert),
+                tooltip: "Menu",
                 onPressed: () => _showMenu(context),
               ),
             ],
           ),
         ),
         if (_suggesting && _suggestions.isNotEmpty) _buildSuggestions(context),
+      ],
+    );
+  }
+
+  Widget _buildIdlePill(ColorScheme scheme, bool isNew, bool https,
+      String host, String url, bool loading) {
+    final display = isNew
+        ? "Search or type a URL"
+        : (host.isNotEmpty ? host : (url.isNotEmpty ? url : "Search or type a URL"));
+    return GestureDetector(
+      onTap: () => _focus.requestFocus(),
+      behavior: HitTestBehavior.opaque,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                isNew ? Icons.search : (https ? Icons.lock_outline : Icons.public),
+                size: 16,
+                color: isNew ? scheme.onSurface : scheme.primary,
+              ),
+              const SizedBox(width: 6),
+              Flexible(
+                child: Text(
+                  display,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(fontSize: 15, color: scheme.onSurface),
+                ),
+              ),
+            ],
+          ),
+          if (!isNew && url.isNotEmpty)
+            Align(
+              alignment: Alignment.centerRight,
+              child: GestureDetector(
+                onTap: loading ? widget.controller.stop : widget.controller.reload,
+                child: Padding(
+                  padding: const EdgeInsets.all(8),
+                  child: Icon(
+                    loading ? Icons.close : Icons.refresh,
+                    size: 18,
+                    color: scheme.onSurface,
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildField(ColorScheme scheme, bool isNew, bool https) {
+    return Row(
+      children: [
+        Icon(
+          isNew ? Icons.search : (https ? Icons.lock_outline : Icons.public),
+          size: 16,
+          color: isNew ? scheme.onSurface : scheme.primary,
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: TextField(
+            controller: _text,
+            focusNode: _focus,
+            onChanged: _onChanged,
+            onSubmitted: _submit,
+            style: TextStyle(fontSize: 15, color: scheme.onSurface),
+            decoration: const InputDecoration(
+              isDense: true,
+              border: InputBorder.none,
+              filled: false,
+              hintText: "Search or type a URL",
+              contentPadding: EdgeInsets.zero,
+            ),
+            textInputAction: TextInputAction.go,
+          ),
+        ),
       ],
     );
   }

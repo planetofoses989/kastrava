@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../app_theme.dart';
 import '../controllers/browser_controller.dart';
+import 'tab_switcher.dart';
 
 class BottomToolbar extends StatelessWidget {
   final BrowserController controller;
@@ -10,12 +11,7 @@ class BottomToolbar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = AppTheme.scheme();
-    final tab = controller.activeTab;
-
-    Widget navBtn(IconData icon, VoidCallback onTap) {
-      return IconButton(icon: Icon(icon), onPressed: onTap);
-    }
-
+    final count = controller.tabCount;
     return Material(
       color: scheme.surface,
       child: Container(
@@ -26,31 +22,21 @@ class BottomToolbar extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
-            navBtn(Icons.arrow_back, tab != null && !tab.isNewTab
-                ? controller.goBack
-                : () {}),
-            navBtn(Icons.arrow_forward, controller.goForward),
             IconButton(
-              icon: tab != null && tab.loading
-                  ? const Icon(Icons.close)
-                  : const Icon(Icons.refresh),
-              onPressed: tab != null && tab.loading
-                  ? controller.stop
-                  : controller.reload,
+              icon: const Icon(Icons.add, size: 26),
+              tooltip: "New tab",
+              onPressed: controller.newTab,
             ),
             IconButton(
-              icon: const Icon(Icons.home_outlined),
-              onPressed: controller.goHome,
+              tooltip: "Tab switcher",
+              onPressed: () => showTabSwitcher(context, controller),
+              icon: Badge(
+                label: Text('$count'),
+                backgroundColor: scheme.primary,
+                textColor: scheme.onPrimary,
+                child: const Icon(Icons.tab, size: 26),
+              ),
             ),
-            navBtn(Icons.shield_outlined, controller.toggleRadar),
-            navBtn(Icons.tab, controller.newTab),
-            Builder(builder: (ctx) {
-              return IconButton(
-                icon: const Icon(Icons.apps),
-                onPressed: () => controller.toggleSidePanel(),
-                color: controller.sidePanelVisible ? scheme.primary : null,
-              );
-            }),
           ],
         ),
       ),
