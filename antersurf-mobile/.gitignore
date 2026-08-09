@@ -1,0 +1,18 @@
+# Flutter / Dart build output
+build/
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+*.iml
+.idea/
+*.g.dart
+
+# Android
+android/.gradle/
+android/local.properties
+android/app/.cxx/
+android/app/build/
+
+# Misc
+*.log
+.DS_Store
