@@ -3,20 +3,21 @@ const fs = require('fs')
 const path = require('path')
 
 const DEFAULTS = {
-  searchEngine: 'duckduckgo',
+  searchEngine: 'kastravasearch',
   customEngine: '',
-  accent: '#8ab4f8',
+  accent: '#4fc3f7',
   theme: '',
-  homepage: '',
   startup: 'last',
   confirmClose: 'off',
+  historyEnabled: 'on',
+  bookmarksEnabled: 'on',
   bookmarkBar: 'auto',
-  suggest: 'on',
+  suggest: 'off',
   fontSize: '12',
   reduceAnimations: 'off',
   hwAcc: 'on',
   dnt: 'on',
-  tracking: 'standard',
+  tracking: 'strict',
   cookies: 'off',
   location: 'block',
   zoom: '100',
@@ -26,28 +27,29 @@ const DEFAULTS = {
   showCopyBtn: 'on',
   showNtpClock: 'on',
   showNtpLogo: 'on',
+  setupDone: '',
   shortcuts: {},
   maxSuggestions: '8',
   launchMaximized: 'off',
   sendReferrer: 'off',
   cursorFx: 'off',
-  cursorFxMode: 'rainbow',
-  cursorFxColor: '#ff5f6d',
+  cursorFxMode: 'color',
+  cursorFxColor: '#4fc3f7',
   cursorFxForce: 'medium',
   cursorFxSize: 'medium',
   blobFx: 'off',
-  blobColor: '#5227FF',
+  blobColor: '#2f6fed',
   blobCount: '3',
   blobSize: 'medium',
   blobOpacity: '0.6',
   blobShape: 'circle',
   glassFx: 'off',
-  glassColor: '#4a6cf7',
+  glassColor: '#3b82f6',
   glassShape: 'sphere',
   glassSize: 'medium',
   glassOpacity: '0.5',
   particleFx: 'off',
-  particleColor: '#ffd166',
+  particleColor: '#3b82f6',
   particleSize: 'medium',
   particleDensity: 'medium',
   clickSparkFx: 'off',
@@ -60,12 +62,14 @@ const DEFAULTS = {
   pixelTrailGrid: 'medium',
   pixelTrailTrail: 'medium',
   ribbonsFx: 'off',
-  ribbonsColor: '#FC8EAC',
+  ribbonsColor: '#2f6fed',
   ribbonsThickness: 'medium',
   ribbonsPoints: '50',
   cursorStyle: 'system',
   cursorStyleColor: '#ffffff',
-  migrateDdg: ''
+  webrtcMode: 'disable',
+  proxy: { enabled: false, type: 'socks5', host: '', port: '' },
+  migrateKs: ''
 }
 
 const PREFS_KEYS = ['hwAcc', 'dnt']
@@ -111,12 +115,12 @@ function createSettingsBackend({ all, run }) {
         cache[k] = stored[k]
       }
     }
-    if (cache.migrateDdg !== '1' && (cache.searchEngine === 'brave' || cache.searchEngine === 'google')) {
-      cache.searchEngine = 'duckduckgo'
-      cache.migrateDdg = '1'
+    if (cache.migrateKs !== '1' && cache.searchEngine !== 'kastravasearch') {
+      cache.searchEngine = 'kastravasearch'
+      cache.migrateKs = '1'
       if (run) {
         run('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)', ['searchEngine', JSON.stringify(cache.searchEngine)])
-        run('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)', ['migrateDdg', JSON.stringify('1')])
+        run('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)', ['migrateKs', JSON.stringify('1')])
       }
     }
     return Object.assign({}, cache)

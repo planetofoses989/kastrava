@@ -24,14 +24,14 @@ jobs:
           cache: true
 
       - name: Resolve dependencies
-        working-directory: antersurf-mobile
+        working-directory: kastrava-mobile
         run: flutter pub get
 
       - name: Build release APKs (per ABI)
-        working-directory: antersurf-mobile
+        working-directory: kastrava-mobile
         run: flutter build apk --release --split-per-abi
 
       - uses: actions/upload-artifact@v4
         with:
-          name: AnterSurf-apk-release
-          path: antersurf-mobile/build/app/outputs/flutter-apk/*.apk
+          name: Kastrava-apk-release
+          path: kastrava-mobile/build/app/outputs/flutter-apk/*.apk

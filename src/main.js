@@ -1,8 +1,16 @@
-const { app, BrowserWindow, ipcMain, Menu, nativeTheme, nativeImage, clipboard, shell, dialog } = require('electron')
+const { app, BrowserWindow, ipcMain, Menu, nativeTheme, nativeImage, clipboard, shell, dialog, protocol } = require('electron')
 const path = require('path')
 const fs = require('fs')
 const { spawn, spawnSync } = require('child_process')
 const backend = require('./backend')
+
+// Serve the browser UI over kastrava:// instead of file:// so no
+// filesystem paths leak (e.g. in DevTools titles) and the shell has a
+// proper secure origin.
+protocol.registerSchemesAsPrivileged([{
+  scheme: 'kastrava',
+  privileges: { standard: true, secure: true, supportFetchAPI: true, corsEnabled: true }
+}])
 
 const preReadyPrefs = backend.initPreReady()
 
@@ -15,10 +23,10 @@ async function initDatabase() {
     const SQL = await initSqlJs()
     const dbDir = path.join(app.getPath('userData'), 'data')
     fs.mkdirSync(dbDir, { recursive: true })
-    const dbPath = path.join(dbDir, 'antersurf.db')
+    const dbPath = path.join(dbDir, 'kastrava.db')
     let buffer
     try { buffer = fs.readFileSync(dbPath) } catch {}
-    console.log('[DB] path:', dbPath, 'size:', buffer ? buffer.length : 'new')
+
     db = new SQL.Database(buffer)
     db.run(`CREATE TABLE IF NOT EXISTS bookmarks (
       id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT, url TEXT NOT NULL,
@@ -65,7 +73,7 @@ function saveDb() {
   try {
     const data = db.export()
     const buf = Buffer.from(data)
-    fs.writeFileSync(path.join(app.getPath('userData'), 'data', 'antersurf.db'), buf)
+    fs.writeFileSync(path.join(app.getPath('userData'), 'data', 'kastrava.db'), buf)
   } catch (e) { console.error('[DB] save error:', e) }
 }
 
@@ -102,18 +110,45 @@ function sendWinState() {
 }
 
 function createWindow() {
-  const ses = require('electron').session.fromPartition('persist:antersurf')
+  if (!globalThis.__kastravaProtoRegistered) {
+    globalThis.__kastravaProtoRegistered = true;
+    protocol.registerFileProtocol('kastrava', (request, callback) => {
+      try {
+        const u = new URL(request.url)
+        let p = decodeURIComponent(u.pathname)
+        if (p.startsWith('/')) p = p.slice(1)
+        if (!p) p = 'browser.html'
+        const file = path.normalize(path.join(__dirname, p))
+        if (file !== __dirname && !file.startsWith(__dirname + path.sep)) return callback({ error: -6 })
+        callback({ path: file })
+      } catch { callback({ error: -6 }) }
+    })
+  }
+  const ses = require('electron').session.fromPartition('kastrava')
 
   ses.on('will-download', (event, item) => {
+    const url = item.getURL()
+    // Native fallback engine: a download started via AnterGet when curl
+    // is unavailable. Let it proceed into our tracked item.
+    if (fallbackPending.has(url)) {
+      const id = fallbackPending.get(url)
+      fallbackPending.delete(url)
+      attachNativeDownload(id, item)
+      return
+    }
     event.preventDefault()
     if (mainWindow) mainWindow.webContents.send('show-download-modal', {
-      url: item.getURL(),
+      url,
       filename: item.getFilename()
     })
   })
 
   // Tracking Radar: live per-tab tracker monitoring
   ses.webRequest.onBeforeRequest((details, callback) => {
+    // Context isolation: webpages must never touch local files
+    try {
+      if (new URL(details.url).protocol === 'file:') return callback({ cancel: true })
+    } catch {}
     callback({})
     let host = ''
     try {
@@ -188,7 +223,7 @@ function createWindow() {
     minWidth: 600,
     minHeight: 400,
     frame: false,
-    backgroundColor: '#0e0e1a',
+    backgroundColor: '#000000',
     icon: path.join(__dirname, '../static/logo.png'),
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
@@ -199,8 +234,78 @@ function createWindow() {
     }
   })
 
-  mainWindow.loadFile(path.join(__dirname, 'browser.html'))
+  mainWindow.loadURL('kastrava://app/browser.html')
 
+function sendShortcut(action) {
+  try { if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send('menu-shortcut', action) } catch {}
+}
+
+// OS-level keyboard accelerators. The renderer's keydown handler only fires
+// when the browser UI has focus; when a webpage (webview) is focused the
+// guest consumes all keys. Menu accelerators fire regardless of focus.
+function buildMenu() {
+  const tabItems = []
+  for (let i = 1; i <= 9; i++) {
+    tabItems.push({ label: 'Go to Tab ' + i, accelerator: 'CommandOrControl+' + i, click: () => sendShortcut('tab' + i) })
+  }
+  const template = [
+    { label: 'File', submenu: [
+      { label: 'New Tab', accelerator: 'CommandOrControl+T', click: () => sendShortcut('newTab') },
+      { label: 'New Tab', accelerator: 'CommandOrControl+N', click: () => sendShortcut('newTab') },
+      { type: 'separator' },
+      { label: 'Close Tab', accelerator: 'CommandOrControl+W', click: () => sendShortcut('closeTab') },
+      { label: 'Reopen Closed Tab', accelerator: 'CommandOrControl+Shift+T', click: () => sendShortcut('reopenTab') }
+    ]},
+    { label: 'Edit', submenu: [
+      { role: 'undo' },
+      { role: 'redo' },
+      { type: 'separator' },
+      { role: 'cut' },
+      { role: 'copy' },
+      { role: 'paste' },
+      { role: 'selectAll' }
+    ]},
+    { label: 'View', submenu: [
+      { label: 'Reload', accelerator: 'CommandOrControl+R', click: () => sendShortcut('reload') },
+      { type: 'separator' },
+      { label: 'Zoom In', accelerator: 'CommandOrControl+=', click: () => sendShortcut('zoomIn') },
+      { label: 'Zoom Out', accelerator: 'CommandOrControl+-', click: () => sendShortcut('zoomOut') },
+      { label: 'Reset Zoom', accelerator: 'CommandOrControl+0', click: () => sendShortcut('zoomReset') },
+      { type: 'separator' },
+      { label: 'Toggle Fullscreen', accelerator: 'F11', click: () => { try { if (mainWindow && !mainWindow.isDestroyed()) mainWindow.setFullScreen(!mainWindow.isFullScreen()) } catch {} } },
+      { label: 'Focus Address Bar', accelerator: 'CommandOrControl+L', click: () => sendShortcut('focusOmnibox') },
+      { label: 'Focus Address Bar', accelerator: 'Alt+D', click: () => sendShortcut('focusOmnibox') },
+      { label: 'Find in Page', accelerator: 'CommandOrControl+F', click: () => sendShortcut('find') }
+    ]},
+    { label: 'Tabs', submenu: [
+      { label: 'Next Tab', accelerator: 'CommandOrControl+Tab', click: () => sendShortcut('nextTab') },
+      { label: 'Previous Tab', accelerator: 'CommandOrControl+Shift+Tab', click: () => sendShortcut('prevTab') },
+      { type: 'separator' },
+      ...tabItems,
+      { type: 'separator' },
+      { label: 'Back', accelerator: 'Alt+Left', click: () => sendShortcut('back') },
+      { label: 'Forward', accelerator: 'Alt+Right', click: () => sendShortcut('forward') }
+    ]},
+    { label: 'Tools', submenu: [
+      { label: 'Bookmark This Page', accelerator: 'CommandOrControl+D', click: () => sendShortcut('bookmark') },
+      { label: 'History', accelerator: 'CommandOrControl+H', click: () => sendShortcut('history') },
+      { label: 'Toggle Bookmark Bar', accelerator: 'CommandOrControl+Shift+B', click: () => sendShortcut('bookmarkBar') },
+      { type: 'separator' },
+      { label: 'Picture-in-Picture', accelerator: 'CommandOrControl+P', click: () => sendShortcut('pip') },
+      { label: 'Reader Mode', accelerator: 'CommandOrControl+Shift+R', click: () => sendShortcut('reader') },
+      { label: 'Split View', accelerator: 'CommandOrControl+Shift+E', click: () => sendShortcut('split') },
+      { label: 'Tracking Radar', accelerator: 'CommandOrControl+Shift+K', click: () => sendShortcut('radar') },
+      { label: 'Screenshot', accelerator: 'CommandOrControl+Shift+S', click: () => sendShortcut('screenshot') },
+      { label: 'Mute Tab', accelerator: 'CommandOrControl+Shift+M', click: () => sendShortcut('mute') },
+      { label: 'Open AnterGet', accelerator: 'CommandOrControl+Shift+P', click: () => sendShortcut('anterget') },
+      { label: 'Developer Tools', accelerator: 'F12', click: () => sendShortcut('devtools') },
+      { label: 'Inspect', accelerator: 'CommandOrControl+Shift+I', click: () => sendShortcut('devtools') },
+      { type: 'separator' },
+      { label: 'Settings', accelerator: 'CommandOrControl+,', click: () => sendShortcut('settings') }
+    ]}
+  ]
+  try { Menu.setApplicationMenu(Menu.buildFromTemplate(template)) } catch (e) { console.error('menu build error:', e) }
+}
   if (settingsBackend && settingsBackend.get('launchMaximized') === 'on') {
     mainWindow.maximize()
   }
@@ -218,6 +323,8 @@ function createWindow() {
     }
   })
 
+  buildMenu()
+
 }
 
 function saveSessionSync(tabs) {
@@ -226,20 +333,36 @@ function saveSessionSync(tabs) {
 
 let lastSessionData = null
 
+// Volatile RAM: web storage lives in a memory-only session. Wipe any web
+// data persisted on disk by older builds (cookies, cache, DOM storage).
+function wipeLegacyWebData() {
+  try {
+    const base = path.join(app.getPath('userData'), 'Partitions')
+    for (const name of ['kastrava', 'persist:kastrava', 'persist_kastrava']) {
+      try { fs.rmSync(path.join(base, name), { recursive: true, force: true }) } catch {}
+    }
+  } catch {}
+}
+
 app.whenReady().then(async () => {
   await initDatabase()
   initBackend()
+  wipeLegacyWebData()
 
   app.on('web-contents-created', (_, wc) => {
     wc.setWindowOpenHandler(({ url }) => {
       try {
         const proto = new URL(url).protocol
-        if (proto !== 'http:' && proto !== 'https:') {
+        if (proto === 'http:' || proto === 'https:') {
+          if (mainWindow) mainWindow.webContents.send('open-new-tab', url)
+          return { action: 'deny' }
+        }
+        // Never hand local files to outside apps; mailto is safe to delegate
+        if (proto === 'mailto:') {
           shell.openExternal(url)
           return { action: 'deny' }
         }
       } catch {}
-      if (mainWindow) mainWindow.webContents.send('open-new-tab', url)
       return { action: 'deny' }
     })
   })
@@ -259,6 +382,13 @@ let quitSaved = false
 app.on('before-quit', () => {
   if (quitSaved) return
   quitSaved = true
+  // Volatile RAM: drop all in-memory web storage (cookies, cache,
+  // IndexedDB, DOM storage). The OS frees the rest on exit.
+  try {
+    const { session } = require('electron')
+    session.fromPartition('kastrava').clearStorageData().catch(() => {})
+    session.fromPartition('kastrava').clearCache().catch(() => {})
+  } catch {}
   if (lastSessionData) {
     try { saveSessionSync(lastSessionData) } catch {}
   } else if (db) {
@@ -292,7 +422,7 @@ ipcMain.handle('set-setting', (_, key, value) => {
   if (key === 'theme') applyNativeTheme(value)
   if (key === 'cookies' && value === 'off') {
     try {
-      const ses = require('electron').session.fromPartition('persist:antersurf')
+      const ses = require('electron').session.fromPartition('kastrava')
       ses.cookies.remove(undefined, undefined).catch(() => {})
     } catch {}
   }
@@ -358,7 +488,6 @@ ipcMain.handle('save-page-icon', async (_, { url, dataUrl }) => {
   } catch {}
 })
 
-ipcMain.handle('log', (_, msg) => console.log('Renderer:', msg))
 
 ipcMain.handle('open-external', (_, url) => {
   try { shell.openExternal(String(url)) } catch {}
@@ -417,7 +546,10 @@ function agPoll(id) {
 
 async function agGetTotalSize(url) {
   try {
-    const r = spawnSync('curl', ['-sIL', '-o', '/dev/null', '-w', '%{size_download}', url], {
+    // Windows has no /dev/null and needs curl.exe explicitly
+    const nullDev = process.platform === 'win32' ? 'NUL' : '/dev/null'
+    const curlBin = process.platform === 'win32' ? 'curl.exe' : 'curl'
+    const r = spawnSync(curlBin, ['-sIL', '-o', nullDev, '-w', '%{size_download}', url], {
       timeout: 10000, encoding: 'utf-8', env: { ...process.env, LC_ALL: 'C' }
     })
     return parseInt(r.stdout.trim(), 10) || 0
@@ -425,6 +557,54 @@ async function agGetTotalSize(url) {
 }
 
 const dlDir = () => app.getPath('downloads')
+const CURL_BIN = process.platform === 'win32' ? 'curl.exe' : 'curl'
+const killProc = (proc) => { if (proc) { try { proc.kill() } catch {} } }
+
+// Native fallback engine (used when curl is missing). Chromium handles
+// networking, so cookies/auth/redirects keep working.
+const fallbackPending = new Map() // url -> dlId
+let _curlOk = null
+function curlOk() {
+  if (process.env.KASTRAVA_NO_CURL) return false
+  if (_curlOk !== null) return _curlOk
+  try {
+    const r = spawnSync(CURL_BIN, ['--version'], { timeout: 5000 })
+    _curlOk = r.status === 0
+  } catch { _curlOk = false }
+  return _curlOk
+}
+function attachNativeDownload(id, item) {
+  const d = agDownloads.get(id)
+  if (!d) { try { item.cancel() } catch {} return }
+  d.item = item
+  try { item.setSavePath(d.outputPath) } catch {}
+  item.on('updated', () => {
+    if (!agDownloads.get(id)) return
+    try { d.received = item.getReceivedBytes() } catch {}
+    try { const t = item.getTotalBytes(); if (t > 0) d.total = t } catch {}
+    agSend(id)
+  })
+  item.on('done', (_, state) => {
+    if (!agDownloads.get(id)) return
+    if (d.state === 'stopped' || d.state === 'paused') return
+    if (state === 'completed') {
+      d.received = d.total || d.received
+      d.speed = 0
+      d.state = 'done'
+    } else {
+      d.state = 'error'
+    }
+    agSend(id)
+  })
+}
+function startNativeDownload(dl) {
+  try {
+    const ses = require('electron').session.fromPartition('kastrava')
+    fallbackPending.set(dl.url, dl.id)
+    ses.downloadURL(dl.url)
+  } catch { dl.state = 'error'; agSend(dl.id); return }
+  dl._timer = setTimeout(() => agPoll(dl.id), 500)
+}
 
 function agFinalPath(filename) {
   let p = path.join(dlDir(), filename)
@@ -442,15 +622,22 @@ ipcMain.handle('ag-start', async (_, url) => {
   const id = ++agIdCounter
   let filename = 'download'
   try { filename = decodeURIComponent(path.basename(new URL(url).pathname)) || 'download' } catch {}
+  filename = filename.replace(/[<>:"/\\|?*\x00-\x1f]/g, '_') || 'download'
   const fp = agFinalPath(filename)
-  const dl = { id, url, filename: path.basename(fp), outputPath: fp, received: 0, total: 0, speed: 0, state: 'queued', proc: null, _timer: null, _lastCheck: null, _lastBytes: 0 }
+  const dl = { id, url, filename: path.basename(fp), outputPath: fp, received: 0, total: 0, speed: 0, state: 'queued', proc: null, item: null, engine: curlOk() ? 'curl' : 'native', _timer: null, _lastCheck: null, _lastBytes: 0 }
   agDownloads.set(id, dl)
 
   dl.total = await agGetTotalSize(url)
+  if (dl.engine === 'native') {
+    dl.state = 'downloading'
+    agSend(id)
+    startNativeDownload(dl)
+    return id
+  }
   dl.state = 'downloading'
   agSend(id)
 
-  dl.proc = spawn('curl', ['-o', dl.outputPath, '-L', '-s', url])
+  dl.proc = spawn(CURL_BIN, ['-o', dl.outputPath, '-L', '-s', url])
   dl.proc.on('error', () => { dl.state = 'error'; agSend(id) })
   dl.proc.on('exit', (code) => {
     if (dl.state === 'stopped' || dl.state === 'paused') return
@@ -473,7 +660,8 @@ ipcMain.handle('ag-pause', (_, id) => {
   const d = agDownloads.get(id)
   if (!d || d.state !== 'downloading') return
   d.state = 'paused'
-  if (d.proc) { try { d.proc.kill('SIGTERM') } catch {} }
+  if (d.engine === 'native' && d.item) { try { d.item.pause() } catch {} }
+  else killProc(d.proc)
   if (d._timer) { clearTimeout(d._timer); d._timer = null }
   d.speed = 0
   agSend(id)
@@ -483,6 +671,19 @@ ipcMain.handle('ag-resume', async (_, id) => {
   const d = agDownloads.get(id)
   if (!d || d.state !== 'paused') return
   d.state = 'downloading'
+  if (d.engine === 'native') {
+    let resumed = false
+    try { if (d.item) { d.item.resume(); resumed = true } } catch {}
+    if (!resumed) {
+      if (d.total === 0 && curlOk()) d.total = await agGetTotalSize(d.url)
+      agSend(id)
+      startNativeDownload(d)
+      return
+    }
+    agSend(id)
+    agPoll(id)
+    return
+  }
   if (d.total === 0) d.total = await agGetTotalSize(d.url)
   agSend(id)
 
@@ -490,7 +691,7 @@ ipcMain.handle('ag-resume', async (_, id) => {
   if (d.received > 0) args.push('-C', '-')
   args.push(d.url)
 
-  d.proc = spawn('curl', args)
+  d.proc = spawn(CURL_BIN, args)
   d.proc.on('error', () => { d.state = 'error'; agSend(id) })
   d.proc.on('exit', (code) => {
     if (d.state === 'stopped' || d.state === 'paused') return
@@ -512,7 +713,9 @@ ipcMain.handle('ag-stop', (_, id) => {
   const d = agDownloads.get(id)
   if (!d) return
   d.state = 'stopped'
-  if (d.proc) { try { d.proc.kill('SIGTERM') } catch {} }
+  fallbackPending.delete(d.url)
+  if (d.engine === 'native' && d.item) { try { d.item.cancel() } catch {} }
+  else killProc(d.proc)
   if (d._timer) { clearTimeout(d._timer); d._timer = null }
   d.speed = 0
   try { if (fs.existsSync(d.outputPath)) fs.unlinkSync(d.outputPath) } catch {}
@@ -523,6 +726,8 @@ ipcMain.handle('ag-clear', (_, id) => {
   const d = agDownloads.get(id)
   if (!d) return
   if (d._timer) clearTimeout(d._timer)
+  fallbackPending.delete(d.url)
+  if (d.engine === 'native' && d.item) { try { d.item.cancel() } catch {} }
   try { if (fs.existsSync(d.outputPath)) fs.unlinkSync(d.outputPath) } catch {}
   agDownloads.delete(id)
   mainWindow?.webContents.send('ag-cleared', id)
@@ -531,20 +736,66 @@ ipcMain.handle('ag-clear', (_, id) => {
 ipcMain.handle('ag-list', () => {
   return Array.from(agDownloads.values()).map(d => ({
     id: d.id, filename: d.filename, url: d.url,
-    received: d.received, total: d.total, speed: d.speed, state: d.state,
+    received: d.received, total: d.total, speed: d.speed, state: d.state, engine: d.engine || 'curl',
     outputPath: d.state === 'done' ? d.outputPath : null
   }))
 })
 
-ipcMain.handle('web-inspect', async (_, { tabId }) => {
+ipcMain.handle('web-inspect', async (_, { tabId, x, y }) => {
   try {
     if (!mainWindow) return
-    const ses = require('electron').session.fromPartition('persist:antersurf')
+    const { webContents } = require('electron')
+    let wc = null
+    try { wc = webContents.fromId(tabId) } catch {}
+    if (wc && !wc.isDestroyed()) { try { wc.inspectElement(x||0, y||0); if(!wc.isDevToolsOpened()) wc.openDevTools({mode:'detach'}); } catch {} return }
+    const ses = require('electron').session.fromPartition('kastrava')
     const wcs = ses.getAllRunningWebContents()
-    for (const wc of wcs) {
-      if (wc.id === tabId) { wc.inspectElement(0, 0); break }
-    }
+    for (const c of wcs) { if (c.id === tabId) { try { c.inspectElement(x||0, y||0); if(!c.isDevToolsOpened()) c.openDevTools({mode:'detach'}); } catch {} break } }
   } catch {}
+})
+ipcMain.handle('devtools-toggle', async (_, tabId) => {
+  try {
+    const { webContents } = require('electron')
+    let wc = null
+    try { wc = webContents.fromId(tabId) } catch {}
+    if (!wc || wc.isDestroyed()) {
+      const ses = require('electron').session.fromPartition('kastrava')
+      const wcs = ses.getAllRunningWebContents()
+      for (const c of wcs) if (c.id === tabId) { wc = c; break }
+    }
+    if (!wc || wc.isDestroyed()) return false
+    if (wc.isDevToolsOpened()) wc.closeDevTools()
+    else wc.openDevTools({mode:'detach'})
+    return wc.isDevToolsOpened()
+  } catch { return false }
+})
+ipcMain.handle('devtools-open', async (_, tabId) => {
+  try {
+    const { webContents } = require('electron')
+    let wc = webContents.fromId(tabId)
+    if (!wc || wc.isDestroyed()) return false
+    if (!wc.isDevToolsOpened()) wc.openDevTools({mode:'detach'})
+    return true
+  } catch { return false }
+})
+ipcMain.handle('devtools-close', async (_, tabId) => {
+  try {
+    const { webContents } = require('electron')
+    let wc = webContents.fromId(tabId)
+    if (wc && !wc.isDestroyed() && wc.isDevToolsOpened()) wc.closeDevTools()
+    return true
+  } catch { return false }
+})
+// Fallback: toggle DevTools for the browser UI itself (used when the
+// active tab has no inspectable guest, e.g. a blank new tab)
+ipcMain.handle('devtools-self', async () => {
+  try {
+    if (!mainWindow || mainWindow.isDestroyed()) return false
+    const wc = mainWindow.webContents
+    if (wc.isDevToolsOpened()) wc.closeDevTools()
+    else wc.openDevTools({ mode: 'detach' })
+    return wc.isDevToolsOpened()
+  } catch { return false }
 })
 
 // Tracking Radar data
@@ -557,7 +808,7 @@ ipcMain.handle('save-screenshot', async (_, { pngDataUrl }) => {
   try {
     const img = nativeImage.createFromDataURL(pngDataUrl)
     const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19)
-    const p = path.join(app.getPath('downloads'), `AnterSurf-${ts}.png`)
+    const p = path.join(app.getPath('downloads'), `Kastrava-${ts}.png`)
     fs.writeFileSync(p, img.toPNG())
     return p
   } catch { return null }
@@ -567,7 +818,7 @@ ipcMain.handle('save-screenshot', async (_, { pngDataUrl }) => {
 ipcMain.handle('export-bookmarks', async (_, html) => {
   try {
     const r = await dialog.showSaveDialog(mainWindow, {
-      defaultPath: 'antersurf-bookmarks.html',
+      defaultPath: 'kastrava-bookmarks.html',
       filters: [{ name: 'HTML', extensions: ['html'] }]
     })
     if (r.canceled || !r.filePath) return null

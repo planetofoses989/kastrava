@@ -23,7 +23,8 @@ module.exports = [
     plugins: [
       new HtmlWebpackPlugin({
         template: './src/browser.html',
-        filename: 'browser.html'
+        filename: 'browser.html',
+        minify: false
       }),
       new CopyPlugin({
         patterns: [

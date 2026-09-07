@@ -2,18 +2,27 @@
 import os, sys, shutil, stat, subprocess, zipfile, io, platform
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-RELEASE_ZIP = os.path.join(SCRIPT_DIR, 'AnterSurf-release.zip')
-PASSWORD = b'anter10#secure!rel'
-APP_NAME = 'AnterSurf'
+RELEASE_ZIP = os.path.join(SCRIPT_DIR, 'Kastrava-release.zip')
+PASSWORD = b'kastra27#secure!rel'
+APP_NAME = 'Kastrava'
 ELECTRON_BIN = None
-INSTALL_DIR = '/opt/antersurf'
-LAUNCHER_PATH = '/opt/antersurf/antersurf'
-DESKTOP_PATH = '/usr/share/applications/antersurf.desktop'
-ICON_PATH = '/usr/share/icons/hicolor/256x256/apps/antersurf.png'
+INSTALL_DIR = '/opt/kastrava'
+LAUNCHER_PATH = '/opt/kastrava/kastrava'
+DESKTOP_PATH = '/usr/share/applications/kastrava.desktop'
+ICON_PATH = '/usr/share/icons/hicolor/256x256/apps/kastrava.png'
 
 
 def log(msg): print(f'[{APP_NAME}] {msg}')
 def err(msg): print(f'[ERROR] {msg}', file=sys.stderr)
+
+
+def get_version():
+    try:
+        import json
+        with open(os.path.join(SCRIPT_DIR, 'package.json')) as f:
+            return json.load(f).get('version', '')
+    except Exception:
+        return ''
 
 
 def xor_unscramble(data, key):
@@ -112,13 +121,13 @@ def create_desktop():
     content = '''[Desktop Entry]
 Version=1.0
 Type=Application
-Name=AnterSurf
+Name=Kastrava
 Comment=Privacy-first browser
 Exec={launcher}
-Icon=/usr/share/icons/hicolor/256x256/apps/antersurf.png
+Icon=/usr/share/icons/hicolor/256x256/apps/kastrava.png
 Terminal=false
 Categories=Network;WebBrowser;
-StartupWMClass=AnterSurf
+StartupWMClass=Kastrava
 MimeType=x-scheme-handler/http;x-scheme-handler/https;
 '''.format(launcher=LAUNCHER_PATH)
     with open(DESKTOP_PATH, 'w') as f:
@@ -137,7 +146,7 @@ def main():
 
     print()
     print('\u2554' + '\u2550' * 38 + '\u2557')
-    print('\u2551       AnterSurf 10 Installer         \u2551')
+    print('\u2551' + ('Kastrava ' + get_version() + ' Installer').center(38) + '\u2551')
     print('\u255a' + '\u2550' * 38 + '\u255d')
     print()
     log('Platform: ' + platform.system() + ' ' + platform.machine())
@@ -155,7 +164,7 @@ def main():
     create_desktop()
 
     print()
-    log('Installation complete! Starting AnterSurf...')
+    log('Installation complete! Starting Kastrava...')
     subprocess.Popen([LAUNCHER_PATH], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
 

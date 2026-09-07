@@ -1,1 +1,1 @@
-console.log('AnterSurf renderer loaded')
+// Kastrava renderer

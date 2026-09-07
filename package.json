@@ -1,5 +1,5 @@
 {
-  "name": "antersurf",
+  "name": "kastrava",
   "version": "27.0.0",
   "description": "Privacy-first browser",
   "author": {
@@ -8,15 +8,15 @@
   },
   "main": "dist/main.js",
   "scripts": {
-    "start": "npm run build:dev && electron . --no-sandbox",
+    "start": "npm run build:dev && electron .",
     "build:dev": "webpack --mode development",
     "build:prod": "webpack --mode production",
     "dist": "electron-builder",
     "package": "python3 scripts/package_release.py"
   },
   "build": {
-    "appId": "com.nexunfog.antersurf",
-    "productName": "AnterSurf",
+    "appId": "com.nexunfog.kastrava",
+    "productName": "Kastrava",
     "directories": {
       "output": "release"
     },
@@ -36,15 +36,8 @@
       "target": "nsis",
       "icon": "static/logo.ico"
     },
-    "mac": {
-      "target": "dmg",
-      "icon": "static/logo.png"
-    },
-    "dmg": {
-      "artifactName": "AnterSurf-${version}.dmg"
-    },
     "portable": {
-      "artifactName": "AnterSurf-${version}.exe"
+      "artifactName": "Kastrava-${version}.exe"
     },
     "nsis": {
       "oneClick": false,
@@ -53,16 +46,16 @@
       "allowElevation": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "AnterSurf",
-      "artifactName": "AnterSurf-Setup-${version}.exe",
+      "shortcutName": "Kastrava",
+      "artifactName": "Kastrava-Setup-${version}.exe",
       "deleteAppDataOnUninstall": false,
       "runAfterFinish": true
     },
     "deb": {
-      "artifactName": "antersurf_${version}_amd64.deb"
+      "artifactName": "kastrava_${version}_amd64.deb"
     },
     "rpm": {
-      "artifactName": "antersurf-${version}.x86_64.rpm"
+      "artifactName": "kastrava-${version}.x86_64.rpm"
     }
   },
   "devDependencies": {

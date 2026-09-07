@@ -37,6 +37,8 @@ contextBridge.exposeInMainWorld('api', {
 
   onOpenNewTab: (cb) => ipcRenderer.on('open-new-tab', (_, url) => cb(url)),
 
+  onMenuShortcut: (cb) => ipcRenderer.on('menu-shortcut', (_, a) => cb(a)),
+
   onSaveSessionNow: (cb) => ipcRenderer.on('save-session-now', () => cb()),
 
   onShowDownloadModal: (cb) => ipcRenderer.on('show-download-modal', (_, d) => cb(d)),
@@ -52,6 +54,12 @@ contextBridge.exposeInMainWorld('api', {
   onAgCleared: (cb) => ipcRenderer.on('ag-cleared', (_, id) => cb(id)),
 
   log: (msg) => ipcRenderer.invoke('log', msg),
+
+  webInspect: (o) => ipcRenderer.invoke('web-inspect', o),
+  devtoolsToggle: (id) => ipcRenderer.invoke('devtools-toggle', id),
+  devtoolsSelf: () => ipcRenderer.invoke('devtools-self'),
+  devtoolsOpen: (id) => ipcRenderer.invoke('devtools-open', id),
+  devtoolsClose: (id) => ipcRenderer.invoke('devtools-close', id),
 
   // Screenshots
   saveScreenshot: (d) => ipcRenderer.invoke('save-screenshot', d),

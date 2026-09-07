@@ -1,0 +1,1 @@
+const EXTENSIONS_STORE = []
