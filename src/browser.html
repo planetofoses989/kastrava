@@ -489,7 +489,7 @@ body.chrome-dark{--c-bg:#202124;--c-toolbar:#35363a;--c-tab-active:#35363a;--c-o
     <div class="ntp-footer">Kastrava 27</div>
   </div>
   <div class="ag-page" id="ag-page">
-    <div style="padding:20px;border-bottom:1px solid var(--c-border)"><h2>AnterGet</h2><span style="font-size:11px;color:var(--c-text2)">Download Manager</span></div>
+    <div style="padding:20px;border-bottom:1px solid var(--c-border)"><h2>Kastget</h2><span style="font-size:11px;color:var(--c-text2)">Download Manager</span></div>
     <div style="padding:12px 20px;display:flex;gap:8px"><input type="text" id="ag-url" placeholder="Paste download URL..." spellcheck="false" style="flex:1;padding:8px 12px;border-radius:20px;border:none;background:var(--c-omni);color:var(--c-text);font-size:13px;outline:none"><button id="ag-start" style="padding:8px 18px;border:none;border-radius:20px;background:var(--accent);color:#202124;font-size:12px;cursor:pointer;font-weight:500">Download</button></div>
     <div id="ag-body" style="padding:8px 20px;flex:1;overflow-y:auto"></div>
   </div>
@@ -525,17 +525,17 @@ body.chrome-dark{--c-bg:#202124;--c-toolbar:#35363a;--c-tab-active:#35363a;--c-o
     <div class="sp-tab" data-tab="history">History</div>
     <div class="sp-tab" data-tab="downloads">Downloads</div>
   </div>
-  <button class="sp-ag" id="sp-ag" title="Open the AnterGet download manager"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg><span>Download Manager</span></button>
+  <button class="sp-ag" id="sp-ag" title="Open the Kastget download manager"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg><span>Download Manager</span></button>
   <div class="sp-body" id="sp-body"></div>
 </div>
 <div class="modal-overlay" id="dl-modal">
   <div class="modal-box">
     <div style="width:48px;height:48px;margin:0 auto 12px;border-radius:50%;background:rgba(242,139,130,.12);display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" fill="none" stroke="#f28b82" stroke-width="2" style="width:24px;height:24px"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
-    <p style="font-size:14px;margin-bottom:12px">Direct downloads are blocked. Use <b>AnterGet</b> for private downloads.</p>
+    <p style="font-size:14px;margin-bottom:12px">Direct downloads are blocked. Use <b>Kastget</b> for private downloads.</p>
     <div id="dl-modal-url" style="background:var(--c-omni);border:1px solid var(--c-border);border-radius:8px;padding:10px;margin-bottom:14px;text-align:left;word-break:break-all;font-size:11px"></div>
     <div style="display:flex;gap:8px;justify-content:center">
       <button class="btn-sm btn-accent" id="dl-copy">Copy Link</button>
-      <button class="btn-sm btn-danger" id="dl-ag">Open AnterGet</button>
+      <button class="btn-sm btn-danger" id="dl-ag">Open Kastget</button>
       <button class="btn-sm" id="dl-close" style="background:var(--c-omni);color:var(--c-text2)">Cancel</button>
     </div>
   </div>
@@ -685,7 +685,7 @@ var SHORTCUT_ACTIONS={
   radar:{label:"Tracking Radar",default:"Ctrl+Shift+K"},
   screenshot:{label:"Screenshot",default:"Ctrl+Shift+S"},
   mute:{label:"Mute tab",default:"Ctrl+Shift+M"},
-  anterget:{label:"Open AnterGet",default:"Ctrl+Shift+P"}
+  kastget:{label:"Open Kastget",default:"Ctrl+Shift+P"}
 };
 function shortcutCombo(e){
   var mods="";
@@ -733,7 +733,7 @@ function runShortcut(a){
     case "radar":toggleRadar();break;
     case "screenshot":takeScreenshot();break;
     case "mute":if(activeTab)toggleMute(activeTab.id);break;
-    case "anterget":openAgPanel();break;
+    case "kastget":openAgPanel();break;
   }
 }
 // OS menu accelerators (main process) -> same actions. Menu accelerators
@@ -797,13 +797,15 @@ function errInfo(code){
 }
 function addTab(url,opts){
   opts=opts||{};
-  if(activeTab&&isBlank(activeTab.url)&&!opts.pinned&&url&&url!="about:anterget"&&!isBlank(url)){
+  if(url==="about:anterget")url="about:kastget";
+  if(activeTab&&isBlank(activeTab.url)&&!opts.pinned&&url&&url!="about:kastget"&&!isBlank(url)){
     activeTab.wv.setAttribute("src",url);
     activeTab.url=url;
     selectTab(activeTab.id);
     return activeTab.id;
   }
   if(activeTab&&isBlank(activeTab.url)&&!opts.pinned){
+    if(url&&!isBlank(url)&&url.indexOf("about:")===0){activeTab.url=url;}
     renderTabs();selectTab(activeTab.id);return activeTab.id;
   }
   var id=++tabIdCounter;
@@ -858,7 +860,7 @@ function addTab(url,opts){
     wv.loadURL("data:text/html;charset=utf-8,"+encodeURIComponent(errHtml));
   });
   wv.addEventListener("did-navigate",function(){tab._errPage=false;});
-  if(url&&url!="about:anterget"&&!isBlank(url)){
+  if(url&&url!="about:kastget"&&!isBlank(url)){
     wv.setAttribute("src",url);
   }
   selectTab(id);
@@ -915,7 +917,7 @@ function renderTabs(){
 function showPage(id){
   var tab=tabMap[id];if(!tab)return;
   var ntp=$("ntp");var ag=$("ag-page");var lp=$("localhost-page");
-  var blank=isBlank(tab.url);var agPage=tab.url==="about:anterget";var localPage=tab.url==="about:localhost";
+  var blank=isBlank(tab.url);var agPage=tab.url==="about:kastget";var localPage=tab.url==="about:localhost";
   if(splitOn&&splitPartner&&tabMap[splitPartner]&&splitPartner!==id){
     if(ntp)ntp.classList.remove("visible");if(ag)ag.classList.remove("visible");if(lp)lp.classList.remove("visible");
     tabs.forEach(function(t){
@@ -977,7 +979,7 @@ function favIcon(u){
 }
 function loadTopSites(){
   var c2=$("top-sites");if(!c2)return;
-  var sites=[];
+  var sites=[{u:"https://kastrava.pp.ua",t:"Kastrava",i:"K"}];
   try{customSites=JSON.parse(localStorage.getItem("as_custom_sites")||"[]")||[];}catch(e){customSites=[];}
   var fav=function(u,l){var f=favIcon(u);return "<div class=\"sc-icon\">"+esc(l)+(f?"<img class=\"sc-fav\" src=\""+f+"\" alt=\"\" onerror=\"this.style.display='none'\">":"")+"</div>";};
   var tiles=customSites.map(function(s){return "<div class=\"shortcut ts-custom\" data-url=\""+esc(s.u)+"\"><button class=\"ts-x\" data-url=\""+esc(s.u)+"\" title=\"Remove\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\"><path d=\"M18 6L6 18M6 6l12 12\"/></svg></button>"+fav(s.u,(s.t||"?").charAt(0).toUpperCase())+"<div class=\"sc-label\">"+esc(s.t)+"</div></div>";}).join("");
@@ -3129,7 +3131,7 @@ function toggleMute(id){var t=tabMap[id];if(!t)return;t.muted=!t.muted;try{t.wv.
 function togglePin(id){var t=tabMap[id];if(!t)return;t.pinned=!t.pinned;renderTabs();}
 
 function toast(msg){var el=$("toast");if(!el)return;el.textContent=msg;el.classList.add("show");clearTimeout(el._t);el._t=setTimeout(function(){el.classList.remove("show");},2600);}
-function reopenTab(){var t=closedTabs.pop();if(t){if(t.url&&!isBlank(t.url)&&t.url!=="about:anterget")addTab(t.url,{pinned:t.pinned});else addTab();}}
+function reopenTab(){var t=closedTabs.pop();if(t){if(t.url&&!isBlank(t.url)&&t.url!=="about:kastget")addTab(t.url,{pinned:t.pinned});else addTab();}}
 
 /* Picture-in-Picture */
 function togglePip(){
@@ -3642,11 +3644,11 @@ async function renderSidePanel(type){
   body.innerHTML=items.map(function(i){return "<div class=\"sp-item\" data-url=\""+esc(i.url||"")+"\"><div style=\"flex:1;overflow:hidden\"><div class=\"sp-title\">"+esc(i.title||i.filename||i.name||"Untitled")+"</div><div class=\"sp-url\">"+esc(i.url||"")+"</div></div></div>";}).join("");
   body.querySelectorAll(".sp-item").forEach(function(el){el.addEventListener("click",function(){var u=el.dataset.url;if(u)addTab(u);});});
 }
-function bindAnterGet(){
+function bindKastget(){
   var start=$("ag-start");if(start)start.addEventListener("click",function(){var u=$("ag-url").value.trim();if(u){startAGDownload(u);$("ag-url").value="";}});
   var agInp=$("ag-url");if(agInp)agInp.addEventListener("keydown",function(e){if(e.key==="Enter"){var u=agInp.value.trim();if(u){startAGDownload(u);agInp.value="";}}});
 }
-function openAgPanel(){addTab("about:anterget");}
+function openAgPanel(){addTab("about:kastget");}
 function startAGDownload(url){
   var id=Date.now();var name=url.split("/").pop().split("?")[0]||"download";
   var item={id:id,name:name,url:url,status:"queued",progress:0,size:0,speed:0};
@@ -3693,7 +3695,7 @@ function fmtSize(b){if(!b)return"";if(b<1024)return b+" B";if(b<1048576)return(b
 function bindDownloadIntercept(){
   $("dl-close").addEventListener("click",function(){$("dl-modal").classList.remove("visible");INTERCEPT_URL="";});
   $("dl-copy").addEventListener("click",function(){if(INTERCEPT_URL)navigator.clipboard.writeText(INTERCEPT_URL).catch(function(){});$("dl-modal").classList.remove("visible");INTERCEPT_URL="";});
-  $("dl-ag").addEventListener("click",function(){$("dl-modal").classList.remove("visible");if(INTERCEPT_URL){var u0=INTERCEPT_URL;addTab("about:anterget");setTimeout(function(){var u=$("ag-url");if(u){u.value=u0;u.focus();}},200);}INTERCEPT_URL="";});
+  $("dl-ag").addEventListener("click",function(){$("dl-modal").classList.remove("visible");if(INTERCEPT_URL){var u0=INTERCEPT_URL;addTab("about:kastget");setTimeout(function(){var u=$("ag-url");if(u){u.value=u0;u.focus();}},200);}INTERCEPT_URL="";});
 }
 function showDownloadBlockModal(url){INTERCEPT_URL=url;$("dl-modal-url").textContent=url||"Unknown URL";$("dl-modal").classList.add("visible");}
 function requestWindowClose(){
@@ -3747,7 +3749,7 @@ function init(){
   try{$("btn-menu").addEventListener("click",openSettings);}catch(e){}
   try{$("btn-more").addEventListener("click",toggleMoreMenu);document.addEventListener("click",function(e){var m=$("more-menu");if(m&&!e.target.closest("#btn-more")&&!e.target.closest("#more-menu"))m.classList.remove("visible");});}catch(e){}
   try{bindSidePanel();}catch(e){err("bindSidePanel",e);}
-  try{bindAnterGet();}catch(e){err("bindAnterGet",e);}
+  try{bindKastget();}catch(e){err("bindKastget",e);}
   try{bindDownloadIntercept();}catch(e){err("bindDownloadIntercept",e);}
   try{bindConfirmModal();}catch(e){err("bindConfirmModal",e);}
   try{bindAddSiteModal();}catch(e){err("bindAddSiteModal",e);}
@@ -3837,7 +3839,7 @@ var COMMANDS=[
   {name:'Show Workspaces',icon:'\uD83D\uDCE6',action:function(){toggleWorkspaces();}},
   {name:'History',icon:'\u23F3',action:function(){W.openSideTab('history');}},
   {name:'Bookmarks',icon:'\u2B50',action:function(){W.openSideTab('bookmarks');}},
-  {name:'Downloads (AnterGet)',icon:'\u2B07\uFE0F',action:function(){W.addTab('about:anterget');}},
+  {name:'Downloads (Kastget)',icon:'\u2B07\uFE0F',action:function(){W.addTab('about:kastget');}},
   {name:'Localhost Dashboard',icon:'\uD83D\uDDA5\uFE0F',action:function(){W.addTab('about:localhost');}},
   {name:'Settings',icon:'\u2699\uFE0F',action:function(){W.openSettings();}},
   {name:'Zoom In',icon:'\uD83D\uDD0D',action:function(){var at=W.activeTab;if(at&&at.wv){var s=W.settings;var z=parseInt(s.zoom)||100;s.zoom=String(Math.min(200,z+10));try{at.wv.setZoomFactor((z+10)/100);}catch(e){}}}},

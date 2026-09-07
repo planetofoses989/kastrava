@@ -4,308 +4,228 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Kastrava — The Most Private Browser</title>
-<meta name="description" content="Kastrava is the most private, most advanced privacy-first browser. Zero telemetry. Zero tracking. Zero data collection.">
+<meta name="description" content="Kastrava Beta is the most private desktop browser. Zero telemetry. Volatile RAM-only browsing — everything wiped on exit.">
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 *{margin:0;padding:0;box-sizing:border-box}
 html{scroll-behavior:smooth}
-body{font-family:'Inter',sans-serif;background:#06060c;color:#c8c8d4;line-height:1.7;overflow-x:hidden;-webkit-font-smoothing:antialiased}
-canvas#bg{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none}
-section{position:relative;z-index:1}
-.container{max-width:960px;margin:0 auto;padding:0 24px}
-.reveal{opacity:0;transform:translateY(24px);transition:all .6s cubic-bezier(.22,1,.36,1)}
-.reveal.show{opacity:1;transform:translateY(0)}
-.section-label{font-size:11px;color:#4fc3f7;letter-spacing:3px;text-transform:uppercase;font-weight:600;margin-bottom:8px;position:relative;display:inline-block;padding-left:40px}
-.section-label::before{content:'';position:absolute;left:0;top:50%;width:28px;height:1px;background:linear-gradient(90deg,#4fc3f7,transparent)}
-.section-title{font-size:28px;font-weight:700;letter-spacing:-.5px;margin-bottom:20px;line-height:1.3;color:#e0e0ec}
-
-header{min-height:100vh;display:flex;align-items:center;justify-content:center;text-align:center;position:relative;overflow:hidden}
-header::before{content:'';position:absolute;top:-50%;left:-50%;width:200%;height:200%;background:radial-gradient(ellipse at 30% 40%,rgba(79,195,247,.04) 0%,transparent 60%),radial-gradient(ellipse at 70% 60%,rgba(2,136,209,.03) 0%,transparent 50%);animation:drifting 20s ease-in-out infinite}
-@keyframes drifting{0%,100%{transform:translate(0,0)}50%{transform:translate(20px,-20px)}}
-header img{width:80px;height:80px;filter:drop-shadow(0 0 40px rgba(79,195,247,.25));position:relative}
-header h1{font-size:72px;font-weight:900;letter-spacing:-3px;margin:14px 0 6px;background:linear-gradient(135deg,#4fc3f7,#0288d1);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;position:relative;text-shadow:0 0 60px rgba(79,195,247,.15)}
-header .version-badge{display:inline-block;font-size:11px;font-weight:500;color:#4fc3f7;background:rgba(79,195,247,.06);border:1px solid rgba(79,195,247,.12);padding:3px 12px;border-radius:20px;margin-bottom:16px;letter-spacing:.5px}
-header .tagline{font-size:16px;color:#666;font-weight:400;letter-spacing:1px;position:relative;margin-bottom:6px}
-header .subline{font-size:12px;color:#444;font-weight:500;letter-spacing:4px;text-transform:uppercase;position:relative}
-header .scroll-hint{position:absolute;bottom:32px;left:50%;transform:translateX(-50%);color:#333;font-size:11px;animation:bounce 2s infinite;letter-spacing:2px}
-@keyframes bounce{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(6px)}}
-
-.hero{padding:80px 0}
-.hero h2{font-size:40px;font-weight:800;letter-spacing:-1px;line-height:1.15;margin-bottom:16px;color:#e0e0ec}
-.hero h2 span{background:linear-gradient(135deg,#4fc3f7,#0288d1);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-.hero p{font-size:15px;color:#7a7a88;max-width:520px;margin-bottom:28px;line-height:1.8}
-
-.btns{display:flex;gap:10px;flex-wrap:wrap}
-.btn{display:inline-flex;align-items:center;gap:8px;padding:14px 32px;border-radius:10px;font-size:14px;font-weight:600;text-decoration:none;cursor:pointer;transition:all .25s;border:none;font-family:inherit}
-.btn-primary{background:linear-gradient(135deg,#4fc3f7,#0288d1);color:#fff}
-.btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(79,195,247,.25)}
-.btn-secondary{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);color:#999}
-.btn-secondary:hover{background:rgba(255,255,255,.06);transform:translateY(-2px)}
-
-.features-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;padding:64px 0}
-.feature{background:#0a0a14;border:1px solid #14141f;border-radius:12px;padding:28px 24px;transition:all .3s cubic-bezier(.22,1,.36,1);position:relative;overflow:hidden}
-.feature::after{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--accent,#4fc3f7),transparent);opacity:0;transition:opacity .3s}
-.feature:hover::after{opacity:1}
-.feature:hover{background:#0d0d1a;border-color:#1f1f30;transform:translateY(-4px);box-shadow:0 12px 40px rgba(0,0,0,.3)}
-.feature .ico{font-size:16px;width:40px;height:40px;display:flex;align-items:center;justify-content:center;border-radius:10px;background:rgba(79,195,247,.05);border:1px solid rgba(79,195,247,.08);margin-bottom:14px;color:#4fc3f7;font-weight:700}
-.feature h3{font-size:15px;font-weight:600;margin-bottom:6px;color:#e0e0ec}
-.feature p{font-size:13px;color:#6a6a7a;line-height:1.7}
-
-.advantage-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;padding:32px 0 64px}
-.advantage{background:linear-gradient(135deg,#0a0a14,#08081a);border:1px solid #14141f;border-radius:14px;padding:32px 28px;position:relative;overflow:hidden;transition:all .3s}
-.advantage::before{content:'';position:absolute;top:0;left:0;width:100%;height:2px;background:linear-gradient(90deg,transparent,#4fc3f7,transparent);opacity:0;transition:opacity .3s}
-.advantage:hover::before{opacity:.6}
-.advantage:hover{border-color:#1f1f30;transform:translateY(-2px)}
-.advantage .num{font-size:36px;font-weight:800;background:linear-gradient(135deg,#4fc3f7,#0288d1);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1;margin-bottom:8px}
-.advantage h3{font-size:16px;font-weight:600;color:#e0e0ec;margin-bottom:6px}
-.advantage p{font-size:13px;color:#6a6a7a;line-height:1.7}
-
-.stats-row{display:flex;justify-content:center;gap:12px;margin:48px auto}
-.stat{background:#0a0a14;border:1px solid #14141f;border-radius:12px;padding:36px 28px;text-align:center;flex:0 1 200px;transition:all .3s;position:relative;overflow:hidden}
-.stat::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 50% 0%,rgba(79,195,247,.03),transparent 70%)}
-.stat:hover{background:#0d0d1a;transform:translateY(-3px);box-shadow:0 12px 32px rgba(0,0,0,.3)}
-.stat .num{font-size:32px;font-weight:700;background:linear-gradient(135deg,#4fc3f7,#0288d1);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-.stat .lbl{font-size:11px;color:#555;text-transform:uppercase;letter-spacing:2px;margin-top:4px}
-
-.about-section{padding:64px 0}
-.about-section p{font-size:14px;color:#8a8a9a;line-height:1.9;margin-bottom:14px}
-.about-section h3{font-size:17px;font-weight:600;color:#e0e0ec;margin:28px 0 10px;position:relative;display:inline-block}
-.about-section h3::after{content:'';position:absolute;bottom:-4px;left:0;width:100%;height:2px;background:linear-gradient(90deg,#4fc3f7,transparent);border-radius:1px}
-.about-section ul{padding-left:18px;margin-bottom:14px}
-.about-section li{font-size:13px;color:#8a8a9a;line-height:1.8;margin-bottom:3px}
-.about-section li strong{color:#c0c4d0}
-
-.architecture-section{padding:64px 0}
-.arch-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
-.arch-card{background:#0a0a14;border:1px solid #14141f;border-radius:12px;padding:24px;position:relative;overflow:hidden;transition:all .3s}
-.arch-card:hover{border-color:#1f1f30;transform:translateY(-2px)}
-.arch-card h4{font-size:11px;font-weight:700;color:#4fc3f7;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px}
-.arch-card p{font-size:12px;color:#6a6a7a;line-height:1.7}
-
-.compare-section{padding:64px 0;overflow-x:auto}
-.compare-section table{width:100%;border-collapse:collapse;font-size:13px;min-width:500px}
-.compare-section th,.compare-section td{padding:12px 16px;text-align:left;border-bottom:1px solid #14141f;position:relative}
-.compare-section tr:hover td{background:rgba(79,195,247,.02)}
-.compare-section th{color:#4fc3f7;font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:1px}
-.compare-section td{color:#8a8a9a}
-.compare-section td:first-child{font-weight:600;color:#c0c4d0}
-.compare-section .yes{color:#4caf50}
-.compare-section .no{color:#e74c3c}
-.compare-section .partial{color:#ff9800}
-
-.security-section{padding:64px 0}
-.security-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}
-.security-card{background:linear-gradient(135deg,#0a0a14,#08081a);border:1px solid #14141f;border-radius:14px;padding:32px 28px;transition:all .3s}
-.security-card:hover{border-color:#1f1f30;transform:translateY(-2px)}
-.security-card .icon{width:48px;height:48px;border-radius:12px;background:rgba(79,195,247,.05);border:1px solid rgba(79,195,247,.1);display:flex;align-items:center;justify-content:center;margin-bottom:16px;color:#4fc3f7;font-size:20px}
-.security-card h3{font-size:16px;font-weight:600;color:#e0e0ec;margin-bottom:8px}
-.security-card p{font-size:13px;color:#6a6a7a;line-height:1.7}
-.security-card ul{margin-top:10px;padding-left:16px}
-.security-card li{font-size:12px;color:#7a7a8a;line-height:1.8;margin-bottom:2px}
-
-.download-section{text-align:center;padding:96px 0}
-.download-section h2{font-size:36px;font-weight:800;letter-spacing:-.5px;margin-bottom:8px;color:#e0e0ec}
-.download-section p{font-size:15px;color:#666;margin-bottom:32px}
-
-footer{text-align:center;padding:40px 0;border-top:1px solid #14141f;margin-top:32px;position:relative}
-footer::before{content:'';position:absolute;top:-1px;left:50%;transform:translateX(-50%);width:200px;height:1px;background:linear-gradient(90deg,transparent,#4fc3f7,transparent)}
-footer p{font-size:12px;color:#444}
-footer a{color:#4fc3f7;text-decoration:none}
-
-@media(max-width:768px){
-  header h1{font-size:40px}
-  .hero h2{font-size:28px}
-  .stats-row{flex-direction:column;align-items:center}
-  .features-grid{grid-template-columns:1fr}
-  .advantage-grid{grid-template-columns:1fr}
-  .security-grid{grid-template-columns:1fr}
-}
+body{font-family:'Inter',sans-serif;background:#f4f6f9;color:#2a2f3a;line-height:1.65;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+h1,h2,h3,.name{font-family:'Space Grotesk',sans-serif}
+.mono{font-family:'JetBrains Mono',monospace}
+.container{max-width:1080px;margin:0 auto;padding:0 24px;position:relative;z-index:1}
+nav{position:sticky;top:0;z-index:50;background:rgba(244,246,249,.88);backdrop-filter:blur(12px);border-bottom:1px solid #e2e7ee}
+nav .container{display:flex;align-items:center;gap:12px;padding-top:13px;padding-bottom:13px}
+nav img{width:30px;height:30px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+nav .name{font-size:15px;font-weight:700;letter-spacing:4px;color:#14161c}
+nav .beta{font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:500;color:#b45309;background:#fef3c7;border:1px solid #fde68a;padding:2px 8px;border-radius:6px;letter-spacing:1px}
+nav .sp{flex:1}
+nav a.btn{font-size:13px;font-weight:600;color:#fff;background:#0288d1;padding:10px 24px;border-radius:10px;text-decoration:none;font-family:'Space Grotesk',sans-serif;box-shadow:0 4px 14px rgba(2,136,209,.3)}
+nav a.btn:hover{background:#039be5}
+header{padding:72px 0 40px;overflow:hidden}
+.hero-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:48px;align-items:center}
+.kicker{font-family:'JetBrains Mono',monospace;font-size:12.5px;color:#0288d1;letter-spacing:1px;margin-bottom:18px}
+header h1{font-size:56px;font-weight:700;letter-spacing:-1.5px;line-height:1.05;color:#10131a;margin-bottom:18px}
+header h1 .accent{color:#0288d1}
+header .lede{font-size:16.5px;color:#5b6472;max-width:480px;margin-bottom:10px}
+header .lede b{color:#14161c}
+.hero-badges{display:flex;gap:8px;flex-wrap:wrap;margin:20px 0 28px}
+.hero-badges span{font-family:'JetBrains Mono',monospace;font-size:11px;color:#3d4451;background:#fff;border:1px solid #e2e7ee;padding:5px 12px;border-radius:20px}
+.hero-badges span b{color:#0288d1}
+.cta-row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+.btn{display:inline-block;padding:15px 36px;border-radius:12px;font-size:15px;font-weight:600;text-decoration:none;transition:all .18s;font-family:'Space Grotesk',sans-serif}
+.btn-primary{background:#0288d1;color:#fff;box-shadow:0 8px 24px rgba(2,136,209,.35)}
+.btn-primary:hover{background:#039be5;transform:translateY(-2px);box-shadow:0 12px 30px rgba(2,136,209,.4)}
+.btn-ghost{background:#fff;border:1px solid #dfe4ec;color:#14161c}
+.btn-ghost:hover{border-color:#0288d1;color:#0288d1}
+.mock{background:#fff;border:1px solid #e2e7ee;border-radius:16px;box-shadow:0 30px 80px rgba(20,40,70,.18),0 4px 16px rgba(20,40,70,.08);overflow:hidden;animation:floatY 7s ease-in-out infinite}
+@keyframes floatY{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+.mock-bar{display:flex;align-items:center;gap:8px;padding:12px 16px;border-bottom:1px solid #eef1f6;background:#fafbfd}
+.mock-dot{width:11px;height:11px;border-radius:50%}
+.mock-url{flex:1;font-family:'JetBrains Mono',monospace;font-size:11px;color:#5b6472;background:#eef1f6;border-radius:8px;padding:6px 14px;margin-left:6px}
+.mock-body{padding:26px 28px}
+.mock-tab{display:inline-block;font-family:'Space Grotesk',sans-serif;font-size:12px;font-weight:600;color:#fff;background:#14161c;border-radius:8px 8px 0 0;padding:8px 20px;margin-bottom:-1px}
+.mock-card{border:1px solid #e7ebf1;border-radius:0 12px 12px 12px;padding:20px}
+.mock-logo{width:46px;height:46px;border-radius:12px;background:#14161c;color:#fff;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:20px;display:flex;align-items:center;justify-content:center;margin-bottom:10px}
+.mock-line{height:10px;border-radius:5px;background:#e7ebf1;margin:9px 0}
+.mock-search{height:34px;border-radius:17px;background:#f0f3f7;border:1px solid #e2e7ee;margin-top:16px}
+.mock-row{display:flex;gap:8px;margin-top:16px}
+.mock-chip{flex:1;height:46px;border-radius:10px;background:#f4f6f9;border:1px solid #e7ebf1}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:56px}
+.stat{background:#fff;border:1px solid #e2e7ee;border-radius:14px;padding:20px 18px;text-align:center}
+.stat .num{font-family:'Space Grotesk',sans-serif;font-size:30px;font-weight:700;color:#14161c}
+.stat .num.cy{color:#0288d1}
+.stat .lbl{font-size:12px;color:#5b6472;margin-top:2px}
+section{padding:60px 0 10px}
+.sec-kicker{font-family:'JetBrains Mono',monospace;font-size:12px;color:#0288d1;letter-spacing:2px;margin-bottom:10px}
+.sec-title{font-size:32px;font-weight:700;letter-spacing:-.5px;color:#10131a;margin-bottom:10px}
+.sec-sub{font-size:15px;color:#5b6472;margin-bottom:34px;max-width:600px}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.card{background:#fff;border:1px solid #e2e7ee;border-radius:16px;padding:26px 24px;transition:all .22s}
+.card:hover{transform:translateY(-4px);box-shadow:0 18px 44px rgba(20,40,70,.12);border-color:#bfe0f5}
+.card .ico{width:46px;height:46px;border-radius:12px;display:flex;align-items:center;justify-content:center;margin-bottom:16px}
+.card h3{font-size:16px;font-weight:600;color:#14161c;margin-bottom:7px}
+.card p{font-size:13.5px;color:#5b6472;line-height:1.65}
+.priv{background:#14161c;border-radius:20px;padding:14px 36px;max-width:760px;color:#c8c8d4}
+.priv .row{display:flex;align-items:center;gap:14px;padding:15px 0;font-size:14px;border-bottom:1px solid rgba(255,255,255,.07)}
+.priv .row:last-child{border-bottom:none}
+.priv .ok{width:26px;height:26px;border-radius:50%;background:rgba(76,175,80,.15);color:#4caf50;font-weight:800;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0}
+.priv b{color:#fff}
+.dl{display:grid;grid-template-columns:1fr 1fr;gap:14px;max-width:880px}
+.dl-card{background:#fff;border:1px solid #e2e7ee;border-radius:18px;padding:34px 30px;transition:all .22s}
+.dl-card:hover{box-shadow:0 18px 44px rgba(20,40,70,.12)}
+.dl-card h3{font-size:20px;font-weight:600;color:#14161c;margin:14px 0 4px}
+.dl-card .plat{font-family:'JetBrains Mono',monospace;font-size:11px;color:#8a93a1;margin-bottom:18px}
+.dl-ver{display:inline-block;font-size:12px;font-weight:600;color:#0277bd;background:#e1f3fd;border:1px solid #b3e0f7;padding:3px 12px;border-radius:20px;margin-bottom:6px}
+.dl-link{display:block;padding:12px 16px;border-radius:10px;background:#f4f6f9;border:1px solid #e2e7ee;color:#2a2f3a;text-decoration:none;font-size:14px;font-weight:600;margin-top:10px;transition:all .18s}
+.dl-link:hover{border-color:#0288d1;background:#eaf5fd;color:#014d7a}
+.dl-link .fn{font-family:'JetBrains Mono',monospace;font-size:11px;color:#8a93a1;display:block;margin-top:3px;word-break:break-all}
+.faq{max-width:760px}
+.faq details{background:#fff;border:1px solid #e2e7ee;border-radius:12px;padding:18px 22px;margin-bottom:10px;cursor:pointer}
+.faq summary{font-size:14.5px;font-weight:600;color:#14161c;font-family:'Space Grotesk',sans-serif;list-style:none;cursor:pointer}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary::after{content:'+';float:right;color:#0288d1;font-weight:700}
+.faq details[open] summary::after{content:'–'}
+.faq p{font-size:13.5px;color:#5b6472;margin-top:10px}
+footer{border-top:1px solid #e2e7ee;margin-top:64px;padding:36px 0 48px;background:#fff}
+footer p{font-size:12.5px;color:#8a93a1}
+footer a{color:#0288d1;text-decoration:none}
+.reveal{opacity:0;transform:translateY(20px);transition:opacity .55s ease,transform .55s ease}
+.reveal.in{opacity:1;transform:none}
+@media(max-width:860px){.hero-grid{grid-template-columns:1fr}header h1{font-size:42px}.grid{grid-template-columns:1fr 1fr}.stats{grid-template-columns:1fr 1fr}}
+@media(max-width:560px){.grid,.dl{grid-template-columns:1fr}header h1{font-size:34px}header{padding:52px 0 20px}.stats{grid-template-columns:1fr 1fr}}
 </style>
 </head>
 <body>
 
-<canvas id="bg"></canvas>
+<nav>
+  <div class="container">
+    <img src="logo.png" alt="Kastrava">
+    <span class="name">KASTRAVA</span>
+    <span class="beta">BETA</span>
+    <span class="sp" style="flex:1"></span>
+    <a class="btn" href="#download">Download</a>
+  </div>
+</nav>
 
 <header>
   <div class="container">
-    <img src="logo.png" alt="Kastrava">
-    <h1>Kastrava</h1>
-    <div class="version-badge">v27 Beta</div>
-    <div class="tagline">The most private browser ever built.</div>
-    <div class="subline">Zero telemetry &middot; Zero tracking &middot; Zero compromise</div>
+    <div class="hero-grid">
+      <div>
+        <div class="kicker">v27.0.0-beta · originally Antersurf</div>
+        <h1>The browser that forgets everything.</h1>
+        <p class="lede" style="font-size:16.5px;color:#5b6472;max-width:480px;margin-bottom:26px">Kastrava keeps <b>zero</b> persistent web storage. No cache, no cookies, no site databases on your disk — everything runs in RAM and is <b>wiped on exit</b>.</p>
+        <div class="cta-row">
+          <a class="btn btn-primary" href="#download" style="display:inline-block;padding:15px 36px;border-radius:12px;font-size:15px;font-weight:600;background:#0288d1;color:#fff;text-decoration:none;font-family:'Space Grotesk',sans-serif">Download Free</a>
+          <a class="btn btn-ghost" href="#features" style="display:inline-block;padding:15px 36px;border-radius:12px;font-size:15px;font-weight:600;background:#fff;border:1px solid #dfe4ec;color:#14161c;text-decoration:none;font-family:'Space Grotesk',sans-serif">See how it works</a>
+        </div>
+        <p class="mono" style="font-size:11.5px;color:#8a93a1;margin-top:22px">Linux &middot; Windows 10+ &middot; Free forever</p>
+      </div>
+      <div class="mock reveal in">
+        <div class="mock-bar"><span class="mock-dot" style="background:#f28b82"></span><span class="mock-dot" style="background:#facc15"></span><span class="mock-dot" style="background:#4caf50"></span><span class="mock-url">kastravasearch.pp.ua</span></div>
+        <div class="mock-body">
+          <div class="mock-tab">New Tab</div>
+          <div class="mock-card">
+            <div class="mock-logo">K</div>
+            <div class="mock-line" style="width:42%"></div>
+            <div class="mock-line" style="width:68%"></div>
+            <div class="mock-search"></div>
+            <div class="mock-row"><div class="mock-chip"></div><div class="mock-chip"></div><div class="mock-chip"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="stats">
+      <div class="stat reveal"><div class="num cy">0</div><div class="lbl">bytes of telemetry</div></div>
+      <div class="stat reveal"><div class="num cy">0</div><div class="lbl">cookies left on disk</div></div>
+      <div class="stat reveal"><div class="num">6</div><div class="lbl">privacy-first features</div></div>
+      <div class="stat reveal"><div class="num">100%</div><div class="lbl">free &amp; open use</div></div>
+    </div>
   </div>
-  <div class="scroll-hint">SCROLL</div>
 </header>
 
-<section class="hero">
-  <div class="container reveal">
-    <h2>Privacy isn't a feature.<br>It's the <span>only thing</span> that matters.</h2>
-    <p>Kastrava was built from zero for one purpose: absolute privacy. Every byte stays on your machine. No exceptions. No asterisks. No "opt-out" buried in settings nobody reads.</p>
-    <div class="btns">
-      <a href="download.html" class="btn btn-primary">Download Free</a>
-      <a href="#security" class="btn btn-secondary">How We Protect You</a>
+<section id="features">
+  <div class="container">
+    <div class="sec-kicker reveal">01 — UNDER THE HOOD</div>
+    <h2 class="sec-title reveal">Six mechanisms. No marketing.</h2>
+    <p class="sec-sub reveal">Every claim below is enforced in code, verifiable in seconds.</p>
+    <div class="grid">
+      <div class="card reveal"><div class="ico" style="background:#e1f3fd"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#0288d1" stroke-width="1.8"><rect x="7" y="7" width="10" height="14" rx="1.5"/><path d="M10 7V5.5A1.5 1.5 0 0111.5 4h1A1.5 1.5 0 0114 5.5V7M10 11h4M10 14.5h4"/></svg></div><h3>Volatile memory sessions</h3><p>Cache, cookies, DOM storage and IndexedDB live in RAM only. Quit, and there is nothing left to find.</p></div>
+      <div class="card reveal"><div class="ico" style="background:#e8f5e9"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#2e7d32" stroke-width="1.8"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3" stroke-linecap="round"/></svg></div><h3>Tracking radar</h3><p>Every third-party request and cookie is counted per tab with a live score. Strict blocking, DNT headers, no referrers.</p></div>
+      <div class="card reveal"><div class="ico" style="background:#e1f3fd"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#0288d1" stroke-width="1.8"><circle cx="11" cy="11" r="6"/><path d="M15.5 15.5L20 20" stroke-linecap="round"/></svg></div><div><h3>KastravaSearch by default</h3><p>Kastrava's own search at kastravasearch.pp.ua. Switchable to DuckDuckGo, Brave, Google or Ecosia.</p></div></div>
+      <div class="card reveal"><div class="ico" style="background:#fff3e0"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#e65100" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7.5 10.5L12 15l4.5-4.5M4 19h16"/></svg></div><h3>Kastget downloads</h3><p>Private download manager with pause and resume. Curl when present, native engine when it isn't.</p></div>
+      <div class="card reveal"><div class="ico" style="background:#ede7f6"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#5e35b1" stroke-width="1.8"><rect x="3" y="7" width="18" height="11" rx="2"/><path d="M7 11h.01M11 11h.01M15 11h.01M17 11h.01M7 14.5h10M8 21h8" stroke-linecap="round"/></svg></div><h3>Real keyboard control</h3><p>Ctrl+T/W/Tab, Ctrl+Shift+T, F12 DevTools — OS-level shortcuts that work even with a page focused.</p></div>
+      <div class="card reveal"><div class="ico" style="background:#fce4ec"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#c2185b" stroke-width="1.8"><circle cx="9" cy="9" r="4"/><circle cx="16" cy="8" r="3"/><path d="M5 20c0-3 2.5-5 5.5-5M14 20c.5-2.4 2-4 4.5-4" stroke-linecap="round"/></svg></div><h3>Guided first-run setup</h3><p>Nine-step welcome: engine, theme, tracking, startup. Beta-labeled, honestly unfinished where it is.</p></div>
     </div>
   </div>
 </section>
 
 <section>
   <div class="container">
-    <div class="features-grid">
-      <div class="feature reveal"><div class="ico">0</div><h3>Zero Telemetry</h3><p>No analytics, no crash reports, no phone-home. Kastrava sends exactly zero bytes to anyone. Ever.</p></div>
-      <div class="feature reveal"><div class="ico">&bull;</div><h3>No Data Collection</h3><p>We don't collect, store, sell, or access your browsing data. Not now. Not ever. There's nothing to collect.</p></div>
-      <div class="feature reveal"><div class="ico">&infin;</div><h3>Zero Accounts</h3><p>No sign-up. No sync. No cloud. No "Sign in with Google." Your browser doesn't need to know who you are.</p></div>
-      <div class="feature reveal"><div class="ico">&gt;</div><h3>Blazing Fast</h3><p>Built on Electron with minimal overhead. No background services, no telemetry daemons, no crypto miners.</p></div>
-      <div class="feature reveal"><div class="ico">#</div><h3>Download Manager</h3><p>Built-in AnterGet handles all downloads with pause, resume, speed control, and progress tracking.</p></div>
-      <div class="feature reveal"><div class="ico">~</div><h3>Local-First</h3><p>All data in local SQLite. Bookmarks, history, settings, sessions &mdash; yours, on your disk, nowhere else.</p></div>
+    <div class="sec-kicker reveal">02 — DEFAULTS</div>
+    <h2 class="sec-title reveal">Maximum privacy, out of the box.</h2>
+    <p class="sec-sub reveal">Nothing to configure. Nothing phones home.</p>
+    <div class="priv reveal" style="background:#14161c;border-radius:20px;padding:14px 36px;max-width:760px;color:#c8c8d4">
+      <div class="row" style="display:flex;align-items:center;gap:14px;padding:15px 0;font-size:14px;border-bottom:1px solid rgba(255,255,255,.07)"><span class="ok" style="width:26px;height:26px;border-radius:50%;background:rgba(76,175,80,.15);color:#4caf50;font-weight:800;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0">✓</span><span>Tracking protection <b>Strict</b>, Do Not Track <b>on</b></span></div>
+      <div class="row" style="display:flex;align-items:center;gap:14px;padding:15px 0;font-size:14px;border-bottom:1px solid rgba(255,255,255,.07)"><span class="ok" style="width:26px;height:26px;border-radius:50%;background:rgba(76,175,80,.15);color:#4caf50;font-weight:800;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0">✓</span><span>Cookies <b>blocked</b>, referrer <b>off</b>, location <b>blocked</b></span></div>
+      <div class="row" style="display:flex;align-items:center;gap:14px;padding:15px 0;font-size:14px;border-bottom:1px solid rgba(255,255,255,.07)"><span class="ok" style="width:26px;height:26px;border-radius:50%;background:rgba(76,175,80,.15);color:#4caf50;font-weight:800;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0">✓</span><span>WebRTC leaks <b>disabled</b>, suggestions <b>removed</b></span></div>
+      <div class="row" style="display:flex;align-items:center;gap:14px;padding:15px 0;font-size:14px;border-bottom:1px solid rgba(255,255,255,.07)"><span class="ok" style="width:26px;height:26px;border-radius:50%;background:rgba(76,175,80,.15);color:#4caf50;font-weight:800;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0">✓</span><span>Webpages <b>cannot touch</b> your local files</span></div>
+      <div class="row" style="display:flex;align-items:center;gap:14px;padding:15px 0;font-size:14px;"><span class="ok" style="width:26px;height:26px;border-radius:50%;background:rgba(76,175,80,.15);color:#4caf50;font-weight:800;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0">✓</span><span>History &amp; bookmarks can be <b>switched off</b> entirely</span></div>
     </div>
   </div>
 </section>
 
-<section class="container stats-row">
-  <div class="stat reveal"><div class="num">0</div><div class="lbl">Telemetry Requests</div></div>
-  <div class="stat reveal"><div class="num">0</div><div class="lbl">External Connections</div></div>
-  <div class="stat reveal"><div class="num">100%</div><div class="lbl">Local Data</div></div>
-</section>
-
-<section class="container" id="security">
-  <div class="security-section">
-    <p class="section-label reveal">Security Architecture</p>
-    <h2 class="section-title reveal">How Kastrava Protects You</h2>
-    <div class="security-grid">
-      <div class="security-card reveal">
-        <div class="icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
-        <h3>No Tracking Headers</h3>
-        <p>Kastrava never sends tracking headers, fingerprinting signals, or unique identifiers. Your browsing sessions are invisible.</p>
-        <ul>
-          <li>No client ID headers</li>
-          <li>No telemetry beacons</li>
-          <li>No crash reporting with device info</li>
-          <li>No referrer leakage</li>
-        </ul>
+<section id="download">
+  <div class="container">
+    <div class="sec-kicker reveal">03 — GET IT</div>
+    <h2 class="sec-title reveal">Download Kastrava Beta</h2>
+    <p class="sec-sub reveal">v27.0.0 — free forever. Pick your platform.</p>
+    <div class="dl">
+      <div class="dl-card reveal">
+        <svg width="40" height="40" viewBox="0 0 40 40" fill="none" stroke="#4a7c59" stroke-width="2"><circle cx="20" cy="20" r="16"/><path d="M20 12v8l5 3" stroke-linecap="round"/></svg>
+        <h3>Linux</h3>
+        <div class="plat">x86_64 · v27.0.0-beta</div>
+        <a class="dl-link" href="https://www.mediafire.com/file/qyxssfmvyfr7kaj/kastrava-27.0.0-1-x86_64.pkg.tar.zst/file" target="_blank" rel="noopener">Arch<span class="fn">kastrava-27.0.0-1-x86_64.pkg.tar.zst</span></a>
+        <a class="dl-link" href="https://www.mediafire.com/file/ut03cujx32s5a3s/kastrava_27.0.0_amd64.deb/file" target="_blank" rel="noopener">Debian / Ubuntu<span class="fn">kastrava_27.0.0_amd64.deb</span></a>
+        <a class="dl-link" href="https://www.mediafire.com/file/e29pt0rldgqus86/kastrava-27.0.0.x86_64.rpm/file" target="_blank" rel="noopener">Fedora<span class="fn">kastrava-27.0.0.x86_64.rpm</span></a>
       </div>
-      <div class="security-card reveal">
-        <div class="icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></div>
-        <h3>Encrypted Local Storage</h3>
-        <p>All your data &mdash; bookmarks, history, sessions &mdash; is stored locally in an encrypted SQLite database. No cloud sync means no cloud breach.</p>
-        <ul>
-          <li>AES-256 encrypted database</li>
-          <li>No network-accessible storage</li>
-          <li>No shared browser profiles</li>
-          <li>Full user control over data</li>
-        </ul>
-      </div>
-      <div class="security-card reveal">
-        <div class="icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg></div>
-        <h3>No External Requests</h3>
-        <p>When you're browsing a page, Kastrava itself makes zero background requests. No update checks. No DNS prefetching. No safe browsing API calls with your IP.</p>
-        <ul>
-          <li>No update pings</li>
-          <li>No DNS prefetching</li>
-          <li>No telemetry endpoints</li>
-          <li>No hidden background tasks</li>
-        </ul>
-      </div>
-      <div class="security-card reveal">
-        <div class="icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></div>
-        <h3>Download Protection</h3>
-        <p>All downloads are handled through AnterGet, our built-in download manager. Files go directly to your machine. No cloud intermediary.</p>
-        <ul>
-          <li>Direct file transfers</li>
-          <li>No download tracking</li>
-          <li>Built-in integrity checks</li>
-          <li>Pause &amp; resume support</li>
-        </ul>
+      <div class="dl-card reveal">
+        <svg width="40" height="40" viewBox="0 0 40 40" fill="none" stroke="#0288d1" stroke-width="2"><rect x="8" y="8" width="11" height="11"/><rect x="21" y="8" width="11" height="11" fill-opacity=".55" fill="#0288d1"/><rect x="8" y="21" width="11" height="11" fill-opacity=".55" fill="#0288d1"/><rect x="21" y="21" width="11" height="11" fill-opacity=".3" fill="#0288d1"/></svg>
+        <h3>Windows</h3>
+        <div class="plat">10+ · v27.0.0-beta</div>
+        <a class="dl-link" href="https://www.mediafire.com/file/9fmw8pxzbstms6d/Kastrava-Setup-27.0.0.exe/file" target="_blank" rel="noopener">Installer — recommended<span class="fn">Kastrava-Setup-27.0.0.exe</span></a>
+        <a class="dl-link" href="https://www.mediafire.com/file/9jcmb3u1y07o1pt/Kastrava-27.0.0.exe/file" target="_blank" rel="noopener">Portable<span class="fn">Kastrava-27.0.0.exe</span></a>
       </div>
     </div>
   </div>
 </section>
 
-<section class="container about-section">
-  <p class="section-label reveal">About</p>
-  <h2 class="section-title reveal">What is Kastrava?</h2>
-  <div class="reveal">
-    <p>Kastrava is the most private desktop browser ever built. Not "privacy-focused." Not "privacy-friendly." The most private. Full stop.</p>
-    <p>Most browsers are built around advertising. They track you, profile you, and sell your attention. Kastrava was built around the radical idea that a browser should just be a browser &mdash; a tool you control, not a platform that controls you.</p>
-    <p>Every feature in Kastrava was designed with one question: does this serve the user, or does this serve us? If it doesn't serve the user, it doesn't ship.</p>
-
-    <h3>Design Principles</h3>
-    <ul>
-      <li><strong>Privacy by Default</strong> &mdash; Zero telemetry. Zero data collection. Zero external requests. Not opt-in. Default.</li>
-      <li><strong>Local-First Architecture</strong> &mdash; SQLite storage. No cloud, no sync, no accounts. Your data never leaves your device.</li>
-      <li><strong>Minimal Footprint</strong> &mdash; 128 MB AppImage. ~120 MB RAM at idle. No background services eating your resources.</li>
-      <li><strong>User Sovereignty</strong> &mdash; Every setting is yours. Every shortcut is configurable. No dark patterns, no hidden options.</li>
-      <li><strong>Open Source</strong> &mdash; Built in the open. Inspect the code. Verify the claims. Trust nothing you can't verify.</li>
-    </ul>
-
-    <h3>What Makes It Different</h3>
-    <p>Chrome tracks you. Firefox phones home. Safari sends telemetry to Apple. Edge is Microsoft's advertising vector. Opera is owned by a Chinese consortium. Every major browser has a conflict of interest.</p>
-    <p>Kastrava has no advertisers to please. No shareholders demanding engagement metrics. No product team optimizing for data harvesting. Just a browser that works for you, and only you.</p>
-    <p>Version 27 "Starship Explorer" brings Picture-in-Picture, Reader mode, Split view, the unique Tracking Radar, one-click screenshots, bookmark import/export, and a full keyboard shortcut suite &mdash; all without compromising a single byte of your privacy.</p>
-  </div>
-</section>
-
-<section class="container architecture-section">
-  <p class="section-label reveal">Architecture</p>
-  <h2 class="section-title reveal">Built Different. Literally.</h2>
-  <div class="arch-grid">
-    <div class="arch-card reveal"><h4>Electron Core</h4><p>Built on Chromium with full process isolation. Sandboxed rendering, GPU acceleration, and modern web standards.</p></div>
-    <div class="arch-card reveal"><h4>SQLite Database</h4><p>All persistent data in a single local SQLite file. No JSON dumps, no IndexedDB, no cloud-backed storage.</p></div>
-    <div class="arch-card reveal"><h4>AnterGet Engine</h4><p>Curl-based download manager with pause, resume, progress tracking, and speed display. No third-party services.</p></div>
-    <div class="arch-card reveal"><h4>Session Manager</h4><p>Full session persistence. Close and reopen exactly where you left off. No account sync needed.</p></div>
-    <div class="arch-card reveal"><h4>Per-Tab Isolation</h4><p>Each tab is an isolated webview. Separate process, separate session, separate memory space.</p></div>
-    <div class="arch-card reveal"><h4>Zero Network Calls</h4><p>The browser itself never phones home. No update checks, no telemetry, no DNS prefetching in the background.</p></div>
-  </div>
-</section>
-
-<section class="container compare-section">
-  <p class="section-label reveal">Comparison</p>
-  <h2 class="section-title reveal">How We Stack Up</h2>
-  <table class="reveal">
-    <tr><th></th><th>Kastrava</th><th>Chrome</th><th>Firefox</th><th>Safari</th><th>Edge</th></tr>
-    <tr><td>Zero Telemetry</td><td class="yes">Yes</td><td class="no">No</td><td class="partial">Minimal</td><td class="no">No</td><td class="no">No</td></tr>
-    <tr><td>No Data Collection</td><td class="yes">Yes</td><td class="no">No</td><td class="partial">Opt-out</td><td class="no">No</td><td class="no">No</td></tr>
-    <tr><td>No Account Required</td><td class="yes">Yes</td><td class="no">No</td><td class="yes">Yes</td><td class="no">No</td><td class="no">No</td></tr>
-    <tr><td>Local-Only Storage</td><td class="yes">Yes</td><td class="no">No</td><td class="no">No</td><td class="no">No</td><td class="no">No</td></tr>
-    <tr><td>Zero Background Requests</td><td class="yes">Yes</td><td class="no">No</td><td class="no">No</td><td class="no">No</td><td class="no">No</td></tr>
-    <tr><td>Forced AI</td><td class="yes">No</td><td class="no">Yes</td><td class="no">Yes</td><td class="partial">AI in OS</td><td class="no">Yes</td></tr>
-  </table>
-</section>
-
-<section class="download-section">
-  <div class="container reveal">
-    <h2>Take Your Privacy Back</h2>
-    <p>Free. Lightweight. Yours forever. No strings attached.</p>
-    <a href="download.html" class="btn btn-primary">Download Kastrava 27</a>
-    <p style="margin-top:14px;font-size:12px;color:#444">Available For Windows &amp; Linux</p>
-  </div>
-</section>
-
-  <footer>
-    <div class="container">
-      <p>Kastrava 27 &mdash; CODENAME: Starship Explorer &mdash; Built by PlanetOfOSes, a sub-brand of Nexunfog Solutions</p>
-      <p style="margin-top:6px">Support: <a href="mailto:planetofoses989@gmail.com">planetofoses989@gmail.com</a></p>
+<section>
+  <div class="container">
+    <div class="sec-kicker reveal">04 — QUESTIONS</div>
+    <h2 class="sec-title reveal">Asked often</h2>
+    <p class="sec-sub reveal">Straight answers.</p>
+    <div class="faq reveal" style="max-width:760px">
+      <details><summary>What exactly is deleted when I quit?</summary><p>Everything websites stored: HTTP cache, cookies, DOM storage, IndexedDB, service-worker caches. They live in RAM under an in-memory session and are wiped on exit. Your own settings, bookmarks and history database stay — unless you switch those off too.</p></details>
+      <details><summary>Is it really free? What's the catch?</summary><p>Free forever, no accounts, no telemetry to monetize. There is no catch — there's also no company infrastructure phoning home.</p></details>
+      <details><summary>Why does it say Beta?</summary><p>Because it is. Kastrava (originally AnterSurf) is under active development — features land fast and rough edges exist. The privacy guarantees above are already enforced.</p></details>
+      <details><summary>Which platforms are supported?</summary><p>Linux (Arch, Debian/Ubuntu, Fedora) and Windows 10+. macOS and Android builds are discontinued.</p></details>
+      <details><summary>What search engine does it use?</summary><p>KastravaSearch (kastravasearch.pp.ua) — Kastrava's own search — is the default. DuckDuckGo, Brave, Google and Ecosia are one click away in Settings.</p></details>
     </div>
-  </footer>
+  </div>
+</section>
+
+<footer>
+  <div class="container">
+    <p>Kastrava 27 Beta · Originally AnterSurf · Built by PlanetOfOSes, a sub-brand of Nexunfog Solutions</p>
+    <p style="margin-top:6px">Support: <a href="mailto:planetofoses989@gmail.com">planetofoses989@gmail.com</a></p>
+  </div>
+</footer>
 
 <script>
-var c=document.getElementById('bg'),g=c.getContext('webgl')
-if(g){
-  function r(){c.width=innerWidth;c.height=innerHeight;g.viewport(0,0,c.width,c.height)}
-  addEventListener('resize',r);r()
-  var vs=g.createShader(g.VERTEX_SHADER)
-  g.shaderSource(vs,'attribute vec2 p;void main(){gl_Position=vec4(p,0.,1.)}');g.compileShader(vs)
-  var fs=g.createShader(g.FRAGMENT_SHADER)
-  g.shaderSource(fs,'precision highp float;uniform vec2 r;uniform float t;void main(){vec2 u=gl_FragCoord.xy/r;float c=0.;for(int i=0;i<5;i++){vec2 q=u*2.-1.;float a=t*0.04+float(i)*1.2;q=vec2(q.x*cos(a)-q.y*sin(a),q.x*sin(a)+q.y*cos(a));float d=length(q);c+=0.025/(d+0.25)*sin(d*6.-t*0.6+float(i)*2.5);}c=clamp(c,0.,1.);gl_FragColor=vec4(c*.08,c*.04,c*.18,1.);}')
-  g.compileShader(fs)
-  var p=g.createProgram();g.attachShader(p,vs);g.attachShader(p,fs);g.linkProgram(p);g.useProgram(p)
-  var b=g.createBuffer();g.bindBuffer(g.ARRAY_BUFFER,b);g.bufferData(g.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,1,-1,1,1,-1,1]),g.STATIC_DRAW)
-  var pl=g.getAttribLocation(p,'p');g.enableVertexAttribArray(pl);g.vertexAttribPointer(pl,2,g.FLOAT,false,0,0)
-  var rl=g.getUniformLocation(p,'r'),tl=g.getUniformLocation(p,'t'),st=Date.now()
-  !function a(){g.uniform2f(rl,c.width,c.height);g.uniform1f(tl,(Date.now()-st)/1e3);g.drawArrays(g.TRIANGLES,0,6);requestAnimationFrame(a)}()
-}
-
-var obs=new IntersectionObserver(function(e){e.forEach(function(e){if(e.isIntersecting)e.target.classList.add('show')})})
-document.querySelectorAll('.reveal').forEach(function(e){obs.observe(e)})
+(function(){
+  var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target);}});},{threshold:.1});
+  document.querySelectorAll('.reveal').forEach(function(el){io.observe(el);});
+})();
 </script>
 </body>
 </html>

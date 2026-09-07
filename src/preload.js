@@ -43,7 +43,7 @@ contextBridge.exposeInMainWorld('api', {
 
   onShowDownloadModal: (cb) => ipcRenderer.on('show-download-modal', (_, d) => cb(d)),
 
-  // AnterGet
+  // Kastget
   agStart: (url) => ipcRenderer.invoke('ag-start', url),
   agPause: (id) => ipcRenderer.invoke('ag-pause', id),
   agResume: (id) => ipcRenderer.invoke('ag-resume', id),

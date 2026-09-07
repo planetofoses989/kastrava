@@ -128,7 +128,7 @@ function createWindow() {
 
   ses.on('will-download', (event, item) => {
     const url = item.getURL()
-    // Native fallback engine: a download started via AnterGet when curl
+    // Native fallback engine: a download started via Kastget when curl
     // is unavailable. Let it proceed into our tracked item.
     if (fallbackPending.has(url)) {
       const id = fallbackPending.get(url)
@@ -297,7 +297,7 @@ function buildMenu() {
       { label: 'Tracking Radar', accelerator: 'CommandOrControl+Shift+K', click: () => sendShortcut('radar') },
       { label: 'Screenshot', accelerator: 'CommandOrControl+Shift+S', click: () => sendShortcut('screenshot') },
       { label: 'Mute Tab', accelerator: 'CommandOrControl+Shift+M', click: () => sendShortcut('mute') },
-      { label: 'Open AnterGet', accelerator: 'CommandOrControl+Shift+P', click: () => sendShortcut('anterget') },
+      { label: 'Open Kastget', accelerator: 'CommandOrControl+Shift+P', click: () => sendShortcut('kastget') },
       { label: 'Developer Tools', accelerator: 'F12', click: () => sendShortcut('devtools') },
       { label: 'Inspect', accelerator: 'CommandOrControl+Shift+I', click: () => sendShortcut('devtools') },
       { type: 'separator' },
@@ -511,7 +511,7 @@ ipcMain.handle('load-session', () => {
   return null
 })
 
-// AnterGet download manager (curl-based)
+// Kastget download manager (curl-based)
 const agDownloads = new Map()
 let agIdCounter = 0
 

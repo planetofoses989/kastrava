@@ -3,7 +3,7 @@
 Package Kastrava for distribution via the custom zip installer.
 Run: python3 scripts/package_release.py
 
-Produces: release/Antersurf-10.0.0.zip
+Produces: release/Kastrava-27.0.0.zip
   - install.py
   - Kastrava-release.zip (scrambled with XOR cipher, contains dist/ output)
 """
