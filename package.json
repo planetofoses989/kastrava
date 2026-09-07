@@ -3,7 +3,7 @@
   "version": "27.0.0",
   "description": "Privacy-first browser",
   "author": {
-    "name": "PlanetOfOSes",
+    "name": "Kastrasoft",
     "email": "planetofoses989@gmail.com"
   },
   "main": "dist/main.js",
@@ -15,7 +15,7 @@
     "package": "python3 scripts/package_release.py"
   },
   "build": {
-    "appId": "com.nexunfog.kastrava",
+    "appId": "com.kastrasoft.kastrava",
     "productName": "Kastrava",
     "directories": {
       "output": "release"
