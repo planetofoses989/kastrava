@@ -14,6 +14,9 @@ protocol.registerSchemesAsPrivileged([{
 
 const preReadyPrefs = backend.initPreReady()
 
+// Volatile RAM: never write GPU shader caches to disk either.
+try { app.commandLine.appendSwitch('disable-gpu-shader-disk-cache'); } catch {}
+
 let db
 let settingsBackend
 let radar
@@ -109,20 +112,27 @@ function sendWinState() {
   })
 }
 
+function handleKastravaProto(request, callback) {
+  try {
+    const u = new URL(request.url)
+    let p = decodeURIComponent(u.pathname)
+    if (p.startsWith('/')) p = p.slice(1)
+    if (!p) p = 'browser.html'
+    const file = path.normalize(path.join(__dirname, p))
+    if (file !== __dirname && !file.startsWith(__dirname + path.sep)) return callback({ error: -6 })
+    callback({ path: file })
+  } catch { callback({ error: -6 }) }
+}
 function createWindow() {
   if (!globalThis.__kastravaProtoRegistered) {
     globalThis.__kastravaProtoRegistered = true;
-    protocol.registerFileProtocol('kastrava', (request, callback) => {
-      try {
-        const u = new URL(request.url)
-        let p = decodeURIComponent(u.pathname)
-        if (p.startsWith('/')) p = p.slice(1)
-        if (!p) p = 'browser.html'
-        const file = path.normalize(path.join(__dirname, p))
-        if (file !== __dirname && !file.startsWith(__dirname + path.sep)) return callback({ error: -6 })
-        callback({ path: file })
-      } catch { callback({ error: -6 }) }
-    })
+    protocol.registerFileProtocol('kastrava', handleKastravaProto);
+    try {
+      // The shell window runs on its own memory session: register there too,
+      // otherwise kastrava:// pages fail to load in it.
+      const shSes = require('electron').session.fromPartition('kastrava-shell');
+      shSes.protocol.registerFileProtocol('kastrava', handleKastravaProto);
+    } catch (e) { console.error('shell protocol error:', e); }
   }
   const ses = require('electron').session.fromPartition('kastrava')
 
@@ -230,7 +240,8 @@ function createWindow() {
       sandbox: false,
       contextIsolation: true,
       nodeIntegration: false,
-      webviewTag: true
+      webviewTag: true,
+      partition: 'kastrava-shell'
     }
   })
 
@@ -386,8 +397,12 @@ app.on('before-quit', () => {
   // IndexedDB, DOM storage). The OS frees the rest on exit.
   try {
     const { session } = require('electron')
-    session.fromPartition('kastrava').clearStorageData().catch(() => {})
-    session.fromPartition('kastrava').clearCache().catch(() => {})
+    for (const part of ['kastrava', 'kastrava-shell']) {
+      try { session.fromPartition(part).clearStorageData().catch(() => {}) } catch {}
+      try { session.fromPartition(part).clearCache().catch(() => {}) } catch {}
+    }
+    try { session.defaultSession.clearStorageData().catch(() => {}) } catch {}
+    try { session.defaultSession.clearCache().catch(() => {}) } catch {}
   } catch {}
   if (lastSessionData) {
     try { saveSessionSync(lastSessionData) } catch {}

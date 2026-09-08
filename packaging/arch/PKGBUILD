@@ -1,0 +1,30 @@
+# Maintainer: Kastrasoft <planetofoses989@gmail.com>
+pkgname=kastrava
+pkgver=27.0.0
+pkgrel=1
+pkgdesc="Privacy-first browser"
+arch=('x86_64')
+url="https://kastrava.pp.ua"
+license=('MIT')
+depends=('alsa-lib' 'gtk3' 'libxss' 'nss')
+options=('!strip')
+_src="/home/tejas/Projects/antersurf/release/linux-unpacked"
+_static="/home/tejas/Projects/antersurf/static/logo.png"
+
+package() {
+  install -dm755 "$pkgdir/opt/Kastrava"
+  cp -a "$_src/." "$pkgdir/opt/Kastrava/"
+  chmod 4755 "$pkgdir/opt/Kastrava/chrome-sandbox"
+  install -Dm644 /dev/stdin "$pkgdir/usr/share/applications/kastrava.desktop" <<'DESK'
+[Desktop Entry]
+Name=Kastrava
+Exec=/opt/Kastrava/kastrava %U
+Terminal=false
+Type=Application
+Icon=kastrava
+StartupWMClass=Kastrava
+Comment=Privacy-first browser
+Categories=Network;
+DESK
+  install -Dm644 "$_static" "$pkgdir/usr/share/icons/hicolor/500x500/apps/kastrava.png"
+}

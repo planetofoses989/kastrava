@@ -86,6 +86,17 @@ section{padding:60px 0 10px}
 .faq summary::after{content:'+';float:right;color:#0288d1;font-weight:700}
 .faq details[open] summary::after{content:'–'}
 .faq p{font-size:13.5px;color:#5b6472;margin-top:10px}
+.guide-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;max-width:920px}
+.guide-card{background:#fff;border:1px solid #e2e7ee;border-radius:16px;padding:28px 26px}
+.guide-card h3{font-size:17px;font-weight:600;color:#14161c;margin-bottom:4px}
+.guide-card .for{font-family:'JetBrains Mono',monospace;font-size:11px;color:#0288d1;margin-bottom:16px}
+.guide-card ol{list-style:none;counter-reset:step}
+.guide-card ol li{counter-increment:step;font-size:13.5px;color:#3d4451;padding:9px 0 9px 38px;position:relative;line-height:1.6}
+.guide-card ol li::before{content:counter(step);position:absolute;left:0;top:9px;width:24px;height:24px;border-radius:50%;background:#eaf5fd;color:#0288d1;font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:500;display:flex;align-items:center;justify-content:center}
+.guide-card ol li+li{border-top:1px solid #f0f3f7}
+.cmd{font-family:'JetBrains Mono',monospace;font-size:12px;background:#14161c;color:#7ee2a8;border-radius:8px;padding:8px 12px;margin-top:7px;word-break:break-all;line-height:1.5}
+.cmd .c{color:#8a93a1}
+@media(max-width:640px){.guide-grid{grid-template-columns:1fr}}
 footer{border-top:1px solid #e2e7ee;margin-top:64px;padding:36px 0 48px;background:#fff}
 footer p{font-size:12.5px;color:#8a93a1}
 footer a{color:#0288d1;text-decoration:none}
@@ -118,7 +129,7 @@ footer a{color:#0288d1;text-decoration:none}
           <a class="btn btn-primary" href="#download" style="display:inline-block;padding:15px 36px;border-radius:12px;font-size:15px;font-weight:600;background:#0288d1;color:#fff;text-decoration:none;font-family:'Space Grotesk',sans-serif">Download Free</a>
           <a class="btn btn-ghost" href="#features" style="display:inline-block;padding:15px 36px;border-radius:12px;font-size:15px;font-weight:600;background:#fff;border:1px solid #dfe4ec;color:#14161c;text-decoration:none;font-family:'Space Grotesk',sans-serif">See how it works</a>
         </div>
-        <p class="mono" style="font-size:11.5px;color:#8a93a1;margin-top:22px">Linux &middot; Windows 10+ &middot; Free forever</p>
+        <p class="mono" style="font-size:11.5px;color:#8a93a1;margin-top:22px">Linux &middot; Windows via bridge &middot; Free forever</p>
       </div>
       <div class="mock reveal in">
         <div class="mock-bar"><span class="mock-dot" style="background:#f28b82"></span><span class="mock-dot" style="background:#facc15"></span><span class="mock-dot" style="background:#4caf50"></span><span class="mock-url">kastravasearch.pp.ua</span></div>
@@ -186,14 +197,45 @@ footer a{color:#0288d1;text-decoration:none}
         <div class="plat">x86_64 · v27.0.0-beta</div>
         <a class="dl-link" href="https://www.mediafire.com/file/qyxssfmvyfr7kaj/kastrava-27.0.0-1-x86_64.pkg.tar.zst/file" target="_blank" rel="noopener">Arch<span class="fn">kastrava-27.0.0-1-x86_64.pkg.tar.zst</span></a>
         <a class="dl-link" href="https://www.mediafire.com/file/ut03cujx32s5a3s/kastrava_27.0.0_amd64.deb/file" target="_blank" rel="noopener">Debian / Ubuntu<span class="fn">kastrava_27.0.0_amd64.deb</span></a>
-        <a class="dl-link" href="https://www.mediafire.com/file/e29pt0rldgqus86/kastrava-27.0.0.x86_64.rpm/file" target="_blank" rel="noopener">Fedora<span class="fn">kastrava-27.0.0.x86_64.rpm</span></a>
       </div>
       <div class="dl-card reveal">
-        <svg width="40" height="40" viewBox="0 0 40 40" fill="none" stroke="#0288d1" stroke-width="2"><rect x="8" y="8" width="11" height="11"/><rect x="21" y="8" width="11" height="11" fill-opacity=".55" fill="#0288d1"/><rect x="8" y="21" width="11" height="11" fill-opacity=".55" fill="#0288d1"/><rect x="21" y="21" width="11" height="11" fill-opacity=".3" fill="#0288d1"/></svg>
+        <svg width="40" height="40" viewBox="0 0 40 40" fill="none" stroke="#8a93a1" stroke-width="2"><rect x="8" y="8" width="11" height="11"/><rect x="21" y="8" width="11" height="11" fill-opacity=".4" fill="#8a93a1"/><rect x="8" y="21" width="11" height="11" fill-opacity=".4" fill="#8a93a1"/><rect x="21" y="21" width="11" height="11" fill-opacity=".25" fill="#8a93a1"/></svg>
         <h3>Windows</h3>
-        <div class="plat">10+ · v27.0.0-beta</div>
-        <a class="dl-link" href="https://www.mediafire.com/file/9fmw8pxzbstms6d/Kastrava-Setup-27.0.0.exe/file" target="_blank" rel="noopener">Installer — recommended<span class="fn">Kastrava-Setup-27.0.0.exe</span></a>
-        <a class="dl-link" href="https://www.mediafire.com/file/9jcmb3u1y07o1pt/Kastrava-27.0.0.exe/file" target="_blank" rel="noopener">Portable<span class="fn">Kastrava-27.0.0.exe</span></a>
+        <div class="dl-ver" style="color:#b45309;background:#fef3c7;border-color:#fde68a">Coming soon</div>
+        <p style="font-size:13.5px;color:#5b6472;margin-bottom:16px">No native Windows build yet — it's in progress. Meanwhile, run Kastrava on Windows today:</p>
+        <a class="dl-link" href="#windows-bridge">Guide: VirtualBox / WSL<span class="fn">for old AnterSurf users</span></a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="windows-bridge">
+  <div class="container">
+    <div class="sec-kicker reveal">04 — ON WINDOWS?</div>
+    <h2 class="sec-title reveal">No native build yet. Two bridges.</h2>
+    <p class="sec-sub reveal">The Windows build is coming soon. Old AnterSurf users: run Kastrava on Windows today with either path.</p>
+    <div class="guide-grid">
+      <div class="guide-card reveal">
+        <h3>VirtualBox</h3>
+        <div class="for">easiest full desktop</div>
+        <ol>
+          <li>Install <b>VirtualBox</b> + Extension Pack from virtualbox.org</li>
+          <li>Download an <b>Ubuntu 24.04 LTS</b> ISO</li>
+          <li>Create a VM: 4 GB RAM, 25 GB disk, attach the ISO, install Ubuntu</li>
+          <li>Inside Ubuntu, grab the <b>Debian package</b> above and double-click it to install<div class="cmd">sudo apt install ./kastrava_27.0.0_amd64.deb</div></li>
+          <li>Launch Kastrava from Activities. Install Guest Additions for shared folders + clipboard.</li>
+        </ol>
+      </div>
+      <div class="guide-card reveal">
+        <h3>WSL</h3>
+        <div class="for">lightest, no VM window</div>
+        <ol>
+          <li>Needs Windows 10 21H2+ or 11 (for GUI apps). Admin PowerShell:<div class="cmd">wsl --install</div></li>
+          <li>Reboot, open Ubuntu, update it:<div class="cmd">sudo apt update &amp;&amp; sudo apt upgrade -y</div></li>
+          <li>Download the <b>Debian package</b> and install it:<div class="cmd">sudo apt install ./kastrava_27.0.0_amd64.deb</div></li>
+          <li>Run it — the window opens via WSLg:<div class="cmd">kastrava</div></li>
+          <li>Your profile lives at <span class="cmd" style="display:inline;padding:2px 8px">\\wsl$\Ubuntu\home\…\.config\kastrava</span></li>
+        </ol>
       </div>
     </div>
   </div>
@@ -201,14 +243,14 @@ footer a{color:#0288d1;text-decoration:none}
 
 <section>
   <div class="container">
-    <div class="sec-kicker reveal">04 — QUESTIONS</div>
+    <div class="sec-kicker reveal">05 — QUESTIONS</div>
     <h2 class="sec-title reveal">Asked often</h2>
     <p class="sec-sub reveal">Straight answers.</p>
     <div class="faq reveal" style="max-width:760px">
       <details><summary>What exactly is deleted when I quit?</summary><p>Everything websites stored: HTTP cache, cookies, DOM storage, IndexedDB, service-worker caches. They live in RAM under an in-memory session and are wiped on exit. Your own settings, bookmarks and history database stay — unless you switch those off too.</p></details>
       <details><summary>Is it really free? What's the catch?</summary><p>Free forever, no accounts, no telemetry to monetize. There is no catch — there's also no company infrastructure phoning home.</p></details>
       <details><summary>Why does it say Beta?</summary><p>Because it is. Kastrava (originally AnterSurf) is under active development — features land fast and rough edges exist. The privacy guarantees above are already enforced.</p></details>
-      <details><summary>Which platforms are supported?</summary><p>Linux (Arch, Debian/Ubuntu, Fedora) and Windows 10+. macOS and Android builds are discontinued.</p></details>
+      <details><summary>Which platforms are supported?</summary><p>Linux (Arch, Debian/Ubuntu) right now. A native Windows build is coming soon — meanwhile the <a href="#windows-bridge" style="color:#0288d1">Windows bridge guide</a> above gets you running. macOS, Fedora and Android builds are discontinued.</p></details>
       <details><summary>What search engine does it use?</summary><p>KastravaSearch (kastravasearch.pp.ua) — Kastrava's own search — is the default. DuckDuckGo, Brave, Google and Ecosia are one click away in Settings.</p></details>
     </div>
   </div>

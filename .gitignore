@@ -3,3 +3,8 @@ dist/
 release/
 build/
 *.log
+
+# makepkg working dirs
+packaging/arch/pkg/
+packaging/arch/src/
+*.pkg.tar.zst
