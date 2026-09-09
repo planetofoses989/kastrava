@@ -72,5 +72,8 @@ contextBridge.exposeInMainWorld('api', {
   radarGet: (wcId) => ipcRenderer.invoke('radar-get', wcId),
   radarClear: (wcId) => ipcRenderer.invoke('radar-clear', wcId),
   radarStats: (wcId) => ipcRenderer.invoke('radar-stats', wcId),
-  onRadarUpdate: (cb) => ipcRenderer.on('radar-update', (_, wcId, ev) => cb(wcId, ev))
+  onRadarUpdate: (cb) => ipcRenderer.on('radar-update', (_, wcId, ev) => cb(wcId, ev)),
+  licMachine: () => ipcRenderer.invoke('lic-machine'),
+  licStatus: () => ipcRenderer.invoke('lic-status'),
+  licActivate: (key) => ipcRenderer.invoke('lic-activate', key)
 })

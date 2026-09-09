@@ -3,6 +3,7 @@ const path = require('path')
 const fs = require('fs')
 const { spawn, spawnSync } = require('child_process')
 const backend = require('./backend')
+const license = require('./license')
 
 // Serve the browser UI over kastrava:// instead of file:// so no
 // filesystem paths leak (e.g. in DevTools titles) and the shell has a
@@ -448,6 +449,12 @@ ipcMain.handle('set-referrer', (_, value) => {
   if (settingsBackend) settingsBackend.set('sendReferrer', value)
   return true
 })
+
+// Kastrava Premium licensing
+ipcMain.handle('lic-machine', () => license.machineCode())
+ipcMain.handle('lic-status', () => license.status())
+ipcMain.handle('lic-activate', async (_, key) => license.activate(key))
+ipcMain.handle('lic-verify', (_, payload, sig) => license.verifyPayload(payload, sig))
 
 ipcMain.handle('get-bookmarks', () => {
   return all('SELECT * FROM bookmarks ORDER BY pos ASC, created_at DESC')

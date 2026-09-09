@@ -586,6 +586,13 @@ body.chrome-dark{--c-bg:#202124;--c-toolbar:#35363a;--c-tab-active:#35363a;--c-o
 "use strict";
 window.addEventListener("error", function(e){ console.log("[GLOBAL ERROR]", e.message, "at", e.lineno+":"+e.colno, e.filename); });
 var api=window.api;
+// Edition: 'premium' default (also when running from source); 'free' hides premium features.
+var EDITION=(typeof __EDITION__!=="undefined"&&__EDITION__)?__EDITION__:"premium";
+var KAS_API=(typeof __KAS_API__!=="undefined"&&__KAS_API__)?__KAS_API__:"http://127.0.0.1:8787";
+var LIC={activated:false,machine:"",key:null,reason:"no_license",expiresAt:null};
+function editionLabel(){if(EDITION==="free")return "Free";return LIC.activated?"Premium":"Free";}
+function isPremium(){if(EDITION==="free")return false;return !!(LIC&&LIC.activated);}
+function requirePremium(){if(isPremium())return true;toast("Kastrava Premium — only ₹500, one machine, lifetime");setTimeout(function(){openPremiumSection();},600);return false;}
 function $(id){return document.getElementById(id)}
 function qa(sel){return document.querySelectorAll(sel)}
 function esc(s){return(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")}
@@ -607,6 +614,53 @@ function loadSettings(){
   return api.getSettings().then(function(saved){
     if(saved&&typeof saved==="object"){for(var k in saved){if(saved[k]!==undefined&&saved[k]!==null&&k!="session")settings[k]=saved[k];}}
   }).catch(function(e){err("loadSettings",e);});
+}
+// Premium license: runtime unlock in premium build, always locked in free.
+function loadLicense(){
+  if(!api||!api.licStatus)return;
+  api.licStatus().then(function(s){if(s){LIC.activated=!!s.activated;LIC.machine=s.machine||"";LIC.key=s.key||null;LIC.reason=s.reason||null;LIC.expiresAt=s.expiresAt||null;}try{applyEditionUI();}catch(e){}}).catch(function(){});
+}
+function applyEditionUI(){
+  var prem=isPremium();
+  var br=$("btn-radar");if(br)br.style.display=prem?"":"none";
+  var bs=$("btn-split");if(bs)bs.style.display=prem?"":"none";
+  var wb=document.getElementById("workspaces-bar");
+  if(wb&&!prem)wb.classList.remove("visible");
+  if(!prem){
+    if(settings.theme!=="dark-0"&&settings.theme!=="light-0"){settings.theme="dark-0";saveSetting("theme","dark-0");}
+    if(!applyThemeKey(settings.theme||"dark-0")&&settings.accent){document.documentElement.style.setProperty("--accent",settings.accent);}
+    ["cursorFx","blobFx","glassFx","particleFx","clickSparkFx","pixelTrailFx","ribbonsFx"].forEach(function(k){if(settings[k]==="on"){settings[k]="off";saveSetting(k,"off");}});
+    try{applyAllFx();}catch(e){}
+  }else{
+    try{renderWorkspaces();}catch(e){}
+  }
+}
+function openPremiumSection(){openSettings();var item=document.querySelector('.settings-nav .sn-item[data-s="premium"]');if(item)item.click();else renderSettingsSection("premium");}
+async function activatePremium(key){
+  if(!api||!api.licActivate)return;
+  toast("Activating…");
+  var res=await api.licActivate(key);
+  if(!res||!res.ok){toast(res&&res.msg?res.msg:"Activation failed.");return;}
+  LIC.activated=true;LIC.key=res.license&&res.license.key?res.license.key:LIC.key;
+  applyEditionUI();try{renderSettingsSection("premium");}catch(e){}
+  toast("Premium activated — this machine is now licensed forever.");
+  try{renderWorkspaces();}catch(e){}
+}
+function copyText(t){
+  if(!t)return;
+  function legacy(){var ta=document.createElement("textarea");ta.value=t;ta.style.position="fixed";ta.style.opacity="0";document.body.appendChild(ta);ta.select();try{document.execCommand("copy");}catch(e){}document.body.removeChild(ta);}
+  if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t).catch(legacy);}else legacy();
+}
+function openPremiumStore(){
+  if(window.clickCheckout){window.clickCheckout();return;}
+  var url=KAS_API.replace(/\/$/,"")+"/#premium";
+  if(activeTab&&activeTab.wv){addTab(url);}else if(api&&api.openExternal){api.openExternal(url);}
+}
+function openOobBuy(machine){
+  if(window.clickCheckout){window.clickCheckout();return;}
+  var base=KAS_API.replace(/\/$/,"");
+  var url=base+"/#premium?machine="+encodeURIComponent(machine||"");
+  if(activeTab&&activeTab.wv){addTab(url);}else if(api&&api.openExternal){api.openExternal(url);}
 }
 function saveSetting(k,v){settings[k]=v;if(api&&api.setSetting)api.setSetting(k,v);}
 function applyFontSize(v){
@@ -1033,8 +1087,8 @@ function renderSetup(){
     setupBindChoices(function(v){setupEngine=v;});
     setupBindNav(2);
   }else if(setupStep===2){
-    var th=DARK_THEMES.slice(0,4).map(function(t,i){return {v:"dark-"+i,n:t.n,d:"Dark",c:t.bg};});
-    var tl=LIGHT_THEMES.slice(0,2).map(function(t,i){return {v:"light-"+i,n:t.n,d:"Light",c:t.bg};});
+    var th=(isPremium()?DARK_THEMES.slice(0,4):[DARK_THEMES[0]]).map(function(t,i){return {v:"dark-"+i,n:t.n,d:"Dark",c:t.bg};});
+    var tl=(isPremium()?LIGHT_THEMES.slice(0,2):[LIGHT_THEMES[0]]).map(function(t,i){return {v:"light-"+i,n:t.n,d:"Light",c:t.bg};});
     var all=th.concat(tl);
     var sw=all.map(function(o){return '<button class="setup-eng'+(setupThemeKey===o.v?' sel':'')+'" data-v="'+o.v+'"><span style="display:inline-block;width:14px;height:14px;border-radius:4px;background:'+o.c+';border:1px solid var(--c-border);vertical-align:-2px;margin-right:8px"></span>'+o.n+'<small>'+o.d+'</small></button>';}).join("");
     c.innerHTML=dots+grid(ART_THEME,'<div class="setup-name" style="font-size:24px;letter-spacing:2px">Theme</div><div class="setup-sub">Pick your look. Clean white is the default.</div><div class="setup-preview"><div class="setup-pv-tab"></div><div class="setup-pv-tab active"></div><div class="setup-pv-url"></div></div><div class="setup-engines">'+sw+'</div>',CONTINUE);
@@ -3171,6 +3225,7 @@ function toggleReader(){
 
 /* Split view */
 function toggleSplit(){
+  if(!requirePremium())return;
   splitOn=!splitOn;
   if(splitOn){
     if(prevTabId&&prevTabId!==activeTab.id&&tabMap[prevTabId])splitPartner=prevTabId;
@@ -3219,6 +3274,7 @@ async function renderRadar(){
   }
 }
 function toggleRadar(){
+  if(!requirePremium())return;
   radarOpen=!radarOpen;
   $("radar-panel").classList.toggle("visible",radarOpen);
   $("btn-radar").classList.toggle("on",radarOpen);
@@ -3282,14 +3338,26 @@ function closeSettings(){
 }
 function renderSettingsNav(){
   var nav=$("settings-nav");
-  var secs=[{id:"general",l:"General"},{id:"appearance",l:"Appearance"},{id:"search",l:"Search Engine"},{id:"privacy",l:"Privacy & Security"},{id:"shortcuts",l:"Shortcuts"},{id:"accessibility",l:"Accessibility"},{id:"system",l:"System"},{id:"reset",l:"Reset Settings"},{id:"about",l:"About"}];
+  var secs=[{id:"premium",l:"Kastrava Premium"},{id:"general",l:"General"},{id:"appearance",l:"Appearance"},{id:"search",l:"Search Engine"},{id:"privacy",l:"Privacy & Security"},{id:"shortcuts",l:"Shortcuts"},{id:"accessibility",l:"Accessibility"},{id:"system",l:"System"},{id:"reset",l:"Reset Settings"},{id:"about",l:"About"}];
   nav.innerHTML=secs.map(function(s){return "<div class=\"sn-item\" data-s=\""+s.id+"\">"+s.l+"</div>";}).join("");
   nav.querySelectorAll(".sn-item").forEach(function(el){el.addEventListener("click",function(){nav.querySelectorAll(".sn-item").forEach(function(x){x.classList.remove("active");});el.classList.add("active");renderSettingsSection(el.dataset.s);});});
   nav.querySelector(".sn-item").classList.add("active");renderSettingsSection("general");
 }
 function renderSettingsSection(id){
   var p=$("settings-panel");var h="";
-  if(id==="general"){h="<h3>General</h3>";
+  if(id==="premium"){h="<h3>Kastrava Premium</h3>";
+    h+="<div class=\"desc\" style=\"margin-bottom:12px\">Unlock Tracking Radar, Cursor FX, Workspaces, Split View and every theme \u2014 <b>one machine, lifetime, \u20B9500 (~$6)</b>.</div>";
+    h+="<div class=\"sg\"><div class=\"lbl\">Your Machine Code</div><div style=\"display:flex;gap:8px;align-items:center\"><code id=\"pm-machine\" style=\"flex:1;word-break:break-all;font-size:12px\">"+(LIC.machine||"…")+"</code><button class=\"btn-sm\" id=\"pm-copy\">Copy</button></div><div class=\"desc\">This code identifies <b>this PC</b>. Your license is bound to it \u2014 copying the app to another machine won't transfer it.</div></div>";
+    if(LIC.activated){
+      h+="<div class=\"sg\"><div class=\"lbl\">Status</div><div class=\"desc\" style=\"font-weight:600;color:#2e7d32\">\u2713 Premium activated on this machine.</div><div class=\"desc\">Key: <code style=\"font-size:12px\">"+(LIC.key||"")+"</code>"+(LIC.expiresAt?" &middot; valid until "+new Date(LIC.expiresAt).toLocaleDateString():"")+"</div></div>";
+    }else{
+      h+="<div class=\"sg\"><div class=\"lbl\">Activation Key</div><input type=\"text\" id=\"s-lickey\" style=\"font-family:var(--font-mono);letter-spacing:.5px\" placeholder=\"KAS-XXXX-XXXX-XXXX-XXXX\" autocomplete=\"off\" spellcheck=\"false\"><div class=\"desc\">Paste the key you received after paying, then click Activate.</div></div>";
+      h+="<div class=\"sg\" style=\"display:flex;gap:8px;flex-wrap:wrap\"><button class=\"btn-sm btn-accent\" id=\"s-licactivate\">Activate Premium</button><button class=\"btn-sm\" id=\"s-licbuy\">Buy now \u2014 \u20B9500</button><button class=\"btn-sm\" id=\"s-liccopy\">Copy machine code</button></div>";
+      h+="<div class=\"desc\" style=\"margin-top:6px\">No key yet? Buy at <a href=\"#\" id=\"s-licbuylink\" style=\"color:var(--accent)\">kastrava.dev</a> \u2014 you'll get a key instantly via Razorpay.</div>";
+    }
+    h+="<div class=\"sg\"><div class=\"lbl\">What's in Premium</div><div class=\"desc\">\u2022 Tracking Radar (live per-tab tracker score)<br>\u2022 Cursor Effects: Mouse Style, Fluid Splash, Blob Trail, Glass Lens, Particle Trail, Click Spark, Pixel Trail, Ribbons<br>\u2022 Workspaces<br>\u2022 Split View<br>\u2022 All 20 dark + light themes</div></div>";
+  }
+  else if(id==="general"){h="<h3>General</h3>";
     h+="<div class=\"sg\"><div class=\"lbl\">Startup</div><select id=\"s-startup\"><option value=\"last\">Restore previous session</option><option value=\"blank\">New tab</option></select></div>";
     h+="<div class=\"sg\"><div class=\"lbl\">Font Size</div><select id=\"s-fontsize\"><option value=\"11\">Small</option><option value=\"12\">Medium</option><option value=\"14\">Large</option></select></div>";
     h+="<div class=\"sg\"><div class=\"lbl\">Default Zoom</div><select id=\"s-zoom\"><option value=\"100\">100%</option><option value=\"110\">110%</option><option value=\"125\">125%</option><option value=\"150\">150%</option><option value=\"175\">175%</option><option value=\"200\">200%</option></select><div class=\"desc\">Applied to all new tabs.</div></div>";
@@ -3297,10 +3365,10 @@ function renderSettingsSection(id){
   }
   else if(id==="appearance"){h="<h3>Appearance</h3>";
     h+="<div class=\"sg\"><div class=\"lbl\">Dark Themes</div><div id=\"s-presets-dark\" style=\"display:flex;gap:6px;flex-wrap:wrap\">";
-    DARK_THEMES.forEach(function(p,i){h+="<div data-idx=\""+i+"\" data-type=\"dark\" style=\"width:28px;height:28px;border-radius:6px;background:"+p.bg+";cursor:pointer;border:2px solid "+(settings.theme===("dark-"+i)?p.ac:"transparent")+";position:relative;overflow:hidden;transition:border .15s,transform .15s\" title=\""+p.n+"\" class=\"theme-btn\"><div style=\"position:absolute;top:0;left:0;right:0;height:6px;background:"+p.tbg+"\"></div><div style=\"position:absolute;bottom:0;left:0;right:0;height:3px;background:"+p.tb+"\"></div></div>";});
+    (isPremium()?DARK_THEMES:[DARK_THEMES[0]]).forEach(function(p,i){h+="<div data-idx=\""+i+"\" data-type=\"dark\" style=\"width:28px;height:28px;border-radius:6px;background:"+p.bg+";cursor:pointer;border:2px solid "+(settings.theme===("dark-"+i)?p.ac:"transparent")+";position:relative;overflow:hidden;transition:border .15s,transform .15s\" title=\""+p.n+"\" class=\"theme-btn\"><div style=\"position:absolute;top:0;left:0;right:0;height:6px;background:"+p.tbg+"\"></div><div style=\"position:absolute;bottom:0;left:0;right:0;height:3px;background:"+p.tb+"\"></div></div>";});
     h+="</div></div>";
     h+="<div class=\"sg\"><div class=\"lbl\">Light Themes</div><div id=\"s-presets-light\" style=\"display:flex;gap:6px;flex-wrap:wrap\">";
-    LIGHT_THEMES.forEach(function(p,i){h+="<div data-idx=\""+i+"\" data-type=\"light\" style=\"width:28px;height:28px;border-radius:6px;background:"+p.bg+";cursor:pointer;border:2px solid "+(settings.theme===("light-"+i)?p.ac:"transparent")+";position:relative;overflow:hidden;transition:border .15s,transform .15s\" title=\""+p.n+"\" class=\"theme-btn\"><div style=\"position:absolute;top:0;left:0;right:0;height:6px;background:"+p.tbg+"\"></div><div style=\"position:absolute;bottom:0;left:0;right:0;height:3px;background:"+p.tb+"\"></div></div>";});
+    (isPremium()?LIGHT_THEMES:[LIGHT_THEMES[0]]).forEach(function(p,i){h+="<div data-idx=\""+i+"\" data-type=\"light\" style=\"width:28px;height:28px;border-radius:6px;background:"+p.bg+";cursor:pointer;border:2px solid "+(settings.theme===("light-"+i)?p.ac:"transparent")+";position:relative;overflow:hidden;transition:border .15s,transform .15s\" title=\""+p.n+"\" class=\"theme-btn\"><div style=\"position:absolute;top:0;left:0;right:0;height:6px;background:"+p.tbg+"\"></div><div style=\"position:absolute;bottom:0;left:0;right:0;height:3px;background:"+p.tb+"\"></div></div>";});
     h+="</div></div>";
     h+="<div class=\"sg\"><div class=\"lbl\">Show Bookmark Bar</div><select id=\"s-bmbar\"><option value=\"auto\">Auto</option><option value=\"always\">Always</option><option value=\"never\">Never</option></select></div>";
     h+="<div class=\"sg\"><div class=\"lbl\">Accent Color</div><div class=\"accent-row\" id=\"accent-swatches\">";
@@ -3313,6 +3381,7 @@ function renderSettingsSection(id){
     h+="<div class=\"sg-switch\"><div style=\"flex:1\"><div class=\"lbl\">Show Copy Link Button</div><div class=\"desc\">Adds a copy button to the address bar.</div></div><div class=\"checkbox-wrapper-10\"><input type=\"checkbox\" id=\"s-copybtn\" class=\"tgl tgl-flip\"><label for=\"s-copybtn\" data-tg-on=\"On\" data-tg-off=\"Off\" class=\"tgl-btn\"></label></div></div>";
     h+="<div class=\"sg-switch\"><div style=\"flex:1\"><div class=\"lbl\">Show Clock on New Tab</div><div class=\"desc\">Displays the current time on the new tab page.</div></div><div class=\"checkbox-wrapper-10\"><input type=\"checkbox\" id=\"s-ntpclock\" class=\"tgl tgl-flip\"><label for=\"s-ntpclock\" data-tg-on=\"On\" data-tg-off=\"Off\" class=\"tgl-btn\"></label></div></div>";
     h+="<div class=\"sg-switch\"><div style=\"flex:1\"><div class=\"lbl\">Show Logo on New Tab</div><div class=\"desc\">Displays the Kastrava logo on the new tab page.</div></div><div class=\"checkbox-wrapper-10\"><input type=\"checkbox\" id=\"s-ntplogo\" class=\"tgl tgl-flip\"><label for=\"s-ntplogo\" data-tg-on=\"On\" data-tg-off=\"Off\" class=\"tgl-btn\"></label></div></div>";
+    if(isPremium()){
     h+="<div class=\"sg-sep\">Mouse</div>";
     h+="<div class=\"sg\"><div class=\"lbl\">Mouse Style</div><select id=\"s-cursorstyle\"><option value=\"system\">System Default</option><option value=\"custom\">Custom Arrow</option></select><div class=\"desc\">Custom Arrow replaces the OS cursor with an animated pointer that trails your mouse.</div></div>";
     h+="<div id=\"cursorstyle-opts\" style=\"display:none\">";
@@ -3365,6 +3434,7 @@ function renderSettingsSection(id){
     h+="<div class=\"sg\"><div class=\"lbl\">Thickness</div><select id=\"s-ribbonsthickness\"><option value=\"thin\">Thin</option><option value=\"medium\">Medium</option><option value=\"thick\">Thick</option></select></div>";
     h+="<div class=\"sg\"><div class=\"lbl\">Points</div><select id=\"s-ribbonspoints\"><option value=\"30\">30</option><option value=\"50\">50</option><option value=\"80\">80</option></select></div>";
     h+="</div>";
+    }
   }
   else if(id==="search"){h="<h3>Search Engine</h3>";
     h+="<div class=\"sg\"><div class=\"lbl\">Default Search Engine</div><select id=\"s-se\"><option value=\"kastravasearch\">KastravaSearch (Default, Beta)</option><option value=\"duckduckgo\">DuckDuckGo</option><option value=\"brave\">Brave Search</option><option value=\"google\">Google</option><option value=\"ecosia\">Ecosia</option></select><div class=\"desc\">KastravaSearch is Kastrava's own private search engine.</div></div>";
@@ -3408,7 +3478,7 @@ function renderSettingsSection(id){
     h+="<div class=\"sg\"><button class=\"btn-sm btn-accent\" id=\"s-setupreplay\">Replay Welcome Setup</button><div class=\"desc\">Show the first-run setup wizard again.</div></div>";
   }
   else if(id==="about"){h="<h3>About</h3>";
-    h+="<div class=\"about-card\"><img src=\"logo.png\"><div><div class=\"name\">Kastrava <span style=\"font-size:10px;font-weight:700;background:rgba(245,158,11,.15);color:#f59e0b;padding:2px 8px;border-radius:10px;vertical-align:2px;letter-spacing:.5px\">BETA</span></div><div class=\"ver\">Version 27.0.0 &mdash; Starship Explorer &mdash; the most private browser</div></div></div>";
+    h+="<div class=\"about-card\"><img src=\"logo.png\"><div><div class=\"name\">Kastrava <span style=\"font-size:10px;font-weight:700;background:rgba(245,158,11,.15);color:#f59e0b;padding:2px 8px;border-radius:10px;vertical-align:2px;letter-spacing:.5px\">BETA</span></div><div class=\"ver\">Version 27.0.0 &mdash; Starship Explorer &mdash; the most private browser &mdash; "+editionLabel()+"</div></div></div>";
     h+="<div class=\"sg\"><div class=\"lbl\">A new voyage through the web</div><div class=\"desc\">Kastrava 27 &ldquo;Starship Explorer&rdquo; is a fast, privacy-first browser designed for a cleaner web. It ships with an ad and tracker radar, cookie controls, fluid cursor effects, a redesigned new-tab experience, and deep theming &mdash; all tuned to stay out of your way.</div></div>";
     h+="<div class=\"sg\"><div class=\"lbl\">Made by Kastrasoft</div><div class=\"desc\">Built for absolute privacy.<br>Email: planetofoses989@gmail.com</div></div>";
   }
@@ -3577,6 +3647,13 @@ function bindSettingsEvents(id){
           btn.classList.add("rec");
         });
       });
+    }else if(id==="premium"){
+      var pc=$("pm-copy");if(pc)pc.addEventListener("click",function(){copyText(LIC.machine);toast("Machine code copied");});
+      var mce=$("s-lickey");
+      var act=$("s-licactivate");if(act)act.addEventListener("click",function(){activatePremium(mce?mce.value.trim():"");});
+      var buy=$("s-licbuy");if(buy)buy.addEventListener("click",function(){openOobBuy(LIC.machine);});
+      var buylink=$("s-licbuylink");if(buylink)buylink.addEventListener("click",function(e){e.preventDefault();openOobBuy(LIC.machine);});
+      var ccm=$("s-liccopy");if(ccm)ccm.addEventListener("click",function(){copyText(LIC.machine);toast("Machine code copied");});
     }else if(id==="reset"){
       function doResetSettings(){settings={setupDone:"1",searchEngine:"kastravasearch",accent:"#4fc3f7",fontSize:"12",reduceAnimations:"off",hwAcc:"on",dnt:"on",tracking:"strict",suggest:"off",bookmarkBar:"auto",startup:"last",confirmClose:"off",historyEnabled:"on",bookmarksEnabled:"on",cookies:"off",location:"block",zoom:"100",uiRadius:"medium",speedDial:"comfortable",showHomeBtn:"off",showCopyBtn:"on",showNtpClock:"on",showNtpLogo:"on",shortcuts:{},maxSuggestions:"8",launchMaximized:"off",sendReferrer:"off",cursorFx:"off",cursorFxMode:"color",cursorFxColor:"#4fc3f7",cursorFxForce:"medium",cursorFxSize:"medium",blobFx:"off",blobColor:"#2f6fed",blobCount:"3",blobSize:"medium",blobOpacity:"0.6",blobShape:"circle",glassFx:"off",glassColor:"#3b82f6",glassShape:"sphere",glassSize:"medium",glassOpacity:"0.5",particleFx:"off",particleColor:"#3b82f6",particleSize:"medium",particleDensity:"medium",clickSparkFx:"off",clickSparkColor:"#ffffff",clickSparkSize:"medium",clickSparkCount:"8",clickSparkDuration:"400",pixelTrailFx:"off",pixelTrailColor:"#ffffff",pixelTrailGrid:"medium",pixelTrailTrail:"medium",ribbonsFx:"off",ribbonsColor:"#2f6fed",ribbonsThickness:"medium",ribbonsPoints:"50",cursorStyle:"system",cursorStyleColor:"#ffffff"};if(api&&api.setSetting){Object.keys(settings).forEach(function(k){api.setSetting(k,settings[k]);});}document.documentElement.style.cssText="";applyFontSize("12");applyReduceAnim("off");applyUiRadius("medium");applySpeedDial("comfortable");applyHomeBtn("off");applyCopyBtn("on");applyNtpClock("on");applyNtpLogo("on");applyBookmarkBar("auto");applyHistoryEnabled("on");applyBookmarksEnabled("on");applyAllFx();toast("Settings reset.");}
       var rs=$("s-reset");if(rs)rs.addEventListener("click",function(){showConfirmModal(function(){doResetSettings();},{title:"Reset all settings?",desc:"Restore all settings to defaults. This cannot be reverted!"});});
@@ -3737,10 +3814,12 @@ function init(){
       try{applyHistoryEnabled(settings.historyEnabled||"on");}catch(e){}
       try{applyBookmarksEnabled(settings.bookmarksEnabled||"on");}catch(e){}
       try{applyAllFx();}catch(e){}
+      try{applyEditionUI();}catch(e){}
       try{bindFxVisibility();}catch(e){}
       try{maybeShowSetup();}catch(e){}
     }).catch(function(e){err("loadSettings",e);});
   }catch(e){err("loadSettings",e);}
+  try{loadLicense();}catch(e){}
   try{bindOmnibox();}catch(e){err("bindOmnibox",e);}
   try{bindKeyboard();}catch(e){err("bindKeyboard",e);}
   try{bindShortcutRecorder();}catch(e){err("bindShortcutRecorder",e);}
@@ -3773,7 +3852,7 @@ function init(){
 }
 if(document.readyState==="loading"){document.addEventListener("DOMContentLoaded",init);}else{init();}
 window.addTab=addTab; window.selectTab=selectTab; window.closeTab=closeTab; window.tabs=tabs; window.tabMap=tabMap;
-window.esc=esc; window.reloadPage=reloadPage; window.goBack=goBack; window.goForward=goForward; window.openFindBar=openFindBar; window.takeScreenshot=takeScreenshot; window.togglePip=togglePip; window.toggleReader=toggleReader; window.toggleSplit=toggleSplit; window.toggleRadar=toggleRadar; window.viewSource=viewSource; window.openSideTab=openSideTab; window.openSettings=openSettings; window.goHome=goHome; window.openAgPanel=openAgPanel; window.cycleTab=cycleTab; window.showPage=showPage; window.applyThemeKey=applyThemeKey; window.saveSetting=saveSetting; window.toast=toast;
+window.esc=esc; window.reloadPage=reloadPage; window.goBack=goBack; window.goForward=goForward; window.openFindBar=openFindBar; window.takeScreenshot=takeScreenshot; window.togglePip=togglePip; window.toggleReader=toggleReader; window.toggleSplit=toggleSplit; window.toggleRadar=toggleRadar; window.viewSource=viewSource; window.openSideTab=openSideTab; window.openSettings=openSettings; window.goHome=goHome; window.openAgPanel=openAgPanel; window.cycleTab=cycleTab; window.showPage=showPage; window.applyThemeKey=applyThemeKey; window.saveSetting=saveSetting; window.toast=toast; window.EDITION=EDITION; window.isPremium=isPremium; window.requirePremium=requirePremium; window.activatePremium=activatePremium; window.loadLicense=loadLicense; window.KAS_API=KAS_API; window.LIC=LIC; window.clickCheckout=null; window.openPremiumStore=openPremiumStore; window.copyText=copyText;
 Object.defineProperty(window,'activeTab',{configurable:true,get:function(){return activeTab;}});
 Object.defineProperty(window,'settings',{configurable:true,get:function(){return settings;}});
 })();
@@ -3900,6 +3979,7 @@ function renderWorkspaces(){
   });
 }
 function toggleWorkspaces(){
+  if(!W.requirePremium())return;
   var el=document.getElementById('workspaces-bar');if(!el)return;
   el.classList.toggle('visible');
   if(el.classList.contains('visible'))renderWorkspaces();
@@ -3907,7 +3987,7 @@ function toggleWorkspaces(){
 window.toggleWorkspaces=toggleWorkspaces;
 
 // ===== INITIALIZE =====
-renderWorkspaces();
+if(!W.isPremium||W.isPremium())renderWorkspaces();
 })();
 
 </script>

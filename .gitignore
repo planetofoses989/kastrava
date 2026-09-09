@@ -8,3 +8,10 @@ build/
 packaging/arch/pkg/
 packaging/arch/src/
 *.pkg.tar.zst
+
+# License server runtime data + signing keys (never commit the private key)
+server/data/
+server/secrets/
+server/.env
+
+.scratch/
