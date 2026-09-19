@@ -1,24 +1,25 @@
 # Kastrava Browser
 
-An open-source, freemium web browser designed for modern web standards, deep desktop integration, and flexible user workflows.
+An open-source, GPLv3-licensed, privacy-first web browser designed for modern web standards, deep desktop integration, and flexible user workflows.
 
 ---
 
-## Model & Edition Matrix
+## Model & Licensing
 
-Kastrava is distributed under an open-source core with optional premium extensions and managed cloud services.
+Kastrava is 100% open source under the **GNU General Public License v3.0 (GPLv3)** for both free and paid offerings—with **zero cloud dependence and zero telemetry**.
 
-* **Core Edition (Free & Open Source)**: Complete access to the core engine, customizable shell, and desktop features under the GNU GPL v3.0.
-* **Pro / Enterprise (Paid Tier)**: Access to dedicated cloud sync infrastructure, priority security feed updates, enterprise management tools, and extended cloud APIs.
+* **Free Community Edition**: Complete access to the full source code, build scripts, and desktop browser features under GPLv3.
+* **Paid / Pro Supporter Tier**: A paid option for pre-compiled official binaries, priority issue triage, direct developer support, and funding ongoing development—without locking away any core functionality or compromising local privacy.
 
 ---
 
 ## Features
 
-* **Open Core Architecture**: Fully transparent, community-driven core browser engine.
+* **Privacy-First & Offline-Focused**: No cloud sync, no remote backends, and no user tracking. All data remains strictly on your local machine.
+* **100% Open Codebase**: Fully transparent, community-driven, and licensed under GPLv3.
 * **Desktop Integration**: Direct system hooks for high-performance navigation and shell interactions.
-* **Modern Web Standards**: Full compatibility with contemporary client-side frameworks, APIs, and rendering standards.
-* **Extensible Ecosystem**: Support for custom client modifications, plugins, and premium cloud add-ons.
+* **Modern Web Standards**: Full support for contemporary web APIs, client-side frameworks, and browser features.
+* **Extensible Ecosystem**: Local-only plugin architecture for custom client modifications and offline extensions.
 
 ---
 
@@ -48,20 +49,21 @@ Ensure you have the following installed on your system before building:
 
 ## Building from Source
 
-To package production binaries for the open-source release:
+To compile production executables locally:
 
 npm run build
 
-The compiled executables will be generated in the dist/ directory.
+The compiled binaries will be generated in the dist/ directory.
 
 ---
 
-## Pro & Cloud Features
+## Paid Support & Sponsorship
 
-For users operating Kastrava in managed environments or seeking cloud synchronization services:
+While Kastrava is entirely free and open source, users and organizations can support the project financially:
 
-* Upgrade or activate license keys directly within the application settings (Settings -> License).
-* Manage cloud backup endpoints and premium extensions via your account dashboard.
+* Purchase official pre-compiled release packages to support maintenance.
+* Gain priority issue handling and direct consultation.
+* Enterprise sponsorship options to fund targeted offline security improvements.
 
 ---
 
