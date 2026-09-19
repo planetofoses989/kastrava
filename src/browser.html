@@ -416,6 +416,40 @@ body.chrome-dark{--c-bg:#202124;--c-toolbar:#35363a;--c-tab-active:#35363a;--c-o
 .mm-item{transition:background .1s,padding-left .15s}
 .mm-item:hover{padding-left:16px}
 .side-panel.open{box-shadow:-18px 0 60px rgba(0,0,0,.4),0 0 40px rgba(79,195,247,.07)}
+/* ===== VERTICAL TABS ===== */
+#vtabs-bar{display:none;width:232px;flex-direction:column;background:var(--c-bg);border-right:1px solid var(--c-border);flex-shrink:0;min-height:0;min-width:0}
+body.vertical-tabs #vtabs-bar{display:flex}
+body.vertical-tabs .titlebar .tab-strip{display:none}
+body.vertical-tabs .titlebar #new-tab-btn{display:none}
+body.vertical-tabs .titlebar{-webkit-app-region:drag}
+body.vertical-tabs .titlebar .win-ctrls{-webkit-app-region:no-drag}
+.vtabs-header{display:flex;align-items:center;gap:6px;padding:10px 10px 6px;flex-shrink:0}
+.vtabs-title{flex:1;font-size:11px;font-weight:600;letter-spacing:.8px;text-transform:uppercase;color:var(--c-text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.vtabs-count{font-size:10px;font-weight:600;color:var(--c-text2);background:var(--c-surface);border:1px solid var(--c-border);border-radius:10px;padding:1px 7px;flex-shrink:0}
+.vtabs-tool{width:26px;height:26px;border:none;background:none;color:var(--c-text2);cursor:pointer;border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .12s,color .12s}
+.vtabs-tool:hover{background:var(--c-hover);color:var(--c-text)}
+.vtabs-tool svg{width:14px;height:14px}
+#vtabs-list{flex:1;overflow-y:auto;overflow-x:hidden;padding:2px 8px 8px;display:flex;flex-direction:column;gap:3px;min-height:0}
+#vtabs-list::-webkit-scrollbar{width:0}
+#vtabs-list:hover::-webkit-scrollbar{width:8px}
+body.vertical-tabs .tab-item{height:36px;min-width:0;max-width:none;width:100%;flex-shrink:0;border-radius:8px;margin-top:0;padding:0 8px}
+body.vertical-tabs .tab-item.active{background:var(--c-toolbar)}
+body.vertical-tabs .tab-item.active::before{top:8px;bottom:8px;left:0;right:auto;width:3px;height:auto;border-radius:0 3px 3px 0}
+body.vertical-tabs .tab-item .tab-title{font-size:12px}
+#vtabs-list .tab-item.drag-over{outline:1px dashed var(--accent);outline-offset:-1px}
+.vtabs-footer{display:flex;align-items:center;gap:6px;padding:8px;border-top:1px solid var(--c-line);flex-shrink:0}
+.vtabs-new{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;height:32px;border:1px dashed var(--c-border);border-radius:8px;background:none;color:var(--c-text2);cursor:pointer;font-size:12px;font-family:inherit;transition:border-color .15s,color .15s,background .15s}
+.vtabs-new:hover{border-color:var(--accent);color:var(--accent);background:var(--c-surface)}
+.vtabs-new svg{width:14px;height:14px;fill:none;stroke:currentColor}
+body.vtabs-collapsed #vtabs-bar{width:60px}
+body.vtabs-collapsed .vtabs-title,body.vtabs-collapsed .vtabs-count{display:none}
+body.vtabs-collapsed #vtabs-list{padding:2px 6px 8px}
+body.vtabs-collapsed #vtabs-list .tab-item{justify-content:center;padding:0}
+body.vtabs-collapsed #vtabs-list .tab-item .tab-title,body.vtabs-collapsed #vtabs-list .tab-item .tab-pin,body.vtabs-collapsed #vtabs-list .tab-item .tab-audio,body.vtabs-collapsed #vtabs-list .tab-item .tab-close-btn{display:none!important}
+body.vtabs-collapsed #vtabs-list .tab-item:hover .tab-close-btn{display:none!important}
+body.vtabs-collapsed .vtabs-new span{display:none}
+body.vtabs-collapsed .vtabs-new{border-style:solid}
+@media(max-width:760px){#vtabs-bar{width:200px}body.vtabs-collapsed #vtabs-bar{width:52px}}
 
 </style>
 </head>
@@ -465,6 +499,8 @@ body.chrome-dark{--c-bg:#202124;--c-toolbar:#35363a;--c-tab-active:#35363a;--c-o
   <div class="mm-item" data-act="split">Split View</div>
   <div class="mm-item" data-act="radar">Tracking Radar</div>
   <div class="mm-sep"></div>
+  <div class="mm-item" data-act="vtabs">Vertical Tabs</div>
+  <div class="mm-sep"></div>
   <div class="mm-item" data-act="find">Find in Page</div>
   <div class="mm-item" data-act="shot">Screenshot</div>
 </div>
@@ -476,6 +512,17 @@ body.chrome-dark{--c-bg:#202124;--c-toolbar:#35363a;--c-tab-active:#35363a;--c-o
   <button id="find-close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
 </div>
 <div class="main-row">
+<div id="vtabs-bar">
+  <div class="vtabs-header">
+    <span class="vtabs-title">Tabs</span>
+    <span class="vtabs-count" id="vtabs-count">0</span>
+    <button class="vtabs-tool" id="vtabs-collapse" title="Collapse sidebar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg></button>
+  </div>
+  <div id="vtabs-list"></div>
+  <div class="vtabs-footer">
+    <button class="vtabs-new" id="vtabs-new" title="New tab"><svg viewBox="0 0 24 24" stroke-width="1.5" stroke-linecap="round"><path d="M12 22C17.5 22 22 17.5 22 12C22 6.5 17.5 2 12 2C6.5 2 2 6.5 2 12C2 17.5 6.5 22 12 22Z"/><path d="M8 12H16"/><path d="M12 16V8"/></svg><span>New tab</span></button>
+  </div>
+</div>
 <div class="content" id="content">
   <div class="ntp visible chrome-ntp" id="ntp">
     <img class="ntp-logo" src="logo.png" alt="">
@@ -600,7 +647,7 @@ function isBlank(u){return!u||u==="about:newtab"||u==="about:localhost"||u==="ab
 function err(fn,e){console.error("[Kastrava]",fn,e)}
 var tabs=[];var tabMap={};var activeTab=null;var tabIdCounter=0;
 var agDownloads=[];var agIdMap={};var bookmarkUrls=new Set();
-var settings={setupDone:"",searchEngine:"kastravasearch",accent:"#4fc3f7",fontSize:"12",reduceAnimations:"off",hwAcc:"on",dnt:"on",tracking:"strict",suggest:"off",bookmarkBar:"auto",startup:"last",confirmClose:"off",historyEnabled:"on",bookmarksEnabled:"on",cookies:"off",location:"block",zoom:"100",uiRadius:"medium",speedDial:"comfortable",showHomeBtn:"off",showCopyBtn:"on",showNtpClock:"on",showNtpLogo:"on",shortcuts:{},maxSuggestions:"8",launchMaximized:"off",sendReferrer:"off",cursorFx:"off",cursorFxMode:"color",cursorFxColor:"#4fc3f7",cursorFxForce:"medium",cursorFxSize:"medium",blobFx:"off",blobColor:"#2f6fed",blobCount:"3",blobSize:"medium",blobOpacity:"0.6",blobShape:"circle",glassFx:"off",glassColor:"#3b82f6",glassShape:"sphere",glassSize:"medium",glassOpacity:"0.5",particleFx:"off",particleColor:"#3b82f6",particleSize:"medium",particleDensity:"medium",clickSparkFx:"off",clickSparkColor:"#ffffff",clickSparkSize:"medium",clickSparkCount:"8",clickSparkDuration:"400",pixelTrailFx:"off",pixelTrailColor:"#ffffff",pixelTrailGrid:"medium",pixelTrailTrail:"medium",ribbonsFx:"off",ribbonsColor:"#2f6fed",ribbonsThickness:"medium",ribbonsPoints:"50",cursorStyle:"system",cursorStyleColor:"#ffffff"};
+var settings={setupDone:"",searchEngine:"kastravasearch",accent:"#4fc3f7",fontSize:"12",reduceAnimations:"off",hwAcc:"on",dnt:"on",tracking:"strict",suggest:"off",bookmarkBar:"auto",startup:"last",confirmClose:"off",historyEnabled:"on",bookmarksEnabled:"on",cookies:"off",location:"block",zoom:"100",uiRadius:"medium",speedDial:"comfortable",showHomeBtn:"off",showCopyBtn:"on",showNtpClock:"on",showNtpLogo:"on",tabLayout:"horizontal",vtabsCollapsed:"off",shortcuts:{},maxSuggestions:"8",launchMaximized:"off",sendReferrer:"off",cursorFx:"off",cursorFxMode:"color",cursorFxColor:"#4fc3f7",cursorFxForce:"medium",cursorFxSize:"medium",blobFx:"off",blobColor:"#2f6fed",blobCount:"3",blobSize:"medium",blobOpacity:"0.6",blobShape:"circle",glassFx:"off",glassColor:"#3b82f6",glassShape:"sphere",glassSize:"medium",glassOpacity:"0.5",particleFx:"off",particleColor:"#3b82f6",particleSize:"medium",particleDensity:"medium",clickSparkFx:"off",clickSparkColor:"#ffffff",clickSparkSize:"medium",clickSparkCount:"8",clickSparkDuration:"400",pixelTrailFx:"off",pixelTrailColor:"#ffffff",pixelTrailGrid:"medium",pixelTrailTrail:"medium",ribbonsFx:"off",ribbonsColor:"#2f6fed",ribbonsThickness:"medium",ribbonsPoints:"50",cursorStyle:"system",cursorStyleColor:"#ffffff"};
 var INTERCEPT_URL="";
 var splitOn=false;var splitPartner=null;var prevTabId=null;
 var closedTabs=[];
@@ -718,6 +765,38 @@ function applyBookmarkBar(v){
 }
 function applyHistoryEnabled(v){settings.historyEnabled=v;document.body.classList.toggle("no-history",v==="off");}
 function applyBookmarksEnabled(v){settings.bookmarksEnabled=v;document.body.classList.toggle("no-bookmarks",v==="off");}
+function applyTabLayout(v){
+  settings.tabLayout=(v==="vertical")?"vertical":"horizontal";
+  document.body.classList.toggle("vertical-tabs",settings.tabLayout==="vertical");
+  try{
+    var c=$("vtabs-count");if(c)c.textContent=String(tabs.length);
+    var col=$("vtabs-collapse");
+    if(col)col.innerHTML=document.body.classList.contains("vtabs-collapsed")
+      ?'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>'
+      :'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>';
+  }catch(e){}
+  try{if(activeTab)scrollVTabIntoView(activeTab.id);}catch(e){}
+}
+function applyVtabsCollapsed(v){
+  settings.vtabsCollapsed=(v==="on")?"on":"off";
+  document.body.classList.toggle("vtabs-collapsed",settings.vtabsCollapsed==="on");
+  try{
+    var col=$("vtabs-collapse");
+    if(col)col.innerHTML=document.body.classList.contains("vtabs-collapsed")
+      ?'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>'
+      :'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>';
+  }catch(e){}
+}
+function toggleTabLayout(){
+  var next=settings.tabLayout==="vertical"?"horizontal":"vertical";
+  saveSetting("tabLayout",next);applyTabLayout(next);
+  toast(next==="vertical"?"Vertical tabs on":"Horizontal tabs on");
+}
+function scrollVTabIntoView(id){
+  var list=$("vtabs-list");if(!list)return;
+  var el=list.querySelector('.tab-item[data-id="'+id+'"]');
+  if(el&&el.scrollIntoView)el.scrollIntoView({block:"nearest"});
+}
 var SHORTCUT_ACTIONS={
   newTab:{label:"New tab",default:"Ctrl+T",extra:["Ctrl+N"]},
   closeTab:{label:"Close tab",default:"Ctrl+W"},
@@ -739,7 +818,8 @@ var SHORTCUT_ACTIONS={
   radar:{label:"Tracking Radar",default:"Ctrl+Shift+K"},
   screenshot:{label:"Screenshot",default:"Ctrl+Shift+S"},
   mute:{label:"Mute tab",default:"Ctrl+Shift+M"},
-  kastget:{label:"Open Kastget",default:"Ctrl+Shift+P"}
+  kastget:{label:"Open Kastget",default:"Ctrl+Shift+P"},
+  vtabs:{label:"Toggle vertical tabs",default:"Ctrl+Shift+V"}
 };
 function shortcutCombo(e){
   var mods="";
@@ -788,6 +868,7 @@ function runShortcut(a){
     case "screenshot":takeScreenshot();break;
     case "mute":if(activeTab)toggleMute(activeTab.id);break;
     case "kastget":openAgPanel();break;
+    case "vtabs":toggleTabLayout();break;
   }
 }
 // OS menu accelerators (main process) -> same actions. Menu accelerators
@@ -949,24 +1030,62 @@ function closeTab(id){
   }
   renderTabs();saveSession();
 }
-function renderTabs(){
-  var list=$("tab-list");if(!list)return;
-  list.innerHTML=tabs.map(function(t){
+function tabHTML(t){
     var fav=t.loading?"<span class=\"tab-spinner\"><svg viewBox=\"25 25 50 50\"><circle r=\"20\" cy=\"50\" cx=\"50\"></circle></svg></span>":(t.favicon?"<img class=\"tab-favicon\" src=\""+t.favicon+"\" onerror=\"this.style.display='none'\">":"<span class=\"tab-favicon placeholder\"><svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'><circle cx='12' cy='12' r='10'/></svg></span>");
     var cls="tab-item"+(activeTab&&activeTab.id===t.id?" active":"")+(t.loading?" loading":"")+(t.playing?" playing":"")+(t.muted?" muted":"")+(t.pinned?" pinned":"");
     var audio=t.playing?"<svg class=\"tab-audio\" data-id=\""+t.id+"\" title=\""+(t.muted?"Unmute":"Mute")+"\" viewBox=\"0 0 24 24\" fill=\"currentColor\">"+(t.muted?"<path d='M3 9v6h4l5 5V4L7 9H3z'/><line x1='16' y1='9' x2='22' y2='15' stroke='currentColor' stroke-width='2'/><line x1='22' y1='9' x2='16' y2='15' stroke='currentColor' stroke-width='2'/>":"<path d='M3 9v6h4l5 5V4L7 9H3z'/>")+"</svg>":"";
-    return "<div class=\""+cls+"\" data-id=\""+t.id+"\">"+fav+"<span class=\"tab-title\">"+esc(t.title||"New Tab")+"</span><span class=\"tab-pin\">&#x1F4CC;</span>"+audio+"<button class=\"tab-close-btn\"><svg viewBox=\"0 0 12 12\"><path d=\"M2 2l8 8M10 2l-8 8\" stroke=\"currentColor\" stroke-width=\"1.5\" fill=\"none\"/></svg></button></div>";
-  }).join("");
+    var tip=esc((t.title||"New Tab")+(t.url&&!isBlank(t.url)?" — "+t.url:""));
+    return "<div class=\""+cls+"\" data-id=\""+t.id+"\" title=\""+tip+"\" draggable=\"true\">"+fav+"<span class=\"tab-title\">"+esc(t.title||"New Tab")+"</span><span class=\"tab-pin\">&#x1F4CC;</span>"+audio+"<button class=\"tab-close-btn\"><svg viewBox=\"0 0 12 12\"><path d=\"M2 2l8 8M10 2l-8 8\" stroke=\"currentColor\" stroke-width=\"1.5\" fill=\"none\"/></svg></button></div>";
+}
+function bindTabList(list){
   list.querySelectorAll(".tab-item").forEach(function(el){
     var id=parseInt(el.dataset.id);
     el.addEventListener("pointerdown",function(e){if(e.button===0)selectTab(id);});
     el.addEventListener("auxclick",function(e){if(e.button===1){e.preventDefault();closeTab(id);}});
     var closeBtn=el.querySelector(".tab-close-btn");
-    closeBtn.addEventListener("pointerdown",function(e){e.stopPropagation();});
-    closeBtn.addEventListener("click",function(e){e.stopPropagation();closeTab(id);});
+    if(closeBtn){
+      closeBtn.addEventListener("pointerdown",function(e){e.stopPropagation();});
+      closeBtn.addEventListener("click",function(e){e.stopPropagation();closeTab(id);});
+    }
     var audioEl=el.querySelector(".tab-audio");
     if(audioEl)audioEl.addEventListener("click",function(e){e.stopPropagation();toggleMute(id);});
+    // Drag to reorder (works in both strips; both lists stay in sync via renderTabs)
+    el.addEventListener("dragstart",function(e){try{e.dataTransfer.setData("text/kastrava-tab",String(id));e.dataTransfer.effectAllowed="move";}catch(x){}});
+    el.addEventListener("dragover",function(e){
+      if(!e.dataTransfer||!e.dataTransfer.types||e.dataTransfer.types.indexOf("text/kastrava-tab")<0){
+        try{if(e.dataTransfer.types&&e.dataTransfer.types.length)return;}catch(x){return;}
+      }
+      e.preventDefault();e.dataTransfer.dropEffect="move";el.classList.add("drag-over");
+    });
+    el.addEventListener("dragleave",function(){el.classList.remove("drag-over");});
+    el.addEventListener("drop",function(e){
+      e.preventDefault();el.classList.remove("drag-over");
+      var src=null;try{src=parseInt(e.dataTransfer.getData("text/kastrava-tab"));}catch(x){}
+      if(!src||src===id)return;
+      moveTab(src,id);e.stopPropagation();
+    });
   });
+}
+function moveTab(srcId,dstId){
+  var si=tabs.findIndex(function(t){return t.id===srcId;});
+  var di=tabs.findIndex(function(t){return t.id===dstId;});
+  if(si<0||di<0||si===di)return;
+  var m=tabs.splice(si,1)[0];
+  di=tabs.findIndex(function(t){return t.id===dstId;});
+  tabs.splice(di,0,m);
+  renderTabs();saveSession();
+}
+function renderTabs(){
+  var html=tabs.map(tabHTML).join("");
+  var list=$("tab-list");if(list){list.innerHTML=html;bindTabList(list);}
+  var vlist=$("vtabs-list");
+  if(vlist){
+    vlist.innerHTML=html;bindTabList(vlist);
+    try{
+      var c=$("vtabs-count");if(c)c.textContent=String(tabs.length);
+      if(activeTab)scrollVTabIntoView(activeTab.id);
+    }catch(e){}
+  }
 }
 function showPage(id){
   var tab=tabMap[id];if(!tab)return;
@@ -3377,6 +3496,8 @@ function renderSettingsSection(id){
     h+="</div><button class=\"btn-sm\" id=\"s-accentreset\" style=\"margin-top:10px\">Reset</button><div class=\"desc\">Custom accent color. Clears the active theme.</div></div>";
     h+="<div class=\"sg\"><div class=\"lbl\">Corner Radius</div><select id=\"s-radius\"><option value=\"small\">Small</option><option value=\"medium\">Medium</option><option value=\"large\">Large</option></select><div class=\"desc\">Rounding of tabs, panels and menus.</div></div>";
     h+="<div class=\"sg\"><div class=\"lbl\">Speed Dial Size</div><select id=\"s-scsize\"><option value=\"comfortable\">Comfortable</option><option value=\"compact\">Compact</option></select></div>";
+    h+="<div class=\"sg\"><div class=\"lbl\">Tab Layout</div><select id=\"s-tablayout\"><option value=\"horizontal\">Horizontal (top)</option><option value=\"vertical\">Vertical (side)</option></select><div class=\"desc\">Vertical tabs show a sidebar with full titles, count and drag-to-reorder. Shortcut: Ctrl+Shift+V.</div></div>";
+    h+="<div class=\"sg-switch\"><div style=\"flex:1\"><div class=\"lbl\">Collapse Vertical Sidebar</div><div class=\"desc\">Show icons only in vertical mode.</div></div><div class=\"checkbox-wrapper-10\"><input type=\"checkbox\" id=\"s-vtabscollapse\" class=\"tgl tgl-flip\"><label for=\"s-vtabscollapse\" data-tg-on=\"On\" data-tg-off=\"Off\" class=\"tgl-btn\"></label></div></div>";
     h+="<div class=\"sg-switch\"><div style=\"flex:1\"><div class=\"lbl\">Show Home Button</div><div class=\"desc\">Adds a home button to the toolbar.</div></div><div class=\"checkbox-wrapper-10\"><input type=\"checkbox\" id=\"s-homebtn\" class=\"tgl tgl-flip\"><label for=\"s-homebtn\" data-tg-on=\"On\" data-tg-off=\"Off\" class=\"tgl-btn\"></label></div></div>";
     h+="<div class=\"sg-switch\"><div style=\"flex:1\"><div class=\"lbl\">Show Copy Link Button</div><div class=\"desc\">Adds a copy button to the address bar.</div></div><div class=\"checkbox-wrapper-10\"><input type=\"checkbox\" id=\"s-copybtn\" class=\"tgl tgl-flip\"><label for=\"s-copybtn\" data-tg-on=\"On\" data-tg-off=\"Off\" class=\"tgl-btn\"></label></div></div>";
     h+="<div class=\"sg-switch\"><div style=\"flex:1\"><div class=\"lbl\">Show Clock on New Tab</div><div class=\"desc\">Displays the current time on the new tab page.</div></div><div class=\"checkbox-wrapper-10\"><input type=\"checkbox\" id=\"s-ntpclock\" class=\"tgl tgl-flip\"><label for=\"s-ntpclock\" data-tg-on=\"On\" data-tg-off=\"Off\" class=\"tgl-btn\"></label></div></div>";
@@ -3517,6 +3638,10 @@ function bindSettingsEvents(id){
       bindChange("s-radius",function(v){sv("uiRadius",v);applyUiRadius(v);});
       setSel("s-scsize",settings.speedDial||"comfortable");
       bindChange("s-scsize",function(v){sv("speedDial",v);applySpeedDial(v);});
+      setSel("s-tablayout",settings.tabLayout||"horizontal");
+      bindChange("s-tablayout",function(v){sv("tabLayout",v);applyTabLayout(v);});
+      setCheck("s-vtabscollapse","on",settings.vtabsCollapsed);
+      bindCheck("s-vtabscollapse","on","off",function(v){sv("vtabsCollapsed",v);applyVtabsCollapsed(v);});
       setCheck("s-homebtn","on",settings.showHomeBtn);
       bindCheck("s-homebtn","on","off",function(v){sv("showHomeBtn",v);applyHomeBtn(v);});
       setCheck("s-copybtn","on",settings.showCopyBtn);
@@ -3655,7 +3780,7 @@ function bindSettingsEvents(id){
       var buylink=$("s-licbuylink");if(buylink)buylink.addEventListener("click",function(e){e.preventDefault();openOobBuy(LIC.machine);});
       var ccm=$("s-liccopy");if(ccm)ccm.addEventListener("click",function(){copyText(LIC.machine);toast("Machine code copied");});
     }else if(id==="reset"){
-      function doResetSettings(){settings={setupDone:"1",searchEngine:"kastravasearch",accent:"#4fc3f7",fontSize:"12",reduceAnimations:"off",hwAcc:"on",dnt:"on",tracking:"strict",suggest:"off",bookmarkBar:"auto",startup:"last",confirmClose:"off",historyEnabled:"on",bookmarksEnabled:"on",cookies:"off",location:"block",zoom:"100",uiRadius:"medium",speedDial:"comfortable",showHomeBtn:"off",showCopyBtn:"on",showNtpClock:"on",showNtpLogo:"on",shortcuts:{},maxSuggestions:"8",launchMaximized:"off",sendReferrer:"off",cursorFx:"off",cursorFxMode:"color",cursorFxColor:"#4fc3f7",cursorFxForce:"medium",cursorFxSize:"medium",blobFx:"off",blobColor:"#2f6fed",blobCount:"3",blobSize:"medium",blobOpacity:"0.6",blobShape:"circle",glassFx:"off",glassColor:"#3b82f6",glassShape:"sphere",glassSize:"medium",glassOpacity:"0.5",particleFx:"off",particleColor:"#3b82f6",particleSize:"medium",particleDensity:"medium",clickSparkFx:"off",clickSparkColor:"#ffffff",clickSparkSize:"medium",clickSparkCount:"8",clickSparkDuration:"400",pixelTrailFx:"off",pixelTrailColor:"#ffffff",pixelTrailGrid:"medium",pixelTrailTrail:"medium",ribbonsFx:"off",ribbonsColor:"#2f6fed",ribbonsThickness:"medium",ribbonsPoints:"50",cursorStyle:"system",cursorStyleColor:"#ffffff"};if(api&&api.setSetting){Object.keys(settings).forEach(function(k){api.setSetting(k,settings[k]);});}document.documentElement.style.cssText="";applyFontSize("12");applyReduceAnim("off");applyUiRadius("medium");applySpeedDial("comfortable");applyHomeBtn("off");applyCopyBtn("on");applyNtpClock("on");applyNtpLogo("on");applyBookmarkBar("auto");applyHistoryEnabled("on");applyBookmarksEnabled("on");applyAllFx();toast("Settings reset.");}
+      function doResetSettings(){settings={setupDone:"1",searchEngine:"kastravasearch",accent:"#4fc3f7",fontSize:"12",reduceAnimations:"off",hwAcc:"on",dnt:"on",tracking:"strict",suggest:"off",bookmarkBar:"auto",startup:"last",confirmClose:"off",historyEnabled:"on",bookmarksEnabled:"on",cookies:"off",location:"block",zoom:"100",uiRadius:"medium",speedDial:"comfortable",showHomeBtn:"off",showCopyBtn:"on",showNtpClock:"on",showNtpLogo:"on",tabLayout:"horizontal",vtabsCollapsed:"off",shortcuts:{},maxSuggestions:"8",launchMaximized:"off",sendReferrer:"off",cursorFx:"off",cursorFxMode:"color",cursorFxColor:"#4fc3f7",cursorFxForce:"medium",cursorFxSize:"medium",blobFx:"off",blobColor:"#2f6fed",blobCount:"3",blobSize:"medium",blobOpacity:"0.6",blobShape:"circle",glassFx:"off",glassColor:"#3b82f6",glassShape:"sphere",glassSize:"medium",glassOpacity:"0.5",particleFx:"off",particleColor:"#3b82f6",particleSize:"medium",particleDensity:"medium",clickSparkFx:"off",clickSparkColor:"#ffffff",clickSparkSize:"medium",clickSparkCount:"8",clickSparkDuration:"400",pixelTrailFx:"off",pixelTrailColor:"#ffffff",pixelTrailGrid:"medium",pixelTrailTrail:"medium",ribbonsFx:"off",ribbonsColor:"#2f6fed",ribbonsThickness:"medium",ribbonsPoints:"50",cursorStyle:"system",cursorStyleColor:"#ffffff"};if(api&&api.setSetting){Object.keys(settings).forEach(function(k){api.setSetting(k,settings[k]);});}document.documentElement.style.cssText="";applyFontSize("12");applyReduceAnim("off");applyUiRadius("medium");applySpeedDial("comfortable");applyHomeBtn("off");applyCopyBtn("on");applyNtpClock("on");applyNtpLogo("on");applyTabLayout("horizontal");applyVtabsCollapsed("off");applyBookmarkBar("auto");applyHistoryEnabled("on");applyBookmarksEnabled("on");applyAllFx();toast("Settings reset.");}
       var rs=$("s-reset");if(rs)rs.addEventListener("click",function(){showConfirmModal(function(){doResetSettings();},{title:"Reset all settings?",desc:"Restore all settings to defaults. This cannot be reverted!"});});
       var ra=$("s-resetall");if(ra)ra.addEventListener("click",function(){showConfirmModal(function(){doResetSettings();clearAllData();},{title:"Reset everything?",desc:"Restore defaults and delete all history, bookmarks and top sites. This cannot be reverted!"});});
       var sr=$("s-setupreplay");if(sr)sr.addEventListener("click",function(){try{saveSetting("setupDone","");}catch(e){}setupRestart();});
@@ -3686,10 +3811,11 @@ function toggleMoreMenu(){
   var r=b.getBoundingClientRect();
   m.style.left=Math.max(4,Math.min(r.left,window.innerWidth-230))+"px";
   m.style.top=(r.bottom+6)+"px";
-  var acts={home:{fn:goHome},hist:{fn:function(){openSideTab("history");}},dls:{fn:function(){openSideTab("downloads");}},reader:{fn:toggleReader},pip:{fn:togglePip},split:{fn:toggleSplit,on:"btn-split"},radar:{fn:toggleRadar,on:"btn-radar"},find:{fn:openFindBar},shot:{fn:takeScreenshot}};
+  var acts={home:{fn:goHome},hist:{fn:function(){openSideTab("history");}},dls:{fn:function(){openSideTab("downloads");}},reader:{fn:toggleReader},pip:{fn:togglePip},split:{fn:toggleSplit,on:"btn-split"},radar:{fn:toggleRadar,on:"btn-radar"},find:{fn:openFindBar},shot:{fn:takeScreenshot},vtabs:{fn:toggleTabLayout}};
   m.querySelectorAll(".mm-item").forEach(function(el){
     var d=acts[el.dataset.act];
     var on=d&&d.on&&$(d.on)&&$(d.on).classList.contains("on");
+    if(el.dataset.act==="vtabs")on=document.body.classList.contains("vertical-tabs");
     el.classList.toggle("on",!!on);
     el.onclick=function(){if(d)d.fn();m.classList.remove("visible");};
   });
@@ -3813,6 +3939,8 @@ function init(){
       try{applyBookmarkBar(settings.bookmarkBar);}catch(e){}
       try{applyHistoryEnabled(settings.historyEnabled||"on");}catch(e){}
       try{applyBookmarksEnabled(settings.bookmarksEnabled||"on");}catch(e){}
+      try{applyTabLayout(settings.tabLayout||"horizontal");}catch(e){}
+      try{applyVtabsCollapsed(settings.vtabsCollapsed||"off");}catch(e){}
       try{applyAllFx();}catch(e){}
       try{applyEditionUI();}catch(e){}
       try{bindFxVisibility();}catch(e){}
@@ -3836,6 +3964,8 @@ function init(){
   try{bindWindowControls();}catch(e){err("bindWindowControls",e);}
   try{$("btn-back").addEventListener("click",goBack);$("btn-fwd").addEventListener("click",goForward);$("btn-reload").addEventListener("click",reloadPage);$("btn-home").addEventListener("click",goHome);}catch(e){}
   try{$("new-tab-btn").addEventListener("click",function(){addTab();});}catch(e){}
+  try{var _vtn=$("vtabs-new");if(_vtn)_vtn.addEventListener("click",function(){addTab();});}catch(e){}
+  try{var _vtc=$("vtabs-collapse");if(_vtc)_vtc.addEventListener("click",function(){var nv=settings.vtabsCollapsed==="on"?"off":"on";saveSetting("vtabsCollapsed",nv);applyVtabsCollapsed(nv);});}catch(e){}
   try{$("btn-pip").addEventListener("click",togglePip);$("btn-reader").addEventListener("click",toggleReader);$("btn-split").addEventListener("click",toggleSplit);$("btn-radar").addEventListener("click",toggleRadar);}catch(e){}
   try{$("radar-close").addEventListener("click",function(){if(radarOpen)toggleRadar();});}catch(e){}
   try{initClock();loadTopSites();bindNTPSearch();}catch(e){err("ntp",e);}
@@ -3852,7 +3982,7 @@ function init(){
 }
 if(document.readyState==="loading"){document.addEventListener("DOMContentLoaded",init);}else{init();}
 window.addTab=addTab; window.selectTab=selectTab; window.closeTab=closeTab; window.tabs=tabs; window.tabMap=tabMap;
-window.esc=esc; window.reloadPage=reloadPage; window.goBack=goBack; window.goForward=goForward; window.openFindBar=openFindBar; window.takeScreenshot=takeScreenshot; window.togglePip=togglePip; window.toggleReader=toggleReader; window.toggleSplit=toggleSplit; window.toggleRadar=toggleRadar; window.viewSource=viewSource; window.openSideTab=openSideTab; window.openSettings=openSettings; window.goHome=goHome; window.openAgPanel=openAgPanel; window.cycleTab=cycleTab; window.showPage=showPage; window.applyThemeKey=applyThemeKey; window.saveSetting=saveSetting; window.toast=toast; window.EDITION=EDITION; window.isPremium=isPremium; window.requirePremium=requirePremium; window.activatePremium=activatePremium; window.loadLicense=loadLicense; window.KAS_API=KAS_API; window.LIC=LIC; window.clickCheckout=null; window.openPremiumStore=openPremiumStore; window.copyText=copyText;
+window.esc=esc; window.reloadPage=reloadPage; window.goBack=goBack; window.goForward=goForward; window.openFindBar=openFindBar; window.takeScreenshot=takeScreenshot; window.togglePip=togglePip; window.toggleReader=toggleReader; window.toggleSplit=toggleSplit; window.toggleRadar=toggleRadar; window.viewSource=viewSource; window.openSideTab=openSideTab; window.openSettings=openSettings; window.goHome=goHome; window.openAgPanel=openAgPanel; window.cycleTab=cycleTab; window.showPage=showPage; window.applyThemeKey=applyThemeKey; window.saveSetting=saveSetting; window.toast=toast; window.toggleTabLayout=toggleTabLayout; window.applyTabLayout=applyTabLayout; window.applyVtabsCollapsed=applyVtabsCollapsed; window.EDITION=EDITION; window.isPremium=isPremium; window.requirePremium=requirePremium; window.activatePremium=activatePremium; window.loadLicense=loadLicense; window.KAS_API=KAS_API; window.LIC=LIC; window.clickCheckout=null; window.openPremiumStore=openPremiumStore; window.copyText=copyText;
 Object.defineProperty(window,'activeTab',{configurable:true,get:function(){return activeTab;}});
 Object.defineProperty(window,'settings',{configurable:true,get:function(){return settings;}});
 })();
@@ -3916,6 +4046,7 @@ var COMMANDS=[
   {name:'Light Theme',icon:'\u2600\uFE0F',action:function(){W.applyThemeKey('light-0');W.saveSetting('theme','light-0');}},
   {name:'Dark Theme',icon:'\uD83C\uDF19',action:function(){W.applyThemeKey('dark-0');W.saveSetting('theme','dark-0');}},
   {name:'Show Workspaces',icon:'\uD83D\uDCE6',action:function(){toggleWorkspaces();}},
+  {name:'Toggle Vertical Tabs',icon:'\u2195',action:function(){if(W.toggleTabLayout)W.toggleTabLayout();},keys:'Ctrl+Shift+V'},
   {name:'History',icon:'\u23F3',action:function(){W.openSideTab('history');}},
   {name:'Bookmarks',icon:'\u2B50',action:function(){W.openSideTab('bookmarks');}},
   {name:'Downloads (Kastget)',icon:'\u2B07\uFE0F',action:function(){W.addTab('about:kastget');}},
