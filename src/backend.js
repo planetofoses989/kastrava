@@ -27,6 +27,8 @@ const DEFAULTS = {
   showCopyBtn: 'on',
   showNtpClock: 'on',
   showNtpLogo: 'on',
+  tabLayout: 'horizontal',
+  vtabsCollapsed: 'off',
   setupDone: '',
   shortcuts: {},
   maxSuggestions: '8',

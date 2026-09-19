@@ -287,7 +287,9 @@ function buildMenu() {
       { label: 'Toggle Fullscreen', accelerator: 'F11', click: () => { try { if (mainWindow && !mainWindow.isDestroyed()) mainWindow.setFullScreen(!mainWindow.isFullScreen()) } catch {} } },
       { label: 'Focus Address Bar', accelerator: 'CommandOrControl+L', click: () => sendShortcut('focusOmnibox') },
       { label: 'Focus Address Bar', accelerator: 'Alt+D', click: () => sendShortcut('focusOmnibox') },
-      { label: 'Find in Page', accelerator: 'CommandOrControl+F', click: () => sendShortcut('find') }
+      { label: 'Find in Page', accelerator: 'CommandOrControl+F', click: () => sendShortcut('find') },
+      { type: 'separator' },
+      { label: 'Toggle Vertical Tabs', accelerator: 'CommandOrControl+Shift+V', click: () => sendShortcut('vtabs') }
     ]},
     { label: 'Tabs', submenu: [
       { label: 'Next Tab', accelerator: 'CommandOrControl+Tab', click: () => sendShortcut('nextTab') },
