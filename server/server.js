@@ -2,12 +2,16 @@
 //   npm run server            -> dev mode (no Razorpay keys needed)
 //   RAZORPAY_KEY_ID=.. RAZORPAY_KEY_SECRET=.. ADMIN_TOKEN=.. npm run server
 // Env (also readable from server/.env):
-//   PORT            default 8787
-//   KAS_HOST        public base URL used in responses, default http://127.0.0.1:8787
-//   PRICE_INR       price in rupees, default 500
-//   LICENSE_YEARS   license lifetime in years, default 10
-//   PREMIUM_BUILD   filesystem path to the premium install package served after payment
-//   DATA_DIR        store location, default ../data
+//   PORT                  default 8787
+//   BIND_HOST             interface to bind, default 127.0.0.1 (0.0.0.0 for a public/bare deployment)
+//   KAS_HOST              public base URL used in responses, default http://127.0.0.1:8787
+//   PRICE_INR             subscription price per 34-day billing cycle, default 199
+//   GRACE_DAYS            days past expiry before access is revoked, default 3
+//   RAZORPAY_PLAN_ID      34-day plan id (optional; cached in DATA_DIR/plan.json)
+//   RAZORPAY_WEBHOOK_SECRET  secret for /api/webhook signature verification
+//   LICENSE_YEARS         legacy fallback for old one-time keys, default 10
+//   PREMIUM_BUILD         filesystem path to the premium install package served after payment
+//   DATA_DIR              store location, default ../data
 const http = require('http')
 const fs = require('fs')
 const path = require('path')
@@ -18,8 +22,10 @@ const sign = require('./lib/sign')
 const razorpay = require('./lib/razorpay')
 
 const port = parseInt(process.env.PORT || '8787', 10)
+const BIND_HOST = process.env.BIND_HOST || '127.0.0.1'
 const HOST = process.env.KAS_HOST || 'http://127.0.0.1:' + port
-const PRICE_INR = parseInt(process.env.PRICE_INR || '500', 10)
+const PRICE_INR = parseInt(process.env.PRICE_INR || '199', 10)
+const GRACE_DAYS = parseInt(process.env.GRACE_DAYS || '3', 10)
 const LICENSE_YEARS = parseInt(process.env.LICENSE_YEARS || '10', 10)
 const PREMIUM_BUILD = process.env.PREMIUM_BUILD || ''
 const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, 'data')
@@ -62,23 +68,44 @@ function readBody(req) {
     let data = ''
     req.on('data', (c) => { data += c; if (data.length > 1e6) req.destroy() })
     req.on('end', () => {
-      try { resolve(JSON.parse(data || '{}')) } catch { resolve({}) }
+      let parsed = {}
+      try { parsed = JSON.parse(data || '{}') } catch {}
+      resolve({ raw: data, parsed })
     })
-    req.on('error', () => resolve({}))
+    req.on('error', () => resolve({ raw: data, parsed: {} }))
   })
+}
+
+function licenseExpirySeconds(lic) {
+  let end = null
+  if (lic && lic.expires_at) end = Math.floor(new Date(lic.expires_at).getTime() / 1000)
+  // Fall back to the subscription's period end (covers licenses issued
+  // before the expiry was seeded).
+  if (!end && lic && lic.subscription_id) {
+    const sub = store.getSubscription(lic.subscription_id)
+    if (sub && sub.current_end) end = Math.floor(new Date(sub.current_end).getTime() / 1000)
+  }
+  if (!end) return null
+  return end + GRACE_DAYS * 86400
 }
 
 function makeLicensePayload(key, machineId) {
   const now = Math.floor(Date.now() / 1000)
-  return {
+  const lic = store.getLicense(key)
+  const exp = licenseExpirySeconds(lic)
+  const payload = {
     sub: key,
     mid: (machineId || '').toUpperCase(),
     product: 'kastrava-premium',
     edition: 'premium',
     iss: 'kastrasoft',
     iat: now,
-    exp: now + LICENSE_YEARS * 365 * 24 * 3600
+    // Subscription keys expire at period end + grace; legacy one-time
+    // keys (no expires_at in store) keep the long LICENSE_YEARS lifetime.
+    exp: exp || now + LICENSE_YEARS * 365 * 24 * 3600
   }
+  if (lic && lic.expires_at) payload.sub_end = Math.floor(new Date(lic.expires_at).getTime() / 1000)
+  return payload
 }
 
 function adminOk(req) {
@@ -120,7 +147,7 @@ function servePremium(res, key) {
 }
 
 async function handlePost(req, res, pathname) {
-  const body = await readBody(req)
+  const { raw, parsed: body } = await readBody(req)
 
   if (pathname === '/api/order') {
     try {
@@ -154,6 +181,81 @@ async function handlePost(req, res, pathname) {
       store.issueLicense(key, order_id)
     }
     return json(res, 200, { ok: true, key, already_paid: false })
+  }
+
+  // ---- subscriptions (₹199/34 days, auto-renew, webhook-driven) ----
+
+  if (pathname === '/api/subscribe') {
+    try {
+      const planId = razorpay.ensurePlan(DATA_DIR, PRICE_INR * 100)
+      const s = await razorpay.createSubscription(planId)
+      const meta = {}
+      if (typeof body.name === 'string' && body.name) meta.name = body.name
+      if (typeof body.email === 'string' && body.email) meta.email = body.email
+      store.createSubscription(s.subscription_id, meta)
+      return json(res, 200, { subscription_id: s.subscription_id, key_id: s.key_id, dev: !!s.dev })
+    } catch (e) {
+      return json(res, 500, { error: 'subscribe_failed', msg: String(e.message || e) })
+    }
+  }
+
+  if (pathname === '/api/verify-subscription') {
+    const { subscription_id, payment_id, signature } = body
+    if (!subscription_id || !payment_id) return json(res, 400, { error: 'bad_request' })
+    const sub = store.getSubscription(String(subscription_id))
+    if (!sub) return json(res, 404, { error: 'subscription_not_found' })
+    if (sub.status === 'active' || sub.status === 'paid') {
+      const k = store.keyForSubscription(String(subscription_id))
+      return json(res, 200, { ok: true, already_paid: true, key: k })
+    }
+    if (!razorpay.verifySubSignature(String(payment_id), String(subscription_id), String(signature || ''))) {
+      return json(res, 403, { error: 'bad_signature', msg: 'Payment could not be verified.' })
+    }
+    // Pull the authoritative period end from Razorpay (dev mode returns a
+    // synthetic one). Fallback: one month from now.
+    let currentEnd = null
+    try {
+      const rs = await razorpay.fetchSubscription(String(subscription_id))
+      if (rs && rs.current_end) currentEnd = new Date(rs.current_end * 1000).toISOString()
+    } catch {}
+    if (!currentEnd && !razorpay.isDev()) currentEnd = new Date(Date.now() + 31 * 86400 * 1000).toISOString()
+    store.markSubPaid(String(subscription_id), String(payment_id), currentEnd)
+    let key = store.keyForSubscription(String(subscription_id))
+    if (!key) {
+      key = sign.makeLicenseKey()
+      store.issueLicense(key, null, String(subscription_id))
+    }
+    // Seed the license expiry from the subscription's period end.
+    if (currentEnd) store.extendLicense(key, currentEnd)
+    return json(res, 200, { ok: true, key, already_paid: false })
+  }
+
+  // Razorpay webhook: renews extend the license expiry; cancellations stop it.
+  if (pathname === '/api/webhook') {
+    if (!razorpay.verifyWebhookSignature(raw, (req.headers['x-razorpay-signature'] || '').toString())) {
+      return json(res, 400, { error: 'bad_signature', msg: 'Webhook signature verification failed.' })
+    }
+    try {
+      const ent = body.payload && body.payload.subscription && body.payload.subscription.entity
+      if (ent && ent.id) {
+        const subId = String(ent.id)
+        const sub = store.getSubscription(subId)
+        if (sub) {
+          if (ent.current_end) {
+            const key = store.keyForSubscription(subId)
+            if (key) store.extendLicense(key, new Date(ent.current_end * 1000).toISOString())
+          }
+          if (body.event === 'subscription.charged' || body.event === 'subscription.activated') {
+            store.setSubscriptionStatus(subId, 'active')
+          } else if (body.event === 'subscription.cancelled' || body.event === 'subscription.completed' || body.event === 'subscription.halted') {
+            store.setSubscriptionStatus(subId, 'cancelled')
+          }
+        }
+      }
+    } catch (e) {
+      console.error('[webhook] error:', e)
+    }
+    return json(res, 200, { ok: true })
   }
 
   if (pathname === '/api/activate') {
@@ -218,7 +320,7 @@ const server = http.createServer((req, res) => {
 
   if (req.method === 'GET') {
     if (pathname === '/api/health') {
-      return json(res, 200, { ok: true, dev: razorpay.isDev(), host: HOST, price: PRICE_INR, version: '27.0.0' })
+      return json(res, 200, { ok: true, dev: razorpay.isDev(), host: HOST, price: PRICE_INR, grace_days: GRACE_DAYS, version: '27.0.0' })
     }
     const dl = pathname.match(/^\/api\/dl\/(.+)$/)
     if (dl) return servePremium(res, decodeURIComponent(dl[1]))
@@ -232,8 +334,8 @@ const server = http.createServer((req, res) => {
   return json(res, 405, { error: 'method_not_allowed' })
 })
 
-server.listen(port, () => {
-  console.log('[kastrava-licenses] listening on http://127.0.0.1:' + port)
-  console.log('[kastrava-licenses] host=' + HOST + ' price=INR ' + PRICE_INR + ' dev=' + razorpay.isDev())
+server.listen(port, BIND_HOST, () => {
+  console.log('[kastrava-licenses] listening on http://' + BIND_HOST + ':' + port)
+  console.log('[kastrava-licenses] host=' + HOST + ' price=INR ' + PRICE_INR + '/34d grace=' + GRACE_DAYS + 'd dev=' + razorpay.isDev())
   console.log('[kastrava-licenses] premium_build=' + (PREMIUM_BUILD || '(not configured — set PREMIUM_BUILD)'))
 })

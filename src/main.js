@@ -1,7 +1,6 @@
 const { app, BrowserWindow, ipcMain, Menu, nativeTheme, nativeImage, clipboard, shell, dialog, protocol } = require('electron')
 const path = require('path')
 const fs = require('fs')
-const { spawn, spawnSync } = require('child_process')
 const backend = require('./backend')
 const license = require('./license')
 
@@ -138,20 +137,15 @@ function createWindow() {
   const ses = require('electron').session.fromPartition('kastrava')
 
   ses.on('will-download', (event, item) => {
-    const url = item.getURL()
-    // Native fallback engine: a download started via Kastget when curl
-    // is unavailable. Let it proceed into our tracked item.
-    if (fallbackPending.has(url)) {
-      const id = fallbackPending.get(url)
-      fallbackPending.delete(url)
-      attachNativeDownload(id, item)
-      return
-    }
-    event.preventDefault()
-    if (mainWindow) mainWindow.webContents.send('show-download-modal', {
-      url,
-      filename: item.getFilename()
-    })
+    // Browser-style downloads: Chromium handles networking (cookies,
+    // auth, redirects) and the file streams into the Downloads folder
+    // while we track progress, exactly like any other browser.
+    const id = ++agIdCounter
+    const fp = agFinalPath(item.getFilename())
+    const dl = { id, url: item.getURL(), filename: path.basename(fp), outputPath: fp, received: 0, total: 0, speed: 0, state: 'downloading', proc: null, item: null, _timer: null, _lastCheck: null, _lastBytes: 0 }
+    agDownloads.set(id, dl)
+    attachNativeDownload(id, item)
+    dl._timer = setTimeout(() => agPoll(id), 500)
   })
 
   // Tracking Radar: live per-tab tracker monitoring
@@ -311,7 +305,7 @@ function buildMenu() {
       { label: 'Tracking Radar', accelerator: 'CommandOrControl+Shift+K', click: () => sendShortcut('radar') },
       { label: 'Screenshot', accelerator: 'CommandOrControl+Shift+S', click: () => sendShortcut('screenshot') },
       { label: 'Mute Tab', accelerator: 'CommandOrControl+Shift+M', click: () => sendShortcut('mute') },
-      { label: 'Open Kastget', accelerator: 'CommandOrControl+Shift+P', click: () => sendShortcut('kastget') },
+      { label: 'Downloads', accelerator: 'CommandOrControl+Shift+P', click: () => sendShortcut('kastget') },
       { label: 'Developer Tools', accelerator: 'F12', click: () => sendShortcut('devtools') },
       { label: 'Inspect', accelerator: 'CommandOrControl+Shift+I', click: () => sendShortcut('devtools') },
       { type: 'separator' },
@@ -382,6 +376,10 @@ app.whenReady().then(async () => {
   })
 
   createWindow()
+
+  // Pick up subscription renewals: silently re-activate to fetch the
+  // freshly-signed license with the extended expiry.
+  license.refreshIfLicensed().catch(() => {})
 })
 
 app.on('window-all-closed', () => {
@@ -535,7 +533,7 @@ ipcMain.handle('load-session', () => {
   return null
 })
 
-// Kastget download manager (curl-based)
+// Download manager: downloads are handled natively by Chromium and tracked here.
 const agDownloads = new Map()
 let agIdCounter = 0
 
@@ -568,35 +566,20 @@ function agPoll(id) {
   d._timer = setTimeout(() => agPoll(id), 500)
 }
 
-async function agGetTotalSize(url) {
-  try {
-    // Windows has no /dev/null and needs curl.exe explicitly
-    const nullDev = process.platform === 'win32' ? 'NUL' : '/dev/null'
-    const curlBin = process.platform === 'win32' ? 'curl.exe' : 'curl'
-    const r = spawnSync(curlBin, ['-sIL', '-o', nullDev, '-w', '%{size_download}', url], {
-      timeout: 10000, encoding: 'utf-8', env: { ...process.env, LC_ALL: 'C' }
-    })
-    return parseInt(r.stdout.trim(), 10) || 0
-  } catch { return 0 }
-}
-
 const dlDir = () => app.getPath('downloads')
-const CURL_BIN = process.platform === 'win32' ? 'curl.exe' : 'curl'
-const killProc = (proc) => { if (proc) { try { proc.kill() } catch {} } }
 
-// Native fallback engine (used when curl is missing). Chromium handles
-// networking, so cookies/auth/redirects keep working.
-const fallbackPending = new Map() // url -> dlId
-let _curlOk = null
-function curlOk() {
-  if (process.env.KASTRAVA_NO_CURL) return false
-  if (_curlOk !== null) return _curlOk
-  try {
-    const r = spawnSync(CURL_BIN, ['--version'], { timeout: 5000 })
-    _curlOk = r.status === 0
-  } catch { _curlOk = false }
-  return _curlOk
+function agFinalPath(filename) {
+  let p = path.join(dlDir(), filename)
+  if (!fs.existsSync(p)) return p
+  const ext = path.extname(filename)
+  const base = path.basename(filename, ext)
+  for (let i = 1; i < 999; i++) {
+    p = path.join(dlDir(), `${base} (${i})${ext}`)
+    if (!fs.existsSync(p)) return p
+  }
+  return path.join(dlDir(), `${base} (999)${ext}`)
 }
+
 function attachNativeDownload(id, item) {
   const d = agDownloads.get(id)
   if (!d) { try { item.cancel() } catch {} return }
@@ -621,125 +604,30 @@ function attachNativeDownload(id, item) {
     agSend(id)
   })
 }
-function startNativeDownload(dl) {
-  try {
-    const ses = require('electron').session.fromPartition('kastrava')
-    fallbackPending.set(dl.url, dl.id)
-    ses.downloadURL(dl.url)
-  } catch { dl.state = 'error'; agSend(dl.id); return }
-  dl._timer = setTimeout(() => agPoll(dl.id), 500)
-}
-
-function agFinalPath(filename) {
-  let p = path.join(dlDir(), filename)
-  if (!fs.existsSync(p)) return p
-  const ext = path.extname(filename)
-  const base = path.basename(filename, ext)
-  for (let i = 1; i < 999; i++) {
-    p = path.join(dlDir(), `${base} (${i})${ext}`)
-    if (!fs.existsSync(p)) return p
-  }
-  return path.join(dlDir(), `${base} (999)${ext}`)
-}
-
-ipcMain.handle('ag-start', async (_, url) => {
-  const id = ++agIdCounter
-  let filename = 'download'
-  try { filename = decodeURIComponent(path.basename(new URL(url).pathname)) || 'download' } catch {}
-  filename = filename.replace(/[<>:"/\\|?*\x00-\x1f]/g, '_') || 'download'
-  const fp = agFinalPath(filename)
-  const dl = { id, url, filename: path.basename(fp), outputPath: fp, received: 0, total: 0, speed: 0, state: 'queued', proc: null, item: null, engine: curlOk() ? 'curl' : 'native', _timer: null, _lastCheck: null, _lastBytes: 0 }
-  agDownloads.set(id, dl)
-
-  dl.total = await agGetTotalSize(url)
-  if (dl.engine === 'native') {
-    dl.state = 'downloading'
-    agSend(id)
-    startNativeDownload(dl)
-    return id
-  }
-  dl.state = 'downloading'
-  agSend(id)
-
-  dl.proc = spawn(CURL_BIN, ['-o', dl.outputPath, '-L', '-s', url])
-  dl.proc.on('error', () => { dl.state = 'error'; agSend(id) })
-  dl.proc.on('exit', (code) => {
-    if (dl.state === 'stopped' || dl.state === 'paused') return
-    if (code === 0) {
-      dl.received = dl.total || 0
-      dl.speed = 0
-      dl.state = 'done'
-      agSend(id)
-    } else {
-      dl.state = 'error'
-      agSend(id)
-    }
-  })
-
-  agPoll(id)
-  return id
-})
-
 ipcMain.handle('ag-pause', (_, id) => {
   const d = agDownloads.get(id)
   if (!d || d.state !== 'downloading') return
   d.state = 'paused'
-  if (d.engine === 'native' && d.item) { try { d.item.pause() } catch {} }
-  else killProc(d.proc)
+  if (d.item) { try { d.item.pause() } catch {} }
   if (d._timer) { clearTimeout(d._timer); d._timer = null }
   d.speed = 0
   agSend(id)
 })
 
-ipcMain.handle('ag-resume', async (_, id) => {
+ipcMain.handle('ag-resume', (_, id) => {
   const d = agDownloads.get(id)
   if (!d || d.state !== 'paused') return
   d.state = 'downloading'
-  if (d.engine === 'native') {
-    let resumed = false
-    try { if (d.item) { d.item.resume(); resumed = true } } catch {}
-    if (!resumed) {
-      if (d.total === 0 && curlOk()) d.total = await agGetTotalSize(d.url)
-      agSend(id)
-      startNativeDownload(d)
-      return
-    }
-    agSend(id)
-    agPoll(id)
-    return
-  }
-  if (d.total === 0) d.total = await agGetTotalSize(d.url)
+  if (d.item) { try { d.item.resume() } catch {} }
   agSend(id)
-
-  const args = ['-o', d.outputPath, '-L', '-s']
-  if (d.received > 0) args.push('-C', '-')
-  args.push(d.url)
-
-  d.proc = spawn(CURL_BIN, args)
-  d.proc.on('error', () => { d.state = 'error'; agSend(id) })
-  d.proc.on('exit', (code) => {
-    if (d.state === 'stopped' || d.state === 'paused') return
-    if (code === 0) {
-      d.received = d.total || 0
-      d.speed = 0
-      d.state = 'done'
-      agSend(id)
-    } else {
-      d.state = 'error'
-      agSend(id)
-    }
-  })
-
-  agPoll(id)
+  if (!d._timer) d._timer = setTimeout(() => agPoll(id), 500)
 })
 
 ipcMain.handle('ag-stop', (_, id) => {
   const d = agDownloads.get(id)
   if (!d) return
   d.state = 'stopped'
-  fallbackPending.delete(d.url)
-  if (d.engine === 'native' && d.item) { try { d.item.cancel() } catch {} }
-  else killProc(d.proc)
+  if (d.item) { try { d.item.cancel() } catch {} }
   if (d._timer) { clearTimeout(d._timer); d._timer = null }
   d.speed = 0
   try { if (fs.existsSync(d.outputPath)) fs.unlinkSync(d.outputPath) } catch {}
@@ -750,8 +638,7 @@ ipcMain.handle('ag-clear', (_, id) => {
   const d = agDownloads.get(id)
   if (!d) return
   if (d._timer) clearTimeout(d._timer)
-  fallbackPending.delete(d.url)
-  if (d.engine === 'native' && d.item) { try { d.item.cancel() } catch {} }
+  if (d.item) { try { d.item.cancel() } catch {} }
   try { if (fs.existsSync(d.outputPath)) fs.unlinkSync(d.outputPath) } catch {}
   agDownloads.delete(id)
   mainWindow?.webContents.send('ag-cleared', id)
@@ -760,7 +647,7 @@ ipcMain.handle('ag-clear', (_, id) => {
 ipcMain.handle('ag-list', () => {
   return Array.from(agDownloads.values()).map(d => ({
     id: d.id, filename: d.filename, url: d.url,
-    received: d.received, total: d.total, speed: d.speed, state: d.state, engine: d.engine || 'curl',
+    received: d.received, total: d.total, speed: d.speed, state: d.state,
     outputPath: d.state === 'done' ? d.outputPath : null
   }))
 })

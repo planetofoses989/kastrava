@@ -63,7 +63,7 @@ html,body{height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFo
 .tb-btn:disabled:hover{background:none}
 .tb-btn.on{color:var(--accent);background:rgba(138,180,248,.14)}
 .tb-btn.on:hover{color:var(--accent);background:rgba(138,180,248,.2)}
-#btn-home,#btn-pip,#btn-reader,#btn-split,#btn-radar{display:none}
+#btn-home,#btn-split,#btn-radar{display:none}
 .more-menu{position:fixed;z-index:950;display:none;flex-direction:column;background:var(--c-bg);border:1px solid var(--c-border);border-radius:10px;box-shadow:0 16px 48px rgba(0,0,0,.45);padding:6px;min-width:210px}
 .more-menu.visible{display:flex}
 .mm-item{padding:8px 12px;font-size:13px;color:var(--c-text);cursor:pointer;border-radius:6px;display:flex;align-items:center;justify-content:space-between;gap:10px}
@@ -536,8 +536,7 @@ body.vtabs-collapsed .vtabs-new{border-style:solid}
     <div class="ntp-footer">Kastrava 27</div>
   </div>
   <div class="ag-page" id="ag-page">
-    <div style="padding:20px;border-bottom:1px solid var(--c-border)"><h2>Kastget</h2><span style="font-size:11px;color:var(--c-text2)">Download Manager</span></div>
-    <div style="padding:12px 20px;display:flex;gap:8px"><input type="text" id="ag-url" placeholder="Paste download URL..." spellcheck="false" style="flex:1;padding:8px 12px;border-radius:20px;border:none;background:var(--c-omni);color:var(--c-text);font-size:13px;outline:none"><button id="ag-start" style="padding:8px 18px;border:none;border-radius:20px;background:var(--accent);color:#202124;font-size:12px;cursor:pointer;font-weight:500">Download</button></div>
+    <div style="padding:20px;border-bottom:1px solid var(--c-border)"><h2>Downloads</h2><span style="font-size:11px;color:var(--c-text2)">Saved to your Downloads folder</span></div>
     <div id="ag-body" style="padding:8px 20px;flex:1;overflow-y:auto"></div>
   </div>
 </div>
@@ -572,20 +571,8 @@ body.vtabs-collapsed .vtabs-new{border-style:solid}
     <div class="sp-tab" data-tab="history">History</div>
     <div class="sp-tab" data-tab="downloads">Downloads</div>
   </div>
-  <button class="sp-ag" id="sp-ag" title="Open the Kastget download manager"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg><span>Download Manager</span></button>
+  <button class="sp-ag" id="sp-ag" title="Open the downloads page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg><span>All Downloads</span></button>
   <div class="sp-body" id="sp-body"></div>
-</div>
-<div class="modal-overlay" id="dl-modal">
-  <div class="modal-box">
-    <div style="width:48px;height:48px;margin:0 auto 12px;border-radius:50%;background:rgba(242,139,130,.12);display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" fill="none" stroke="#f28b82" stroke-width="2" style="width:24px;height:24px"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
-    <p style="font-size:14px;margin-bottom:12px">Direct downloads are blocked. Use <b>Kastget</b> for private downloads.</p>
-    <div id="dl-modal-url" style="background:var(--c-omni);border:1px solid var(--c-border);border-radius:8px;padding:10px;margin-bottom:14px;text-align:left;word-break:break-all;font-size:11px"></div>
-    <div style="display:flex;gap:8px;justify-content:center">
-      <button class="btn-sm btn-accent" id="dl-copy">Copy Link</button>
-      <button class="btn-sm btn-danger" id="dl-ag">Open Kastget</button>
-      <button class="btn-sm" id="dl-close" style="background:var(--c-omni);color:var(--c-text2)">Cancel</button>
-    </div>
-  </div>
 </div>
 <div class="modal-overlay" id="confirm-modal">
   <div class="confirm-card">
@@ -636,10 +623,11 @@ var api=window.api;
 // Edition: 'premium' default (also when running from source); 'free' hides premium features.
 var EDITION=(typeof __EDITION__!=="undefined"&&__EDITION__)?__EDITION__:"premium";
 var KAS_API=(typeof __KAS_API__!=="undefined"&&__KAS_API__)?__KAS_API__:"http://127.0.0.1:8787";
-var LIC={activated:false,machine:"",key:null,reason:"no_license",expiresAt:null};
+var KAS_STORE=(typeof __KAS_STORE__!=="undefined"&&__KAS_STORE__)?__KAS_STORE__:(KAS_API||"http://127.0.0.1:8787");
+var LIC={activated:false,machine:"",key:null,reason:"no_license",expiresAt:null,subEnd:null,grace:false};
 function editionLabel(){if(EDITION==="free")return "Free";return LIC.activated?"Premium":"Free";}
 function isPremium(){if(EDITION==="free")return false;return !!(LIC&&LIC.activated);}
-function requirePremium(){if(isPremium())return true;toast("Kastrava Premium — only ₹500, one machine, lifetime");setTimeout(function(){openPremiumSection();},600);return false;}
+function requirePremium(){if(isPremium())return true;toast("Kastrava Premium — ₹199/34 days, one machine");setTimeout(function(){openPremiumSection();},600);return false;}
 function $(id){return document.getElementById(id)}
 function qa(sel){return document.querySelectorAll(sel)}
 function esc(s){return(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")}
@@ -648,7 +636,6 @@ function err(fn,e){console.error("[Kastrava]",fn,e)}
 var tabs=[];var tabMap={};var activeTab=null;var tabIdCounter=0;
 var agDownloads=[];var agIdMap={};var bookmarkUrls=new Set();
 var settings={setupDone:"",searchEngine:"kastravasearch",accent:"#4fc3f7",fontSize:"12",reduceAnimations:"off",hwAcc:"on",dnt:"on",tracking:"strict",suggest:"off",bookmarkBar:"auto",startup:"last",confirmClose:"off",historyEnabled:"on",bookmarksEnabled:"on",cookies:"off",location:"block",zoom:"100",uiRadius:"medium",speedDial:"comfortable",showHomeBtn:"off",showCopyBtn:"on",showNtpClock:"on",showNtpLogo:"on",tabLayout:"horizontal",vtabsCollapsed:"off",shortcuts:{},maxSuggestions:"8",launchMaximized:"off",sendReferrer:"off",cursorFx:"off",cursorFxMode:"color",cursorFxColor:"#4fc3f7",cursorFxForce:"medium",cursorFxSize:"medium",blobFx:"off",blobColor:"#2f6fed",blobCount:"3",blobSize:"medium",blobOpacity:"0.6",blobShape:"circle",glassFx:"off",glassColor:"#3b82f6",glassShape:"sphere",glassSize:"medium",glassOpacity:"0.5",particleFx:"off",particleColor:"#3b82f6",particleSize:"medium",particleDensity:"medium",clickSparkFx:"off",clickSparkColor:"#ffffff",clickSparkSize:"medium",clickSparkCount:"8",clickSparkDuration:"400",pixelTrailFx:"off",pixelTrailColor:"#ffffff",pixelTrailGrid:"medium",pixelTrailTrail:"medium",ribbonsFx:"off",ribbonsColor:"#2f6fed",ribbonsThickness:"medium",ribbonsPoints:"50",cursorStyle:"system",cursorStyleColor:"#ffffff"};
-var INTERCEPT_URL="";
 var splitOn=false;var splitPartner=null;var prevTabId=null;
 var closedTabs=[];
 var readerUrls={};
@@ -656,6 +643,8 @@ var radarEvents={};var radarOpen=false;
 var customSites=[];
 var cursorFxDispose=null;
 var SEARCH_ENGINES={kastravasearch:"https://kastravasearch.pp.ua/search?q=%s",duckduckgo:"https://duckduckgo.com/?q=%s",brave:"https://search.brave.com/search?q=%s",google:"https://www.google.com/search?q=%s",ecosia:"https://www.ecosia.org/search?q=%s"};
+// Premium-only extras. Free ships KastravaSearch + DuckDuckGo.
+var PREMIUM_ENGINES={brave:1,google:1,ecosia:1};
 function loadSettings(){
   if(!api||!api.getSettings)return Promise.resolve();
   return api.getSettings().then(function(saved){
@@ -665,7 +654,7 @@ function loadSettings(){
 // Premium license: runtime unlock in premium build, always locked in free.
 function loadLicense(){
   if(!api||!api.licStatus)return;
-  api.licStatus().then(function(s){if(s){LIC.activated=!!s.activated;LIC.machine=s.machine||"";LIC.key=s.key||null;LIC.reason=s.reason||null;LIC.expiresAt=s.expiresAt||null;}try{applyEditionUI();}catch(e){}}).catch(function(){});
+  api.licStatus().then(function(s){if(s){LIC.activated=!!s.activated;LIC.machine=s.machine||"";LIC.key=s.key||null;LIC.reason=s.reason||null;LIC.expiresAt=s.expiresAt||null;LIC.subEnd=s.subEnd||null;LIC.grace=!!s.grace;}try{applyEditionUI();}catch(e){}}).catch(function(){});
 }
 function applyEditionUI(){
   var prem=isPremium();
@@ -675,8 +664,11 @@ function applyEditionUI(){
   if(wb&&!prem)wb.classList.remove("visible");
   if(!prem){
     if(settings.theme!=="dark-0"&&settings.theme!=="light-0"){settings.theme="dark-0";saveSetting("theme","dark-0");}
+    if(PREMIUM_ENGINES[settings.searchEngine]){settings.searchEngine="kastravasearch";saveSetting("searchEngine","kastravasearch");}
+    if(settings.tabLayout==="vertical"){settings.tabLayout="horizontal";saveSetting("tabLayout","horizontal");applyTabLayout("horizontal");}
     if(!applyThemeKey(settings.theme||"dark-0")&&settings.accent){document.documentElement.style.setProperty("--accent",settings.accent);}
     ["cursorFx","blobFx","glassFx","particleFx","clickSparkFx","pixelTrailFx","ribbonsFx"].forEach(function(k){if(settings[k]==="on"){settings[k]="off";saveSetting(k,"off");}});
+    if(settings.cursorStyle==="custom"){settings.cursorStyle="system";saveSetting("cursorStyle","system");applyCursorStyle();}
     try{applyAllFx();}catch(e){}
   }else{
     try{renderWorkspaces();}catch(e){}
@@ -690,7 +682,7 @@ async function activatePremium(key){
   if(!res||!res.ok){toast(res&&res.msg?res.msg:"Activation failed.");return;}
   LIC.activated=true;LIC.key=res.license&&res.license.key?res.license.key:LIC.key;
   applyEditionUI();try{renderSettingsSection("premium");}catch(e){}
-  toast("Premium activated — this machine is now licensed forever.");
+  toast("Premium activated — renews every 34 days, cancel anytime.");
   try{renderWorkspaces();}catch(e){}
 }
 function copyText(t){
@@ -700,12 +692,12 @@ function copyText(t){
 }
 function openPremiumStore(){
   if(window.clickCheckout){window.clickCheckout();return;}
-  var url=KAS_API.replace(/\/$/,"")+"/#premium";
+  var url=KAS_STORE.replace(/\/$/,"")+"/#premium";
   if(activeTab&&activeTab.wv){addTab(url);}else if(api&&api.openExternal){api.openExternal(url);}
 }
 function openOobBuy(machine){
   if(window.clickCheckout){window.clickCheckout();return;}
-  var base=KAS_API.replace(/\/$/,"");
+  var base=KAS_STORE.replace(/\/$/,"");
   var url=base+"/#premium?machine="+encodeURIComponent(machine||"");
   if(activeTab&&activeTab.wv){addTab(url);}else if(api&&api.openExternal){api.openExternal(url);}
 }
@@ -789,6 +781,7 @@ function applyVtabsCollapsed(v){
 }
 function toggleTabLayout(){
   var next=settings.tabLayout==="vertical"?"horizontal":"vertical";
+  if(next==="vertical"&&!isPremium()){requirePremium();return;}
   saveSetting("tabLayout",next);applyTabLayout(next);
   toast(next==="vertical"?"Vertical tabs on":"Horizontal tabs on");
 }
@@ -818,7 +811,7 @@ var SHORTCUT_ACTIONS={
   radar:{label:"Tracking Radar",default:"Ctrl+Shift+K"},
   screenshot:{label:"Screenshot",default:"Ctrl+Shift+S"},
   mute:{label:"Mute tab",default:"Ctrl+Shift+M"},
-  kastget:{label:"Open Kastget",default:"Ctrl+Shift+P"},
+  kastget:{label:"Downloads",default:"Ctrl+Shift+P"},
   vtabs:{label:"Toggle vertical tabs",default:"Ctrl+Shift+V"}
 };
 function shortcutCombo(e){
@@ -899,6 +892,15 @@ function bindShortcutRecorder(){
 function finishShortcutRec(combo){
   if(!shortcutRecording)return;
   var a=shortcutRecording.action;
+  // Viewing the shortcut list is free; assigning a custom combo is Premium.
+  if(combo&&!isPremium()){
+    shortcutRecording=null;
+    var btn=document.querySelector('#s-shortcut-list .sh-row[data-act="'+a+'"] .sh-key');
+    if(btn)btn.classList.remove("rec");
+    toast("Custom shortcut remapping is a Premium feature");
+    setTimeout(function(){openPremiumSection();},600);
+    return;
+  }
   var cur=settings.shortcuts||{};
   if(combo===""){delete cur[a];}
   else{cur[a]=combo;}
@@ -933,6 +935,11 @@ function errInfo(code){
 function addTab(url,opts){
   opts=opts||{};
   if(url==="about:anterget")url="about:kastget";
+  if(url==="about:localhost"&&!isPremium()){
+    toast("Localhost Dashboard is a Premium feature");
+    setTimeout(function(){openPremiumSection();},600);
+    url="about:newtab";
+  }
   if(activeTab&&isBlank(activeTab.url)&&!opts.pinned&&url&&url!="about:kastget"&&!isBlank(url)){
     activeTab.wv.setAttribute("src",url);
     activeTab.url=url;
@@ -1168,8 +1175,8 @@ function loadTopSites(){
 }
 /* First-run setup wizard */
 var setupStep=0,setupEngine="kastravasearch",setupThemeKey="dark-0",setupTracking="strict",setupStartup="last",setupNtpClock="on",setupNtpLogo="on",setupNavAt=0,setupRenderId=0;
-var SETUP_ENGINES=[{id:"kastravasearch",n:"KastravaSearch",d:"Kastrava's own search"},{id:"duckduckgo",n:"DuckDuckGo",d:"Private search"},{id:"brave",n:"Brave Search",d:"Independent index"},{id:"google",n:"Google",d:"Most results"},{id:"ecosia",n:"Ecosia",d:"Plants trees"}];
-function setupDots(){var d='<div class="setup-steps">';for(var i=0;i<9;i++)d+='<div class="setup-dot'+(setupStep>=i?' on':'')+'"></div>';return d+'</div>';}
+var SETUP_ENGINES=[{id:"kastravasearch",n:"KastravaSearch",d:"Kastrava's own search"},{id:"duckduckgo",n:"DuckDuckGo",d:"Private search"},{id:"brave",n:"Brave Search",d:"Independent index \u00b7 Premium"},{id:"google",n:"Google",d:"Most results \u00b7 Premium"},{id:"ecosia",n:"Ecosia",d:"Plants trees \u00b7 Premium"}];
+function setupDots(){var d='<div class="setup-steps">';for(var i=0;i<10;i++)d+='<div class="setup-dot'+(setupStep>=i?' on':'')+'"></div>';return d+'</div>';}
 function setupGo(n){var t=Date.now();if(t-setupNavAt<350)return;setupNavAt=t;setupStep=n;renderSetup();}
 function setupBindNav(next){
   var n=$("setup-next");if(n)n.addEventListener("click",function(){setupGo(next);});
@@ -1180,7 +1187,7 @@ function setupChoiceBtns(list,selKey){
 }
 function setupBindChoices(cb){
   var c=$("setup-card");if(!c)return;
-  c.querySelectorAll(".setup-eng").forEach(function(b){b.addEventListener("click",function(){cb(b.dataset.v);c.querySelectorAll(".setup-eng").forEach(function(x){x.classList.toggle("sel",x===b);});});});
+  c.querySelectorAll(".setup-eng").forEach(function(b){b.addEventListener("click",function(){if(cb(b.dataset.v)===false)return;c.querySelectorAll(".setup-eng").forEach(function(x){x.classList.toggle("sel",x===b);});});});
 }
 function setupHero(){return '<div class="setup-hero"><svg viewBox="0 0 132 132" fill="none"><circle cx="66" cy="66" r="60" stroke="#4fc3f7" stroke-opacity=".22" stroke-width="1.5" stroke-dasharray="3 7"/><circle cx="66" cy="66" r="46" stroke="#4fc3f7" stroke-opacity=".35" stroke-width="1.5" stroke-dasharray="2 6"/><circle cx="66" cy="66" r="4" fill="#4fc3f7"/><circle cx="116" cy="46" r="3" fill="#4fc3f7" fill-opacity=".9"/><circle cx="112" cy="46" r="7" stroke="#4fc3f7" stroke-opacity=".4"/><circle cx="24" cy="88" r="2.4" fill="#fff" fill-opacity=".55"/><circle cx="88" cy="100" r="1.8" fill="#4fc3f7" fill-opacity=".6"/></svg><img src="logo.png" alt=""></div>';}
 function renderSetup(){
@@ -1194,6 +1201,7 @@ function renderSetup(){
   var ART_NTP='<svg class="art-float" viewBox="0 0 200 160" fill="none"><rect x="30" y="30" width="140" height="100" rx="12" stroke="#4fc3f7" stroke-width="6"/><circle cx="100" cy="66" r="12" stroke="#fff" stroke-width="4" stroke-opacity=".8"/><rect x="55" y="92" width="90" height="12" rx="6" fill="#4fc3f7" fill-opacity=".5" stroke="none"/><rect x="70" y="110" width="60" height="8" rx="4" fill="#fff" fill-opacity=".25" stroke="none"/></svg>';
   var ART_IMPORT='<svg class="art-float" viewBox="0 0 200 160" fill="none" stroke="#4fc3f7" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"><path d="M40 60a8 8 0 018-8h30l12 14h50a8 8 0 018 8v40a8 8 0 01-8 8H48a8 8 0 01-8-8z"/><line x1="100" y1="86" x2="100" y2="116"/><polyline points="88,106 100,118 112,106"/></svg>';
   var ART_SUMMARY='<svg class="art-float" viewBox="0 0 200 160" fill="none" stroke="#4fc3f7" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"><circle cx="100" cy="80" r="52"/><polyline points="78,82 94,98 124,64"/></svg>';
+  var ART_PREMIUM='<svg class="art-float" viewBox="0 0 200 160" fill="none" stroke="#ffb300" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"><path d="M55 44l26 26 19-24 19 24 26-26-12 62H67z" fill="#ffb300" fill-opacity=".15"/><circle cx="100" cy="54" r="5.5" fill="#ffb300" stroke="none"/><line x1="55" y1="120" x2="145" y2="120" stroke-width="7" stroke-opacity=".7"/></svg>';
   function grid(art,body,nav){return '<div class="setup-grid"><div class="setup-art">'+art+'</div><div class="setup-body">'+body+'</div></div><div class="setup-foot">'+nav+'</div>';}
   var CONTINUE='<button class="setup-btn" id="setup-next">Continue</button><div><button class="setup-skip" id="setup-back">Back</button></div>';
   if(setupStep===0){
@@ -1203,7 +1211,7 @@ function renderSetup(){
   }else if(setupStep===1){
     var opts=SETUP_ENGINES.map(function(e){return {v:e.id,n:e.n,d:e.d};});
     c.innerHTML=dots+grid(ART_SEARCH,'<div class="setup-name" style="font-size:24px;letter-spacing:2px">Search Engine</div><div class="setup-sub">Choose your default search.</div><div class="setup-engines">'+setupChoiceBtns(opts,setupEngine)+'</div>',CONTINUE);
-    setupBindChoices(function(v){setupEngine=v;});
+    setupBindChoices(function(v){if(PREMIUM_ENGINES[v]&&!isPremium()){requirePremium();return false;}setupEngine=v;});
     setupBindNav(2);
   }else if(setupStep===2){
     var th=(isPremium()?DARK_THEMES.slice(0,4):[DARK_THEMES[0]]).map(function(t,i){return {v:"dark-"+i,n:t.n,d:"Dark",c:t.bg};});
@@ -1227,12 +1235,20 @@ function renderSetup(){
     setupBindNav(6);
   }else if(setupStep===6){
     c.innerHTML=dots+grid(ART_IMPORT,'<div class="setup-name" style="font-size:24px;letter-spacing:2px">Import Bookmarks</div><div class="setup-sub">Bring bookmarks from another browser (HTML file).</div><button class="setup-btn" id="setup-import">Import Bookmarks</button>',CONTINUE);
-    $("setup-import").addEventListener("click",function(){try{importBookmarks();}catch(e){}});
+    $("setup-import").addEventListener("click",function(){try{importBookmarks(true);}catch(e){}});
     setupBindNav(7);
   }else if(setupStep===7){
     var engName="KastravaSearch";SETUP_ENGINES.forEach(function(e){if(e.id===setupEngine)engName=e.n;});
     c.innerHTML=dots+grid(ART_SUMMARY,'<div class="setup-name" style="font-size:24px;letter-spacing:2px">You are protected</div><div class="setup-sub">Review your setup.</div><div class="setup-priv"><div><span class="ok">✓</span>Search <b>'+engName+'</b></div><div><span class="ok">✓</span>Theme <b>'+esc(setupThemeKey)+'</b>, tracking <b>'+setupTracking+'</b></div><div><span class="ok">✓</span>Startup <b>'+(setupStartup==="last"?"restore":"new tab")+'</b></div><div><span class="ok">✓</span>Cookies <b>blocked</b>, referrer <b>off</b>, DNT <b>on</b></div></div>',CONTINUE);
     setupBindNav(8);
+  }else if(setupStep===8){
+    if(isPremium()){
+      c.innerHTML=dots+grid(ART_PREMIUM,'<div class="setup-name" style="font-size:24px;letter-spacing:2px">Kastrava Premium</div><div class="setup-sub">You are already Premium. Enjoy every feature Kastrava has to offer.</div><div class="setup-priv"><div><span class="ok">✓</span>Premium is active on this machine</div><div><span class="ok">✓</span>All features are unlocked</div></div>',CONTINUE);
+    }else{
+      c.innerHTML=dots+grid(ART_PREMIUM,'<div class="setup-name" style="font-size:24px;letter-spacing:2px">Kastrava Premium</div><div class="setup-sub">Unlock the full browser — one plan, one machine.</div><div class="setup-priv"><div><span class="ok">✦</span><b>20 themes</b> — all dark &amp; light sets</div><div><span class="ok">✦</span><b>Tracking Radar</b> · <b>Split View</b> · <b>Workspaces</b></div><div><span class="ok">✦</span><b>Cursor FX</b> — fluid, particles &amp; more</div><div><span class="ok">✦</span><b>Brave</b> · <b>Google</b> · <b>Ecosia</b> engines</div><div><span class="ok">✦</span><b>Reader</b> · <b>PiP</b> · <b>Screenshot</b> tools</div><div><span class="ok">✦</span><b>Vertical tabs</b> · custom shortcuts · more</div></div><div style="margin:2px auto 16px;padding:8px 24px;border-radius:999px;border:1px solid rgba(255,179,0,.45);background:rgba(255,179,0,.08);color:#ffb300;font-weight:700;font-size:20px;display:inline-block">₹199 <span style="font-size:12px;color:var(--c-text2);font-weight:500">/ 34 days · one machine</span></div><div><button class="setup-btn" id="setup-prem-go" style="background:linear-gradient(135deg,#ffb300,#f57c00);box-shadow:0 6px 24px rgba(255,179,0,.35)">Get Premium</button></div>',CONTINUE);
+      var g=$("setup-prem-go");if(g)g.addEventListener("click",function(){try{openPremiumStore();}catch(e){}});
+    }
+    setupBindNav(9);
   }else{
     c.innerHTML=dots+'<div class="setup-grid"><div class="setup-art">'+setupHero()+'</div><div class="setup-body"><div class="setup-name" style="font-size:26px">You are all set</div><div class="setup-sub">Enjoy private browsing with Kastrava.</div></div></div><div class="setup-foot"><button class="setup-btn" id="setup-done">Start Browsing</button></div>';
     $("setup-done").addEventListener("click",finishSetup);
@@ -2258,7 +2274,7 @@ function syncCursorFxVisibility(){
   var blocked=false;
   var sp=document.getElementById("settings-page");if(sp&&sp.classList.contains("visible"))blocked=true;
   var sd=document.getElementById("side-panel");if(sd&&sd.classList.contains("open"))blocked=true;
-  ["confirm-modal","add-site-modal","dl-modal"].forEach(function(id){var el=document.getElementById(id);if(el&&el.classList.contains("visible"))blocked=true;});
+  ["confirm-modal","add-site-modal"].forEach(function(id){var el=document.getElementById(id);if(el&&el.classList.contains("visible"))blocked=true;});
   var ctx=document.getElementById("ctx-menu");if(ctx&&ctx.children.length)blocked=true;
   var mm=document.getElementById("more-menu");if(mm&&mm.classList.contains("visible"))blocked=true;
   ["cursor-fx","blob-fx","glass-fx","particle-fx","click-spark-fx","pixel-trail-fx","ribbons-fx","custom-cursor"].forEach(function(id){
@@ -3219,7 +3235,6 @@ function bindKeyboard(){
     if(e.key==="Escape"){
       var cm=$("confirm-modal");if(cm&&cm.classList.contains("visible")){hideConfirmModal();return;}
       var am=$("add-site-modal");if(am&&am.classList.contains("visible")){am.classList.remove("visible");return;}
-      var dm=$("dl-modal");if(dm&&dm.classList.contains("visible")){dm.classList.remove("visible");return;}
       var sp=$("side-panel");if(sp&&sp.classList.contains("open")){sp.classList.remove("open");var sbd=$("sp-backdrop");if(sbd)sbd.classList.remove("show");return;}
       var st=$("settings-page");if(st&&st.classList.contains("visible")){closeSettings();return;}
       var fb=$("find-bar");if(fb&&fb.classList.contains("visible")){fb.classList.remove("visible");return;}
@@ -3308,6 +3323,7 @@ function reopenTab(){var t=closedTabs.pop();if(t){if(t.url&&!isBlank(t.url)&&t.u
 
 /* Picture-in-Picture */
 function togglePip(){
+  if(!requirePremium())return;
   if(!activeTab||!activeTab.wv)return;
   var js="(function(){var v=[].slice.call(document.querySelectorAll('video')).filter(function(x){return !x.paused&&x.readyState>2}).sort(function(a,b){return b.videoWidth*b.videoHeight-a.videoWidth*a.videoHeight})[0]||[].slice.call(document.querySelectorAll('video')).sort(function(a,b){return b.videoWidth*b.videoHeight-a.videoWidth*a.videoHeight})[0];if(!v)return false;if(document.pictureInPictureElement===v){document.exitPictureInPicture();return true}v.requestPictureInPicture()['catch'](function(){});return true})()";
   activeTab.wv.executeJavaScript(js).then(function(ok){if(!ok)toast("No video found on this page");}).catch(function(){});
@@ -3323,6 +3339,7 @@ function buildReaderHtml(d,origUrl){
   return "<!DOCTYPE html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><title>"+esc(d.title||"Reader Mode")+"</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:Georgia,'Times New Roman',serif;background:#0d1117;color:#c9d1d9;line-height:1.75;font-size:18px}.rb{position:sticky;top:0;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 20px;background:#161b22;border-bottom:1px solid rgba(255,255,255,.06);font-family:'Segoe UI',system-ui,sans-serif}.rb .host{font-size:13px;color:#8b949e;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.rb button{background:rgba(138,180,248,.15);color:#8ab4f8;border:none;border-radius:8px;padding:8px 16px;font-size:13px;cursor:pointer;font-family:inherit;flex-shrink:0}.rb button:hover{background:rgba(138,180,248,.25)}.art{max-width:720px;margin:0 auto;padding:40px 24px 80px}h1{font-size:34px;line-height:1.25;color:#e6edf3;margin-bottom:16px}.meta{font-size:13px;color:#8b949e;margin-bottom:28px}.art img{max-width:100%;height:auto;border-radius:8px;margin:12px 0}h1,h2,h3,h4{line-height:1.3;color:#e6edf3;margin:24px 0 12px;font-family:'Segoe UI',system-ui,sans-serif}p{margin:0 0 18px}a{color:#8ab4f8}pre{background:#161b22;border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:14px;overflow-x:auto;font-size:14px}code{font-family:'Courier New',monospace}blockquote{border-left:3px solid #30363d;padding-left:16px;color:#8b949e;font-style:italic}</style></head><body><div class='rb'><span class='host'>"+esc(host)+"</span><button onclick='location.href=decodeURIComponent(escape(atob(b64)))'>Exit reader mode</button></div><div class='art'><h1>"+esc(d.title||"")+"</h1><div class='meta'>"+esc(host)+"</div>"+d.html+imgs+"</div><scr"+"ipt></scr"+"ipt></body></html>"
 }
 function toggleReader(){
+  if(!requirePremium())return;
   if(!activeTab)return;
   var id=activeTab.id;
   if(readerUrls[id]&&activeTab.url.indexOf("data:text/html")===0){
@@ -3402,6 +3419,7 @@ function toggleRadar(){
 
 /* Screenshot */
 async function takeScreenshot(){
+  if(!requirePremium())return;
   if(!activeTab||!activeTab.wv){toast("Nothing to capture");return;}
   try{
     var img=await activeTab.wv.capturePage();
@@ -3412,6 +3430,7 @@ async function takeScreenshot(){
 
 /* Bookmark import/export */
 async function exportBookmarks(){
+  if(!requirePremium())return;
   if(!api||!api.getBookmarks)return;
   var bms=await api.getBookmarks().catch(function(){return[];});
   var html="<!DOCTYPE NETSCAPE-Bookmark-file-1>\n<META HTTP-EQUIV=\"Content-Type\" CONTENT=\"text/html; charset=UTF-8\">\n<TITLE>Bookmarks</TITLE>\n<H1>Bookmarks</H1>\n<DL><p>\n";
@@ -3420,7 +3439,8 @@ async function exportBookmarks(){
   var p=await api.exportBookmarks(html).catch(function(){return null;});
   toast(p?"Exported "+bms.length+" bookmarks":(p===null?"Export cancelled":null));
 }
-async function importBookmarks(){
+async function importBookmarks(skipGate){
+  if(!skipGate&&!requirePremium())return;
   if(!api||!api.importBookmarks)return;
   var n=await api.importBookmarks().catch(function(){return 0;});
   if(n)toast("Imported "+n+" bookmarks");
@@ -3465,16 +3485,19 @@ function renderSettingsNav(){
 function renderSettingsSection(id){
   var p=$("settings-panel");var h="";
   if(id==="premium"){h="<h3>Kastrava Premium</h3>";
-    h+="<div class=\"desc\" style=\"margin-bottom:12px\">Unlock Tracking Radar, Cursor FX, Workspaces, Split View and every theme \u2014 <b>one machine, lifetime, \u20B9500 (~$6)</b>.</div>";
+    h+="<div class=\"desc\" style=\"margin-bottom:12px\">Unlock Tracking Radar, Cursor FX, Workspaces, Split View and every theme \u2014 <b>\u20B9199/34 days (~$2.4), one machine, cancel anytime</b>.</div>";
     h+="<div class=\"sg\"><div class=\"lbl\">Your Machine Code</div><div style=\"display:flex;gap:8px;align-items:center\"><code id=\"pm-machine\" style=\"flex:1;word-break:break-all;font-size:12px\">"+(LIC.machine||"…")+"</code><button class=\"btn-sm\" id=\"pm-copy\">Copy</button></div><div class=\"desc\">This code identifies <b>this PC</b>. Your license is bound to it \u2014 copying the app to another machine won't transfer it.</div></div>";
     if(LIC.activated){
-      h+="<div class=\"sg\"><div class=\"lbl\">Status</div><div class=\"desc\" style=\"font-weight:600;color:#2e7d32\">\u2713 Premium activated on this machine.</div><div class=\"desc\">Key: <code style=\"font-size:12px\">"+(LIC.key||"")+"</code>"+(LIC.expiresAt?" &middot; valid until "+new Date(LIC.expiresAt).toLocaleDateString():"")+"</div></div>";
+      var stColor=LIC.grace?"#e65100":"#2e7d32";
+      var stText=LIC.grace?"\u26A0 Billing period ended \u2014 grace period active. Renew to keep Premium.":"\u2713 Premium activated on this machine.";
+      h+="<div class=\"sg\"><div class=\"lbl\">Status</div><div class=\"desc\" style=\"font-weight:600;color:"+stColor+"\">"+stText+"</div><div class=\"desc\">Key: <code style=\"font-size:12px\">"+(LIC.key||"")+"</code>"+(LIC.expiresAt?" &middot; valid until "+new Date(LIC.expiresAt).toLocaleDateString():"")+"</div></div>";
+      h+="<div class=\"sg\" style=\"display:flex;gap:8px;flex-wrap:wrap\"><button class=\"btn-sm btn-accent\" id=\"s-licrenew\">Renew \u2014 \u20B9199/34d</button><button class=\"btn-sm\" id=\"s-liccopy\">Copy machine code</button></div>";
     }else{
-      h+="<div class=\"sg\"><div class=\"lbl\">Activation Key</div><input type=\"text\" id=\"s-lickey\" style=\"font-family:var(--font-mono);letter-spacing:.5px\" placeholder=\"KAS-XXXX-XXXX-XXXX-XXXX\" autocomplete=\"off\" spellcheck=\"false\"><div class=\"desc\">Paste the key you received after paying, then click Activate.</div></div>";
-      h+="<div class=\"sg\" style=\"display:flex;gap:8px;flex-wrap:wrap\"><button class=\"btn-sm btn-accent\" id=\"s-licactivate\">Activate Premium</button><button class=\"btn-sm\" id=\"s-licbuy\">Buy now \u2014 \u20B9500</button><button class=\"btn-sm\" id=\"s-liccopy\">Copy machine code</button></div>";
-      h+="<div class=\"desc\" style=\"margin-top:6px\">No key yet? Buy at <a href=\"#\" id=\"s-licbuylink\" style=\"color:var(--accent)\">kastrava.dev</a> \u2014 you'll get a key instantly via Razorpay.</div>";
+      h+="<div class=\"sg\"><div class=\"lbl\">Activation Key</div><input type=\"text\" id=\"s-lickey\" style=\"font-family:var(--font-mono);letter-spacing:.5px\" placeholder=\"KAS-XXXX-XXXX-XXXX-XXXX\" autocomplete=\"off\" spellcheck=\"false\"><div class=\"desc\">Paste the key you received after subscribing, then click Activate.</div></div>";
+      h+="<div class=\"sg\" style=\"display:flex;gap:8px;flex-wrap:wrap\"><button class=\"btn-sm btn-accent\" id=\"s-licactivate\">Activate Premium</button><button class=\"btn-sm\" id=\"s-licbuy\">Subscribe \u2014 \u20B9199/34d</button><button class=\"btn-sm\" id=\"s-liccopy\">Copy machine code</button></div>";
+      h+="<div class=\"desc\" style=\"margin-top:6px\">No key yet? Subscribe at <a href=\"#\" id=\"s-licbuylink\" style=\"color:var(--accent)\">kastrava.dev</a> \u2014 you'll get a key instantly via Razorpay. Auto-renews every 34 days, cancel anytime.</div>";
     }
-    h+="<div class=\"sg\"><div class=\"lbl\">What's in Premium</div><div class=\"desc\">\u2022 Tracking Radar (live per-tab tracker score)<br>\u2022 Cursor Effects: Mouse Style, Fluid Splash, Blob Trail, Glass Lens, Particle Trail, Click Spark, Pixel Trail, Ribbons<br>\u2022 Workspaces<br>\u2022 Split View<br>\u2022 All 20 dark + light themes</div></div>";
+    h+="<div class=\"sg\"><div class=\"lbl\">What's in Premium</div><div class=\"desc\">\u2022 Tracking Radar (live per-tab tracker score)<br>\u2022 Cursor Effects: Mouse Style, Fluid Splash, Blob Trail, Glass Lens, Particle Trail, Click Spark, Pixel Trail, Ribbons<br>\u2022 Workspaces<br>\u2022 Split View<br>\u2022 All 20 dark + light themes<br>\u2022 Extra search engines: Brave, Google, Ecosia<br>\u2022 Custom cursor arrow<br>\u2022 Reader Mode, Picture-in-Picture, Screenshot<br>\u2022 Localhost Dashboard<br>\u2022 Vertical tabs layout<br>\u2022 Bookmark import &amp; export<br>\u2022 Custom shortcut remapping</div></div>";
   }
   else if(id==="general"){h="<h3>General</h3>";
     h+="<div class=\"sg\"><div class=\"lbl\">Startup</div><select id=\"s-startup\"><option value=\"last\">Restore previous session</option><option value=\"blank\">New tab</option></select></div>";
@@ -3558,7 +3581,7 @@ function renderSettingsSection(id){
     }
   }
   else if(id==="search"){h="<h3>Search Engine</h3>";
-    h+="<div class=\"sg\"><div class=\"lbl\">Default Search Engine</div><select id=\"s-se\"><option value=\"kastravasearch\">KastravaSearch (Default, Beta)</option><option value=\"duckduckgo\">DuckDuckGo</option><option value=\"brave\">Brave Search</option><option value=\"google\">Google</option><option value=\"ecosia\">Ecosia</option></select><div class=\"desc\">KastravaSearch is Kastrava's own private search engine.</div></div>";
+    h+="<div class=\"sg\"><div class=\"lbl\">Default Search Engine</div><select id=\"s-se\"><option value=\"kastravasearch\">KastravaSearch (Default, Beta)</option><option value=\"duckduckgo\">DuckDuckGo</option><option value=\"brave\">Brave Search (Premium)</option><option value=\"google\">Google (Premium)</option><option value=\"ecosia\">Ecosia (Premium)</option></select><div class=\"desc\">KastravaSearch is Kastrava's own private search engine. DuckDuckGo is free too; Brave, Google and Ecosia are Premium.</div></div>";
     h+="<div class=\"sg\"><div class=\"lbl\">Current Engine URL</div><div class=\"desc\" style=\"word-break:break-all\">"+esc(SEARCH_ENGINES[settings.searchEngine]||SEARCH_ENGINES.kastravasearch)+"</div></div>";
   }
   else if(id==="privacy"){h="<h3>Privacy &amp; Security</h3>";
@@ -3703,7 +3726,7 @@ function bindSettingsEvents(id){
       setSel("s-particledensity",settings.particleDensity);
       bindChange("s-particledensity",function(v){sv("particleDensity",v);applyParticleFx();});
       setSel("s-cursorstyle",settings.cursorStyle);
-      bindChange("s-cursorstyle",function(v){sv("cursorStyle",v);applyCursorStyle();toggleFxOpts();});
+      bindChange("s-cursorstyle",function(v){if(v==="custom"&&!isPremium()){setSel("s-cursorstyle","system");toggleFxOpts();requirePremium();return;}sv("cursorStyle",v);applyCursorStyle();toggleFxOpts();});
       var cscc=$("s-cursorstylecolor");if(cscc){cscc.value=settings.cursorStyleColor||"#ffffff";bindChange("s-cursorstylecolor",function(v){sv("cursorStyleColor",v);var h=$("cursorstyle-color-hex");if(h)h.textContent=v;applyCursorStyle();});}
       setCheck("s-clicksparkfx","on",settings.clickSparkFx);
       bindCheck("s-clicksparkfx","on","off",function(v){sv("clickSparkFx",v);setFxExclusive("clickSparkFx");applyClickSparkFx();toggleFxOpts();});
@@ -3731,7 +3754,7 @@ function bindSettingsEvents(id){
       bindChange("s-bmbar",function(v){sv("bookmarkBar",v);applyBookmarkBar(v);});
     }else if(id==="search"){
       var se=$("s-se");if(se)se.value=settings.searchEngine||"kastravasearch";
-      bindChange("s-se",function(v){sv("searchEngine",v);});
+      var seCh=$("s-se");if(seCh)seCh.addEventListener("change",function(e){var v=e.target.value;if(PREMIUM_ENGINES[v]&&!isPremium()){e.target.value=settings.searchEngine||"kastravasearch";requirePremium();return;}sv("searchEngine",v);});
     }else if(id==="privacy"){
       setSel("s-tracking",settings.tracking);
       setCheck("s-dnt","on",settings.dnt);
@@ -3777,6 +3800,7 @@ function bindSettingsEvents(id){
       var mce=$("s-lickey");
       var act=$("s-licactivate");if(act)act.addEventListener("click",function(){activatePremium(mce?mce.value.trim():"");});
       var buy=$("s-licbuy");if(buy)buy.addEventListener("click",function(){openOobBuy(LIC.machine);});
+      var renew=$("s-licrenew");if(renew)renew.addEventListener("click",function(){openOobBuy(LIC.machine);});
       var buylink=$("s-licbuylink");if(buylink)buylink.addEventListener("click",function(e){e.preventDefault();openOobBuy(LIC.machine);});
       var ccm=$("s-liccopy");if(ccm)ccm.addEventListener("click",function(){copyText(LIC.machine);toast("Machine code copied");});
     }else if(id==="reset"){
@@ -3847,17 +3871,7 @@ async function renderSidePanel(type){
   body.innerHTML=items.map(function(i){return "<div class=\"sp-item\" data-url=\""+esc(i.url||"")+"\"><div style=\"flex:1;overflow:hidden\"><div class=\"sp-title\">"+esc(i.title||i.filename||i.name||"Untitled")+"</div><div class=\"sp-url\">"+esc(i.url||"")+"</div></div></div>";}).join("");
   body.querySelectorAll(".sp-item").forEach(function(el){el.addEventListener("click",function(){var u=el.dataset.url;if(u)addTab(u);});});
 }
-function bindKastget(){
-  var start=$("ag-start");if(start)start.addEventListener("click",function(){var u=$("ag-url").value.trim();if(u){startAGDownload(u);$("ag-url").value="";}});
-  var agInp=$("ag-url");if(agInp)agInp.addEventListener("keydown",function(e){if(e.key==="Enter"){var u=agInp.value.trim();if(u){startAGDownload(u);agInp.value="";}}});
-}
 function openAgPanel(){addTab("about:kastget");}
-function startAGDownload(url){
-  var id=Date.now();var name=url.split("/").pop().split("?")[0]||"download";
-  var item={id:id,name:name,url:url,status:"queued",progress:0,size:0,speed:0};
-  agDownloads.push(item);agIdMap[id]=item;renderAG();
-  if(api&&api.agStart){api.agStart(url).then(function(rid){agIdMap[rid]=item;item.realId=rid;renderAG();}).catch(function(){});}
-}
 function handleAgUpdate(d){
   var item=agIdMap[d.id];if(!item)return;
   item.name=d.filename||item.name;item.size=d.total||0;item.received=d.received||0;item.speed=d.speed||0;
@@ -3895,12 +3909,6 @@ function renderAG(){
   });
 }
 function fmtSize(b){if(!b)return"";if(b<1024)return b+" B";if(b<1048576)return(b/1024).toFixed(1)+" KB";if(b<1073741824)return(b/1048576).toFixed(1)+" MB";return(b/1073741824).toFixed(2)+" GB";}
-function bindDownloadIntercept(){
-  $("dl-close").addEventListener("click",function(){$("dl-modal").classList.remove("visible");INTERCEPT_URL="";});
-  $("dl-copy").addEventListener("click",function(){if(INTERCEPT_URL)navigator.clipboard.writeText(INTERCEPT_URL).catch(function(){});$("dl-modal").classList.remove("visible");INTERCEPT_URL="";});
-  $("dl-ag").addEventListener("click",function(){$("dl-modal").classList.remove("visible");if(INTERCEPT_URL){var u0=INTERCEPT_URL;addTab("about:kastget");setTimeout(function(){var u=$("ag-url");if(u){u.value=u0;u.focus();}},200);}INTERCEPT_URL="";});
-}
-function showDownloadBlockModal(url){INTERCEPT_URL=url;$("dl-modal-url").textContent=url||"Unknown URL";$("dl-modal").classList.add("visible");}
 function requestWindowClose(){
   if(settings.confirmClose==="on"&&tabs.length>1){
     showConfirmModal(function(){if(api&&api.close)api.close();},{title:"Close window?",desc:"This will close "+tabs.length+" open tabs."});
@@ -3956,8 +3964,6 @@ function init(){
   try{$("btn-menu").addEventListener("click",openSettings);}catch(e){}
   try{$("btn-more").addEventListener("click",toggleMoreMenu);document.addEventListener("click",function(e){var m=$("more-menu");if(m&&!e.target.closest("#btn-more")&&!e.target.closest("#more-menu"))m.classList.remove("visible");});}catch(e){}
   try{bindSidePanel();}catch(e){err("bindSidePanel",e);}
-  try{bindKastget();}catch(e){err("bindKastget",e);}
-  try{bindDownloadIntercept();}catch(e){err("bindDownloadIntercept",e);}
   try{bindConfirmModal();}catch(e){err("bindConfirmModal",e);}
   try{bindAddSiteModal();}catch(e){err("bindAddSiteModal",e);}
   try{bindBookmarks();}catch(e){err("bindBookmarks",e);}
@@ -3973,7 +3979,7 @@ function init(){
     try{if(api.onOpenNewTab)api.onOpenNewTab(function(url){addTab(url);});}catch(e){}
     try{if(api.onMenuShortcut)api.onMenuShortcut(handleMenuShortcut);}catch(e){}
     try{if(api.onSaveSessionNow)api.onSaveSessionNow(function(){saveSession();});}catch(e){}
-    try{if(api.onShowDownloadModal)api.onShowDownloadModal(function(d){var url=typeof d==="string"?d:(d&&d.url)||"";showDownloadBlockModal(url);});}catch(e){}
+    try{if(api.onAgUpdate)api.onAgUpdate(handleAgUpdate);}catch(e){}
     try{if(api.onAgUpdate)api.onAgUpdate(handleAgUpdate);}catch(e){}
     try{if(api.onRadarUpdate)api.onRadarUpdate(onRadarUpdate);}catch(e){}
   }
@@ -3982,7 +3988,7 @@ function init(){
 }
 if(document.readyState==="loading"){document.addEventListener("DOMContentLoaded",init);}else{init();}
 window.addTab=addTab; window.selectTab=selectTab; window.closeTab=closeTab; window.tabs=tabs; window.tabMap=tabMap;
-window.esc=esc; window.reloadPage=reloadPage; window.goBack=goBack; window.goForward=goForward; window.openFindBar=openFindBar; window.takeScreenshot=takeScreenshot; window.togglePip=togglePip; window.toggleReader=toggleReader; window.toggleSplit=toggleSplit; window.toggleRadar=toggleRadar; window.viewSource=viewSource; window.openSideTab=openSideTab; window.openSettings=openSettings; window.goHome=goHome; window.openAgPanel=openAgPanel; window.cycleTab=cycleTab; window.showPage=showPage; window.applyThemeKey=applyThemeKey; window.saveSetting=saveSetting; window.toast=toast; window.toggleTabLayout=toggleTabLayout; window.applyTabLayout=applyTabLayout; window.applyVtabsCollapsed=applyVtabsCollapsed; window.EDITION=EDITION; window.isPremium=isPremium; window.requirePremium=requirePremium; window.activatePremium=activatePremium; window.loadLicense=loadLicense; window.KAS_API=KAS_API; window.LIC=LIC; window.clickCheckout=null; window.openPremiumStore=openPremiumStore; window.copyText=copyText;
+window.esc=esc; window.reloadPage=reloadPage; window.goBack=goBack; window.goForward=goForward; window.openFindBar=openFindBar; window.takeScreenshot=takeScreenshot; window.togglePip=togglePip; window.toggleReader=toggleReader; window.toggleSplit=toggleSplit; window.toggleRadar=toggleRadar; window.viewSource=viewSource; window.openSideTab=openSideTab; window.openSettings=openSettings; window.goHome=goHome; window.openAgPanel=openAgPanel; window.cycleTab=cycleTab; window.showPage=showPage; window.applyThemeKey=applyThemeKey; window.saveSetting=saveSetting; window.toast=toast; window.toggleTabLayout=toggleTabLayout; window.applyTabLayout=applyTabLayout; window.applyVtabsCollapsed=applyVtabsCollapsed; window.EDITION=EDITION; window.isPremium=isPremium; window.requirePremium=requirePremium; window.activatePremium=activatePremium; window.loadLicense=loadLicense; window.KAS_API=KAS_API; window.KAS_STORE=KAS_STORE; window.LIC=LIC; window.clickCheckout=null; window.openPremiumStore=openPremiumStore; window.copyText=copyText;
 Object.defineProperty(window,'activeTab',{configurable:true,get:function(){return activeTab;}});
 Object.defineProperty(window,'settings',{configurable:true,get:function(){return settings;}});
 })();
@@ -4049,7 +4055,7 @@ var COMMANDS=[
   {name:'Toggle Vertical Tabs',icon:'\u2195',action:function(){if(W.toggleTabLayout)W.toggleTabLayout();},keys:'Ctrl+Shift+V'},
   {name:'History',icon:'\u23F3',action:function(){W.openSideTab('history');}},
   {name:'Bookmarks',icon:'\u2B50',action:function(){W.openSideTab('bookmarks');}},
-  {name:'Downloads (Kastget)',icon:'\u2B07\uFE0F',action:function(){W.addTab('about:kastget');}},
+  {name:'Downloads',icon:'\u2B07\uFE0F',action:function(){W.addTab('about:kastget');}},
   {name:'Localhost Dashboard',icon:'\uD83D\uDDA5\uFE0F',action:function(){W.addTab('about:localhost');}},
   {name:'Settings',icon:'\u2699\uFE0F',action:function(){W.openSettings();}},
   {name:'Zoom In',icon:'\uD83D\uDD0D',action:function(){var at=W.activeTab;if(at&&at.wv){var s=W.settings;var z=parseInt(s.zoom)||100;s.zoom=String(Math.min(200,z+10));try{at.wv.setZoomFactor((z+10)/100);}catch(e){}}}},

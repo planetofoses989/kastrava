@@ -85,16 +85,20 @@ function verifyPayload(payload, sig) {
   if (payload.iss !== 'kastrasoft' || payload.product !== 'kastrava-premium') {
     return { ok: false, reason: 'bad_issuer' }
   }
-  if (payload.exp && Date.now() / 1000 > payload.exp) return { ok: false, reason: 'expired' }
+  const now = Date.now() / 1000
+  if (payload.exp && now > payload.exp) return { ok: false, reason: 'expired' }
   if ((payload.mid || '').toUpperCase() !== machineCode()) return { ok: false, reason: 'machine_mismatch' }
-  return { ok: true }
+  // Grace period: the billing period ended (sub_end) but exp (sub_end +
+  // grace days) hasn't passed yet — still unlocked, UI nudges a renewal.
+  const grace = !!(payload.sub_end && now > payload.sub_end)
+  return { ok: true, grace }
 }
 
 function status() {
   const lic = loadLicense()
   const code = machineCode()
   if (!lic || !lic.payload) {
-    return { activated: false, edition: 'premium', machine: code, key: null, reason: 'no_license', expiresAt: null }
+    return { activated: false, edition: 'premium', machine: code, key: null, reason: 'no_license', expiresAt: null, subEnd: null, grace: false }
   }
   const v = verifyPayload(lic.payload, lic.sig)
   return {
@@ -104,6 +108,8 @@ function status() {
     key: lic.key || null,
     reason: v.reason || null,
     expiresAt: v.ok && lic.payload.exp ? lic.payload.exp * 1000 : null,
+    subEnd: v.ok && lic.payload.sub_end ? lic.payload.sub_end * 1000 : null,
+    grace: v.ok && !!v.grace,
     iat: lic.payload.iat ? lic.payload.iat * 1000 : null
   }
 }
@@ -137,4 +143,14 @@ function clear() {
   try { fs.rmSync(licensePath(), { force: true }) } catch {}
 }
 
-module.exports = { machineCode, machineIdRaw, status, activate, verifyPayload, loadLicense, clear, API }
+// Silent renewal pickup: activation is idempotent per machine, so calling it
+// again on startup fetches a freshly-signed license with the renewed expiry
+// (extended server-side by the Razorpay webhook after each successful charge).
+async function refreshIfLicensed() {
+  const lic = loadLicense()
+  if (!lic || !lic.key) return
+  if (!status().activated) return
+  await activate(lic.key).catch(() => {})
+}
+
+module.exports = { machineCode, machineIdRaw, status, activate, verifyPayload, loadLicense, refreshIfLicensed, clear, API }

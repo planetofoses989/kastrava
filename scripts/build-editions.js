@@ -14,6 +14,12 @@ if (!edition || !['premium', 'free'].includes(edition)) {
   process.exit(1)
 }
 
+// API + store hosts. KAS_API is what the app uses for license/payment calls;
+// KAS_STORE is where the built-in Subscribe button opens (#premium checkout).
+// Both are stamped into the hand-written inline script in browser.html.
+const KAS_API = process.env.KAS_API || 'http://127.0.0.1:8787'
+const KAS_STORE = process.env.KAS_STORE || process.env.KAS_API || 'http://127.0.0.1:8787'
+
 const OUT_DIR = edition === 'premium' ? 'dist' : 'dist-free'
 const htmlFile = path.join(__dirname, '..', OUT_DIR, 'browser.html')
 
@@ -32,5 +38,8 @@ if (!fs.existsSync(htmlFile)) {
 }
 let html = fs.readFileSync(htmlFile, 'utf8')
 html = html.split('__EDITION__').join(JSON.stringify(edition))
+html = html.split('__KAS_API__').join(JSON.stringify(KAS_API))
+html = html.split('__KAS_STORE__').join(JSON.stringify(KAS_STORE))
 fs.writeFileSync(htmlFile, html)
 console.log(`[build-editions] ${edition} edition written to ${OUT_DIR} (${html.length} bytes)`)
+console.log(`[build-editions] KAS_API=${KAS_API} KAS_STORE=${KAS_STORE}`)

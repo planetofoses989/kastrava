@@ -41,10 +41,7 @@ contextBridge.exposeInMainWorld('api', {
 
   onSaveSessionNow: (cb) => ipcRenderer.on('save-session-now', () => cb()),
 
-  onShowDownloadModal: (cb) => ipcRenderer.on('show-download-modal', (_, d) => cb(d)),
-
-  // Kastget
-  agStart: (url) => ipcRenderer.invoke('ag-start', url),
+  // Downloads (handled natively by Chromium, tracked via IPC)
   agPause: (id) => ipcRenderer.invoke('ag-pause', id),
   agResume: (id) => ipcRenderer.invoke('ag-resume', id),
   agStop: (id) => ipcRenderer.invoke('ag-stop', id),
