@@ -205,8 +205,19 @@ async function handlePost(req, res, pathname) {
     const sub = store.getSubscription(String(subscription_id))
     if (!sub) return json(res, 404, { error: 'subscription_not_found' })
     if (sub.status === 'active' || sub.status === 'paid') {
-      const k = store.keyForSubscription(String(subscription_id))
-      return json(res, 200, { ok: true, already_paid: true, key: k })
+      // The signed webhook may have raced the checkout callback and marked the
+      // subscription active before verify ran — a key must still be minted so
+      // activation + download work. Idempotent when a key already exists.
+      let key = store.keyForSubscription(String(subscription_id))
+      if (!key) {
+        key = sign.makeLicenseKey()
+        store.issueLicense(key, null, String(subscription_id))
+      }
+      try {
+        const rs = await razorpay.fetchSubscription(String(subscription_id))
+        if (rs && rs.current_end) store.extendLicense(key, new Date(rs.current_end * 1000).toISOString())
+      } catch {}
+      return json(res, 200, { ok: true, already_paid: true, key })
     }
     if (!razorpay.verifySubSignature(String(payment_id), String(subscription_id), String(signature || ''))) {
       return json(res, 403, { error: 'bad_signature', msg: 'Payment could not be verified.' })
