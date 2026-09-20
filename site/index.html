@@ -46,8 +46,6 @@ html[data-theme="dark"] .theme-btn .ic-moon{display:none}
 header{padding:70px 0 30px}
 .hero-grid{display:grid;grid-template-columns:1fr 1.1fr;gap:56px;align-items:center}
 .kicker{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--cream);background:var(--panel);padding:6px 14px;border-radius:8px;letter-spacing:1px;margin-bottom:22px}
-.hero-logo{width:96px;height:96px;border-radius:24px;margin-bottom:22px;filter:drop-shadow(0 6px 18px rgba(0,0,0,.18));transition:transform .25s}
-.hero-logo:hover{transform:rotate(-4deg) scale(1.04)}
 header h1{font-size:68px;font-weight:700;letter-spacing:-2px;line-height:.98;color:var(--ink);margin-bottom:20px}
 header h1 .strike{text-decoration:line-through;text-decoration-thickness:5px;text-decoration-color:var(--blue)}
 header .lede{font-size:17px;color:var(--muted);max-width:460px;margin-bottom:28px}
@@ -197,7 +195,6 @@ footer a{color:var(--blue);text-decoration:none}
   <div class="container">
     <div class="hero-grid">
       <div>
-        <img class="hero-logo reveal" src="logo.png" alt="Kastrava logo">
         <div class="kicker" style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--blue);letter-spacing:1px;margin-bottom:18px">v101.0.0-beta · Codename: Starship Wonders · originally Antersurf</div>
         <h1>Leave <span class="strike">nothing</span> behind.</h1>
         <p class="lede" style="font-size:16.5px;color:var(--muted);max-width:480px;margin-bottom:26px">Kastrava keeps <b>zero</b> persistent web storage. No cache, no cookies, no site databases on your disk — everything runs in RAM and is <b>wiped on exit</b>.</p>
