@@ -24,7 +24,7 @@ function ensureFilterDir() {
 function downloadFile(url, destPath) {
   return new Promise((resolve, reject) => {
     const proto = url.startsWith('https') ? https : http
-    const req = proto.get(url, { headers: { 'User-Agent': 'Kastrava/27' } }, (res) => {
+    const req = proto.get(url, { headers: { 'User-Agent': 'Kastrava/101' } }, (res) => {
       if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
         return downloadFile(res.headers.location, destPath).then(resolve, reject)
       }

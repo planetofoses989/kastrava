@@ -331,7 +331,7 @@ const server = http.createServer((req, res) => {
 
   if (req.method === 'GET') {
     if (pathname === '/api/health') {
-      return json(res, 200, { ok: true, dev: razorpay.isDev(), host: HOST, price: PRICE_INR, grace_days: GRACE_DAYS, version: '27.0.0' })
+      return json(res, 200, { ok: true, dev: razorpay.isDev(), host: HOST, price: PRICE_INR, grace_days: GRACE_DAYS, version: '101.0.0', codename: 'Starship Wonders' })
     }
     const dl = pathname.match(/^\/api\/dl\/(.+)$/)
     if (dl) return servePremium(res, decodeURIComponent(dl[1]))
