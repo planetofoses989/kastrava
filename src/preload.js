@@ -47,6 +47,7 @@ contextBridge.exposeInMainWorld('api', {
   agStop: (id) => ipcRenderer.invoke('ag-stop', id),
   agClear: (id) => ipcRenderer.invoke('ag-clear', id),
   agList: () => ipcRenderer.invoke('ag-list'),
+  agSave: (id) => ipcRenderer.invoke('ag-save', id),
   onAgUpdate: (cb) => ipcRenderer.on('ag-update', (_, d) => cb(d)),
   onAgCleared: (cb) => ipcRenderer.on('ag-cleared', (_, id) => cb(id)),
 

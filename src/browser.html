@@ -536,7 +536,7 @@ body.vtabs-collapsed .vtabs-new{border-style:solid}
     <div class="ntp-footer">Kastrava 27</div>
   </div>
   <div class="ag-page" id="ag-page">
-    <div style="padding:20px;border-bottom:1px solid var(--c-border)"><h2>Downloads</h2><span style="font-size:11px;color:var(--c-text2)">Saved to your Downloads folder</span></div>
+    <div style="padding:20px;border-bottom:1px solid var(--c-border)"><h2>Downloads</h2><span style="font-size:11px;color:var(--c-text2)">Kept private for this session — wiped when you quit. Save files you want to keep.</span></div>
     <div id="ag-body" style="padding:8px 20px;flex:1;overflow-y:auto"></div>
   </div>
 </div>
@@ -3873,11 +3873,28 @@ async function renderSidePanel(type){
 }
 function openAgPanel(){addTab("about:kastget");}
 function handleAgUpdate(d){
-  var item=agIdMap[d.id];if(!item)return;
-  item.name=d.filename||item.name;item.size=d.total||0;item.received=d.received||0;item.speed=d.speed||0;
-  item.outputPath=d.outputPath||item.outputPath;
-  item.status=d.state||"downloading";item.progress=item.size>0?Math.round((item.received/item.size)*100):0;
+  d=d||{};
+  // Live downloads arrive as ag-update events; create the item on first sight
+  // (the manager used to ignore them, so downloads never appeared here).
+  var item=agIdMap[d.id];
+  if(!item){
+    item={id:d.id,realId:d.id,name:d.filename||"Download",url:d.url||"",received:0,size:0,speed:0,outputPath:null,status:"downloading",progress:0,savedTo:null};
+    agIdMap[d.id]=item;agDownloads.push(item);
+  }
+  if(d.filename)item.name=d.filename;
+  if(d.url)item.url=d.url;
+  if(d.outputPath)item.outputPath=d.outputPath;
+  item.size=d.total||item.size;item.received=d.received||0;item.speed=d.speed||0;
+  item.status=d.state||item.status;item.progress=item.size>0?Math.round((item.received/item.size)*100):0;
   if(item.status==="done")item.progress=100;renderAG();
+}
+function agSaveAction(realId){
+  if(!api||!api.agSave)return;
+  api.agSave(realId).then(function(r){
+    var item=agIdMap[realId];if(!item)return;
+    if(r&&r.ok){item.savedTo=r.path;renderAG();toast("Saved to your Downloads folder");}
+    else toast(((r&&r.msg)||"Could not save")+" — files are session-only until you save them.");
+  }).catch(function(){toast("Could not save the file.");});
 }
 function agAction(id,act){
   var item=agIdMap[id];if(!item)return;
@@ -3895,7 +3912,7 @@ function renderAG(){
     var btns="";
     if(d.status==="downloading"||d.status==="queued")btns="<button class=\"ag-btn\" data-act=\"pause\">Pause</button><button class=\"ag-btn ag-danger\" data-act=\"stop\">Stop</button>";
     else if(d.status==="paused")btns="<button class=\"ag-btn ag-accent\" data-act=\"resume\">Resume</button><button class=\"ag-btn ag-danger\" data-act=\"stop\">Stop</button>";
-    else if(d.status==="done")btns="<button class=\"ag-btn ag-accent\" data-open=\""+esc(d.outputPath||"")+"\">Open Folder</button><button class=\"ag-btn\" data-act=\"clear\">Clear</button>";
+    else if(d.status==="done")btns="<button class=\"ag-btn ag-accent\" data-save=\""+d.id+"\">"+(d.savedTo?"Saved ✓":"Save to Downloads")+"</button><button class=\"ag-btn\" data-open=\""+esc(d.outputPath||"")+"\">Open folder</button><button class=\"ag-btn\" data-act=\"clear\">Clear</button>";
     else if(d.status==="error")btns="<button class=\"ag-btn\" data-act=\"clear\">Clear</button>";
     return "<div class=\"ag-item\" data-id=\""+d.id+"\"><div class=\"ag-top\"><div class=\"ag-name\">"+esc(d.name)+"</div><div class=\"ag-btns\">"+btns+"</div></div><div class=\"ag-bar\"><div class=\"ag-fill\" style=\"width:"+d.progress+"%\"></div></div><div class=\"ag-meta\"><span class=\"ag-status "+st+"\">"+d.status+"</span><span>"+d.progress+"%"+(d.size?" of "+fmtSize(d.size):"")+"</span></div></div>";
   }).join("");
@@ -3903,6 +3920,7 @@ function renderAG(){
     btn.addEventListener("click",function(){
       var itemEl=btn.closest(".ag-item");
       var id=parseInt(itemEl&&itemEl.dataset.id);
+      if(btn.dataset.save){agSaveAction(id);return;}
       if(btn.dataset.open){if(api&&api.openPath)api.openPath(btn.dataset.open);return;}
       agAction(id,btn.dataset.act);
     });
