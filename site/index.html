@@ -140,13 +140,17 @@ a.dl-link:hover{border-color:var(--deep);background:var(--card)}
 .faq summary::after{content:'+';float:right;color:var(--blue);font-weight:700}
 .faq details[open] summary::after{content:'–'}
 .faq p{font-size:13.5px;color:var(--muted);margin-top:10px}
+.os-band{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;background:#0288d1;color:#fff;padding:18px 26px;border-radius:14px;text-decoration:none;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:17px;letter-spacing:.5px;margin-bottom:14px;transition:all .18s}
+.os-band:hover{background:#039be5;transform:translateY(-1px)}
+.os-band-cta{font-size:13px;font-weight:600;background:rgba(255,255,255,.16);border:2px solid #fff;padding:8px 18px;border-radius:10px;white-space:nowrap}
+.os-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
 footer{border-top:2px solid var(--deep);margin-top:64px;padding:36px 0 48px;background:var(--card)}
 footer p{font-size:12.5px;color:var(--muted2)}
 footer a{color:var(--blue);text-decoration:none}
 ::selection{background:var(--blue);color:var(--bg)}
 .reveal{opacity:0;transform:translateY(20px);transition:opacity .55s ease,transform .55s ease}
 .reveal.in{opacity:1;transform:none}
-@media(max-width:900px){.hero-grid{grid-template-columns:1fr}header h1{font-size:46px}.grid{grid-template-columns:1fr 1fr}.stats{grid-template-columns:1fr 1fr}}
+@media(max-width:900px){.hero-grid{grid-template-columns:1fr}header h1{font-size:46px}.grid{grid-template-columns:1fr 1fr}.stats{grid-template-columns:1fr 1fr}.os-grid{grid-template-columns:1fr}}
 @media(max-width:600px){.grid,.dl,.guide-grid{grid-template-columns:1fr}header h1{font-size:36px}header{padding:52px 0 20px}.stats{grid-template-columns:1fr 1fr}}
 @media(max-width:480px){nav .beta{display:none}nav .name{font-size:13px;letter-spacing:2px}nav a.btn{padding:8px 15px;font-size:12px}.theme-btn{width:34px;height:34px}}
 @media(prefers-reduced-motion:reduce){.marquee span{animation:none}.reveal{transition:none;opacity:1;transform:none}}
@@ -198,7 +202,7 @@ footer a{color:var(--blue);text-decoration:none}
           <a class="btn btn-primary" href="#download" style="display:inline-block;padding:15px 36px;border-radius:12px;font-size:15px;font-weight:600;background:#0288d1;color:#fff;text-decoration:none;font-family:'Space Grotesk',sans-serif">Download Free</a>
           <a class="btn btn-ghost" href="#premium" style="display:inline-block;padding:15px 36px;border-radius:12px;font-size:15px;font-weight:600;background:transparent;border:2px solid var(--deep);color:var(--ink);text-decoration:none;font-family:'Space Grotesk',sans-serif">Go Premium — ₹199/34d</a>
         </div>
-        <p class="mono" style="font-size:11.5px;color:var(--muted2);margin-top:22px">Linux &middot; Windows via bridge &middot; Free core, forever &middot; Premium ₹199/34 days, one machine</p>
+        <p class="mono" style="font-size:11.5px;color:var(--muted2);margin-top:22px">Linux &middot; Windows via bridge &middot; Free core, forever &middot; Premium ₹199/34 days, one machine &middot; 100% Open Source (GPLv3)</p>
       </div>
       <div>
         <div class="shot-frame reveal in">
@@ -216,7 +220,7 @@ footer a{color:var(--blue);text-decoration:none}
   </div>
 </header>
 
-<div class="marquee" aria-hidden="true"><span>ZERO TELEMETRY <span class="cy">·</span> ZERO COOKIES <span class="cy">·</span> ZERO ACCOUNTS <span class="cy">·</span> ZERO COMPROMISE <span class="cy">·</span> ZERO TELEMETRY <span class="cy">·</span> ZERO COOKIES <span class="cy">·</span> ZERO ACCOUNTS <span class="cy">·</span> ZERO COMPROMISE <span class="cy">·</span>&nbsp;</span><span>ZERO TELEMETRY <span class="cy">·</span> ZERO COOKIES <span class="cy">·</span> ZERO ACCOUNTS <span class="cy">·</span> ZERO COMPROMISE <span class="cy">·</span> ZERO TELEMETRY <span class="cy">·</span> ZERO COOKIES <span class="cy">·</span> ZERO ACCOUNTS <span class="cy">·</span> ZERO COMPROMISE <span class="cy">·</span>&nbsp;</span></div>
+<div class="marquee" aria-hidden="true"><span>ZERO TELEMETRY <span class="cy">·</span> ZERO COOKIES <span class="cy">·</span> ZERO ACCOUNTS <span class="cy">·</span> 100% GPLv3 OPEN SOURCE <span class="cy">·</span> ZERO COMPROMISE <span class="cy">·</span> ZERO TELEMETRY <span class="cy">·</span> ZERO COOKIES <span class="cy">·</span> ZERO ACCOUNTS <span class="cy">·</span> 100% GPLv3 OPEN SOURCE <span class="cy">·</span> ZERO COMPROMISE <span class="cy">·</span>&nbsp;</span><span>ZERO TELEMETRY <span class="cy">·</span> ZERO COOKIES <span class="cy">·</span> ZERO ACCOUNTS <span class="cy">·</span> 100% GPLv3 OPEN SOURCE <span class="cy">·</span> ZERO COMPROMISE <span class="cy">·</span> ZERO TELEMETRY <span class="cy">·</span> ZERO COOKIES <span class="cy">·</span> ZERO ACCOUNTS <span class="cy">·</span> 100% GPLv3 OPEN SOURCE <span class="cy">·</span> ZERO COMPROMISE <span class="cy">·</span>&nbsp;</span></div>
 
 <section id="features">
   <div class="container">
@@ -320,9 +324,43 @@ footer a{color:var(--blue);text-decoration:none}
   </div>
 </section>
 
+<section id="opensource">
+  <div class="container">
+    <div class="sec-kicker reveal">05 — OPEN SOURCE</div>
+    <h2 class="sec-title reveal">No black boxes. Read every line.</h2>
+    <p class="sec-sub reveal">Kastrava is 100% open source under <b>GPLv3</b> — not a wrapper around Chromium, the whole browser: UI, license flow, themes, everything. Audit it, fork it, build your own.</p>
+  </div>
+  <div class="container">
+    <a class="os-band reveal" href="https://github.com/planetofoses989/kastrava" target="_blank" rel="noopener">
+      <span>github.com/planetofoses989/kastrava</span>
+      <span class="os-band-cta">★ Star the repo →</span>
+    </a>
+  </div>
+  <div class="container">
+    <div class="os-grid">
+      <div class="card reveal">
+        <div class="mono" style="font-size:11px;color:var(--blue);margin-bottom:12px">LICENSE</div>
+        <h3>GPLv3, unambiguously</h3>
+        <p>Copyleft, no exceptions. If you fork it, your changes stay open too — no proprietary re-skins of a private-browser idea.</p>
+      </div>
+      <div class="card reveal">
+        <div class="mono" style="font-size:11px;color:var(--blue);margin-bottom:12px">AUDIT</div>
+        <h3>Verify every privacy claim</h3>
+        <p>Zero telemetry, volatile sessions, one-machine keys — all in the source. You don't have to trust the marketing, you can read the code.</p>
+      </div>
+      <div class="card reveal">
+        <div class="mono" style="font-size:11px;color:var(--blue);margin-bottom:12px">BUILD</div>
+        <h3>Build it yourself</h3>
+        <p>Clone, package and run your own copy — nothing to register, no accounts.</p>
+        <div class="cmd">git clone https://github.com/planetofoses989/kastrava.git</div>
+      </div>
+    </div>
+  </div>
+</section>
+
 <section id="windows-bridge">
   <div class="container">
-    <div class="sec-kicker reveal">05 — ON WINDOWS?</div>
+    <div class="sec-kicker reveal">06 — ON WINDOWS?</div>
     <h2 class="sec-title reveal">Two bridges until native lands.</h2>
     <p class="sec-sub reveal">Old AnterSurf users: run Kastrava on Windows today with either path.</p>
     <div class="guide-grid">
@@ -354,7 +392,7 @@ footer a{color:var(--blue);text-decoration:none}
 
 <section>
   <div class="container">
-    <div class="sec-kicker reveal">06 — QUESTIONS</div>
+    <div class="sec-kicker reveal">07 — QUESTIONS</div>
     <h2 class="sec-title reveal">Asked often</h2>
     <p class="sec-sub reveal">Straight answers.</p>
     <div class="faq reveal" style="max-width:780px">
@@ -374,7 +412,7 @@ footer a{color:var(--blue);text-decoration:none}
 <footer>
   <div class="container">
     <p>Kastrava 101 Beta &ldquo;Starship Wonders&rdquo; · Originally AnterSurf · Built by Kastrasoft</p>
-    <p style="margin-top:8px;opacity:.7"><a href="https://github.com/planetofoses989/kastrava" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline">100% Open Source (GPLv3)</a> · github.com/planetofoses989/kastrava</p>
+    <p style="margin-top:10px;font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:700;color:var(--ink)"><a href="https://github.com/planetofoses989/kastrava" target="_blank" rel="noopener" style="color:inherit">★ 100% Open Source — GPLv3</a> · github.com/planetofoses989/kastrava</p>
     <p style="margin-top:6px">Support: <a href="mailto:planetofoses989@gmail.com">planetofoses989@gmail.com</a></p>
   </div>
 </footer>

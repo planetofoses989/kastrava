@@ -135,7 +135,9 @@ body.show-home #btn-home{display:flex}
 body.show-copy #omni-copy{display:flex}
 body.no-clock .ntp-time{display:none}
 body.no-logo .ntp-logo,body.no-logo .ntp-brand{display:none}
-.ntp-footer{position:fixed;bottom:8px;font-size:11px;color:var(--c-text3);opacity:.5;pointer-events:none;letter-spacing:.5px}
+.ntp-footer{position:fixed;bottom:8px;font-size:11px;color:var(--c-text3);opacity:.6;pointer-events:auto;letter-spacing:.5px}
+.ntp-footer a{color:inherit;text-decoration:none}
+.ntp-footer a:hover{color:var(--accent);text-decoration:underline}
 .ag-page{position:absolute;inset:0;display:none;flex-direction:column;overflow-y:auto;background:var(--c-tab-active);z-index:1;-webkit-user-select:text;user-select:text}
 .ag-page.visible{display:flex}
 .ag-item{background:var(--c-omni);border-radius:8px;padding:12px;margin-bottom:8px}
@@ -533,7 +535,7 @@ body.vtabs-collapsed .vtabs-new{border-style:solid}
       <input type="text" id="ntp-search-input" placeholder="Search with KastravaSearch">
     </div>
     <div class="ntp-shortcuts" id="top-sites"></div>
-    <div class="ntp-footer">Kastrava 101</div>
+    <div class="ntp-footer"><a href="https://github.com/planetofoses989/kastrava" target="_blank" rel="noopener" style="color:inherit;text-decoration:none">Kastrava 101 · 100% Open Source (GPLv3)</a></div>
   </div>
   <div class="ag-page" id="ag-page">
     <div style="padding:20px;border-bottom:1px solid var(--c-border)"><h2>Downloads</h2><span style="font-size:11px;color:var(--c-text2)">Kept private for this session — wiped when you quit. Save files you want to keep.</span></div>
@@ -3495,7 +3497,7 @@ function renderSettingsSection(id){
     }else{
       h+="<div class=\"sg\"><div class=\"lbl\">Activation Key</div><input type=\"text\" id=\"s-lickey\" style=\"font-family:var(--font-mono);letter-spacing:.5px\" placeholder=\"KAS-XXXX-XXXX-XXXX-XXXX\" autocomplete=\"off\" spellcheck=\"false\"><div class=\"desc\">Paste the key you received after subscribing, then click Activate.</div></div>";
       h+="<div class=\"sg\" style=\"display:flex;gap:8px;flex-wrap:wrap\"><button class=\"btn-sm btn-accent\" id=\"s-licactivate\">Activate Premium</button><button class=\"btn-sm\" id=\"s-licbuy\">Subscribe \u2014 \u20B9199/34d</button><button class=\"btn-sm\" id=\"s-liccopy\">Copy machine code</button></div>";
-      h+="<div class=\"desc\" style=\"margin-top:6px\">No key yet? Subscribe at <a href=\"#\" id=\"s-licbuylink\" style=\"color:var(--accent)\">kastrava.dev</a> \u2014 you'll get a key instantly via Razorpay. Auto-renews every 34 days, cancel anytime.</div>";
+      h+="<div class=\"desc\" style=\"margin-top:6px\">No key yet? Subscribe at <a href=\"#\" id=\"s-licbuylink\" style=\"color:var(--accent)\">kastrava.pp.ua/#premium</a> \u2014 you'll get a key instantly via Razorpay. Auto-renews every 34 days, cancel anytime.</div>";
     }
     h+="<div class=\"sg\"><div class=\"lbl\">What's in Premium</div><div class=\"desc\">\u2022 Tracking Radar (live per-tab tracker score)<br>\u2022 Cursor Effects: Mouse Style, Fluid Splash, Blob Trail, Glass Lens, Particle Trail, Click Spark, Pixel Trail, Ribbons<br>\u2022 Workspaces<br>\u2022 Split View<br>\u2022 All 20 dark + light themes<br>\u2022 Extra search engines: Brave, Google, Ecosia<br>\u2022 Custom cursor arrow<br>\u2022 Reader Mode, Picture-in-Picture, Screenshot<br>\u2022 Localhost Dashboard<br>\u2022 Vertical tabs layout<br>\u2022 Bookmark import &amp; export<br>\u2022 Custom shortcut remapping</div></div>";
   }
@@ -3625,6 +3627,7 @@ function renderSettingsSection(id){
     h+="<div class=\"about-card\"><img src=\"logo.png\"><div><div class=\"name\">Kastrava <span style=\"font-size:10px;font-weight:700;background:rgba(245,158,11,.15);color:#f59e0b;padding:2px 8px;border-radius:10px;vertical-align:2px;letter-spacing:.5px\">BETA</span></div><div class=\"ver\">Version 101.0.0 &mdash; Starship Wonders &mdash; the most private browser &mdash; "+editionLabel()+"</div></div></div>";
     h+="<div class=\"sg\"><div class=\"lbl\">A new voyage through the web</div><div class=\"desc\">Kastrava 101 &ldquo;Starship Wonders&rdquo; is a fast, privacy-first browser designed for a cleaner web. It ships with an ad and tracker radar, cookie controls, fluid cursor effects, a redesigned new-tab experience, and deep theming &mdash; all tuned to stay out of your way.</div></div>";
     h+="<div class=\"sg\"><div class=\"lbl\">Made by Kastrasoft</div><div class=\"desc\">Built for absolute privacy.<br>Email: planetofoses989@gmail.com</div></div>";
+    h+="<div class=\"sg\" style=\"border:1px solid var(--c-border);border-radius:12px;padding:14px;margin-top:4px\"><div class=\"lbl\" style=\"font-weight:700;font-size:13px\">★ 100% Open Source — GPLv3</div><div class=\"desc\">Every line of Kastrava is public on GitHub — the browser, the license server, the storefront. Audit the privacy claims, report issues, fork it and build your own copy: <b>github.com/planetofoses989/kastrava</b></div><div style=\"margin-top:12px;display:flex;gap:8px;flex-wrap:wrap\"><a class=\"btn-sm btn-accent\" href=\"https://github.com/planetofoses989/kastrava\" target=\"_blank\" rel=\"noopener\" style=\"text-decoration:none;padding:8px 18px\">View source on GitHub</a></div></div>";
   }
   p.innerHTML=h;
   bindSettingsEvents(id);
