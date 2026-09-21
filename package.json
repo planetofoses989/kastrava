@@ -29,7 +29,9 @@
     "linux": {
       "target": [
         "deb",
-        "pacman"
+        "pacman",
+        "AppImage",
+        "rpm"
       ],
       "category": "Network",
       "icon": "static/logo.png"
