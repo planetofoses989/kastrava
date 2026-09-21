@@ -37,7 +37,10 @@
       "icon": "static/logo.png"
     },
     "win": {
-      "target": "nsis",
+      "target": [
+        "nsis",
+        "portable"
+      ],
       "icon": "static/logo.ico"
     },
     "portable": {
