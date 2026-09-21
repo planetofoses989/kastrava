@@ -27,7 +27,9 @@ const htmlFile = path.join(__dirname, '..', OUT_DIR, 'browser.html')
 const r = spawnSync('npx', ['webpack', '--mode', 'production'], {
   cwd: path.join(__dirname, '..'),
   env: { ...process.env, OUT_DIR },
-  stdio: 'inherit'
+  stdio: 'inherit',
+  // Windows: `npx` is npx.cmd, so plain spawn can't resolve it.
+  shell: process.platform === 'win32'
 })
 if (r.status !== 0) process.exit(r.status || 1)
 
