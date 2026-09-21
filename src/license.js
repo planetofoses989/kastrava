@@ -143,13 +143,15 @@ function clear() {
   try { fs.rmSync(licensePath(), { force: true }) } catch {}
 }
 
-// Silent renewal pickup: activation is idempotent per machine, so calling it
-// again on startup fetches a freshly-signed license with the renewed expiry
-// (extended server-side by the Razorpay webhook after each successful charge).
+// Renewal pickup, no auto-renew: on startup we re-activate a key that is
+// either still valid (picks up a server-side extension after a renewal
+// payment) or expired (retries once in case the user renewed in the store
+// while this session was open). Cheap: one signed activate call, idempotent.
 async function refreshIfLicensed() {
   const lic = loadLicense()
   if (!lic || !lic.key) return
-  if (!status().activated) return
+  const st = status()
+  if (!st.activated && st.reason !== 'expired') return
   await activate(lic.key).catch(() => {})
 }
 

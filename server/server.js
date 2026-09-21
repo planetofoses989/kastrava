@@ -5,9 +5,9 @@
 //   PORT                  default 8787
 //   BIND_HOST             interface to bind, default 127.0.0.1 (0.0.0.0 for a public/bare deployment)
 //   KAS_HOST              public base URL used in responses, default http://127.0.0.1:8787
-//   PRICE_INR             subscription price per 34-day billing cycle, default 199
+//   PRICE_INR             one-time price per 34-day license, default 199
+//   PERIOD_DAYS           license validity days per payment, default 34
 //   GRACE_DAYS            days past expiry before access is revoked, default 3
-//   RAZORPAY_PLAN_ID      34-day plan id (optional; cached in DATA_DIR/plan.json)
 //   RAZORPAY_WEBHOOK_SECRET  secret for /api/webhook signature verification
 //   LICENSE_YEARS         legacy fallback for old one-time keys, default 10
 //   PREMIUM_BUILD         filesystem path to the premium install package served after payment
@@ -25,6 +25,7 @@ const port = parseInt(process.env.PORT || '8787', 10)
 const BIND_HOST = process.env.BIND_HOST || '127.0.0.1'
 const HOST = process.env.KAS_HOST || 'http://127.0.0.1:' + port
 const PRICE_INR = parseInt(process.env.PRICE_INR || '199', 10)
+const PERIOD_DAYS = parseInt(process.env.PERIOD_DAYS || '34', 10)
 const GRACE_DAYS = parseInt(process.env.GRACE_DAYS || '3', 10)
 const LICENSE_YEARS = parseInt(process.env.LICENSE_YEARS || '10', 10)
 const PREMIUM_BUILD = process.env.PREMIUM_BUILD || ''
@@ -146,6 +147,38 @@ function servePremium(res, key) {
   })
 }
 
+// One-time payment settlement. Called by /api/verify (checkout callback) and
+// the payment.captured webhook — idempotent, so both can race safely:
+//   - never paid before   -> mint a key with a fresh 34-day expiry
+//   - paid with a machine code that already has a license -> EXTEND that key
+//     from max(now, expiry) + PERIOD_DAYS and return the SAME key, so renewal
+//     needs no new activation; the app picks it up on its next re-activate.
+function finalizePayment(orderId, paymentId, machineIdRaw) {
+  const order = store.getOrder(orderId)
+  store.markPaid(orderId, paymentId)
+  const machine = String(machineIdRaw || (order && order.machine_id) || '').trim().toUpperCase()
+  let key = store.keyForOrder(orderId)
+  let renewed = false
+  if (!key) {
+    const existing = machine ? store.licenseForMachine(machine) : null
+    if (existing && existing.status === 'activated') {
+      // Renewal: same machine keeps its key, expiry extends from today (or
+      // from its old end if still in the future — tightening is never applied).
+      key = existing.key
+      const base = existing.expires_at
+        ? Math.max(Date.now(), new Date(existing.expires_at).getTime())
+        : Date.now()
+      store.extendLicense(key, new Date(base + PERIOD_DAYS * 86400000).toISOString())
+      store.setLicenseOrder(key, orderId)
+      renewed = true
+    } else {
+      key = sign.makeLicenseKey()
+      store.issueLicense(key, orderId, null, new Date(Date.now() + PERIOD_DAYS * 86400000).toISOString())
+    }
+  }
+  return { key, renewed }
+}
+
 async function handlePost(req, res, pathname) {
   const { raw, parsed: body } = await readBody(req)
 
@@ -155,6 +188,7 @@ async function handlePost(req, res, pathname) {
       const meta = {}
       if (typeof body.name === 'string' && body.name) meta.name = body.name
       if (typeof body.email === 'string' && body.email) meta.email = body.email
+      if (typeof body.machine_id === 'string' && body.machine_id.trim()) meta.machine_id = body.machine_id.trim().toUpperCase()
       store.createOrder(o.order_id, meta)
       return json(res, 200, { order_id: o.order_id, amount: o.amount, currency: o.currency, key_id: o.key_id, dev: !!o.dev })
     } catch (e) {
@@ -163,104 +197,37 @@ async function handlePost(req, res, pathname) {
   }
 
   if (pathname === '/api/verify') {
-    const { order_id, payment_id, signature } = body
+    const { order_id, payment_id, signature, machine_id } = body
     if (!order_id || !payment_id) return json(res, 400, { error: 'bad_request' })
     const order = store.getOrder(order_id)
     if (!order) return json(res, 404, { error: 'order_not_found' })
     if (order.status === 'paid') {
       const k = store.keyForOrder(order_id)
-      return json(res, 200, { ok: true, already_paid: true, key: k })
+      if (k) return json(res, 200, { ok: true, already_paid: true, key: k })
     }
     if (!razorpay.verifySignature(String(order_id), String(payment_id), String(signature || ''))) {
       return json(res, 403, { error: 'bad_signature', msg: 'Payment could not be verified.' })
     }
-    store.markPaid(order_id, payment_id)
-    let key = store.keyForOrder(order_id)
-    if (!key) {
-      key = sign.makeLicenseKey()
-      store.issueLicense(key, order_id)
-    }
-    return json(res, 200, { ok: true, key, already_paid: false })
+    const r = finalizePayment(String(order_id), String(payment_id), machine_id)
+    return json(res, 200, { ok: true, key: r.key, renewed: r.renewed, already_paid: false })
   }
 
-  // ---- subscriptions (₹199/34 days, auto-renew, webhook-driven) ----
+  // ---- one-time payments: webhook safety net (payment.captured) ----
 
-  if (pathname === '/api/subscribe') {
-    try {
-      const planId = razorpay.ensurePlan(DATA_DIR, PRICE_INR * 100)
-      const s = await razorpay.createSubscription(planId)
-      const meta = {}
-      if (typeof body.name === 'string' && body.name) meta.name = body.name
-      if (typeof body.email === 'string' && body.email) meta.email = body.email
-      store.createSubscription(s.subscription_id, meta)
-      return json(res, 200, { subscription_id: s.subscription_id, key_id: s.key_id, dev: !!s.dev })
-    } catch (e) {
-      return json(res, 500, { error: 'subscribe_failed', msg: String(e.message || e) })
-    }
-  }
-
-  if (pathname === '/api/verify-subscription') {
-    const { subscription_id, payment_id, signature } = body
-    if (!subscription_id || !payment_id) return json(res, 400, { error: 'bad_request' })
-    const sub = store.getSubscription(String(subscription_id))
-    if (!sub) return json(res, 404, { error: 'subscription_not_found' })
-    if (sub.status === 'active' || sub.status === 'paid') {
-      // The signed webhook may have raced the checkout callback and marked the
-      // subscription active before verify ran — a key must still be minted so
-      // activation + download work. Idempotent when a key already exists.
-      let key = store.keyForSubscription(String(subscription_id))
-      if (!key) {
-        key = sign.makeLicenseKey()
-        store.issueLicense(key, null, String(subscription_id))
-      }
-      try {
-        const rs = await razorpay.fetchSubscription(String(subscription_id))
-        if (rs && rs.current_end) store.extendLicense(key, new Date(rs.current_end * 1000).toISOString())
-      } catch {}
-      return json(res, 200, { ok: true, already_paid: true, key })
-    }
-    if (!razorpay.verifySubSignature(String(payment_id), String(subscription_id), String(signature || ''))) {
-      return json(res, 403, { error: 'bad_signature', msg: 'Payment could not be verified.' })
-    }
-    // Pull the authoritative period end from Razorpay (dev mode returns a
-    // synthetic one). Fallback: one month from now.
-    let currentEnd = null
-    try {
-      const rs = await razorpay.fetchSubscription(String(subscription_id))
-      if (rs && rs.current_end) currentEnd = new Date(rs.current_end * 1000).toISOString()
-    } catch {}
-    if (!currentEnd && !razorpay.isDev()) currentEnd = new Date(Date.now() + 31 * 86400 * 1000).toISOString()
-    store.markSubPaid(String(subscription_id), String(payment_id), currentEnd)
-    let key = store.keyForSubscription(String(subscription_id))
-    if (!key) {
-      key = sign.makeLicenseKey()
-      store.issueLicense(key, null, String(subscription_id))
-    }
-    // Seed the license expiry from the subscription's period end.
-    if (currentEnd) store.extendLicense(key, currentEnd)
-    return json(res, 200, { ok: true, key, already_paid: false })
-  }
-
-  // Razorpay webhook: renews extend the license expiry; cancellations stop it.
+  // Razorpay webhook safety net. The checkout callback normally settles the
+  // order in /api/verify; this catches payments whose tab closed first.
+  // Event: payment.captured (entity.order_id links to our order).
   if (pathname === '/api/webhook') {
     if (!razorpay.verifyWebhookSignature(raw, (req.headers['x-razorpay-signature'] || '').toString())) {
       return json(res, 400, { error: 'bad_signature', msg: 'Webhook signature verification failed.' })
     }
     try {
-      const ent = body.payload && body.payload.subscription && body.payload.subscription.entity
-      if (ent && ent.id) {
-        const subId = String(ent.id)
-        const sub = store.getSubscription(subId)
-        if (sub) {
-          if (ent.current_end) {
-            const key = store.keyForSubscription(subId)
-            if (key) store.extendLicense(key, new Date(ent.current_end * 1000).toISOString())
-          }
-          if (body.event === 'subscription.charged' || body.event === 'subscription.activated') {
-            store.setSubscriptionStatus(subId, 'active')
-          } else if (body.event === 'subscription.cancelled' || body.event === 'subscription.completed' || body.event === 'subscription.halted') {
-            store.setSubscriptionStatus(subId, 'cancelled')
-          }
+      const ent = body.payload && body.payload.payment && body.payload.payment.entity
+      if (ent && ent.order_id && body.event === 'payment.captured') {
+        const order = store.getOrder(String(ent.order_id))
+        if (order && order.status !== 'paid') {
+          const r = finalizePayment(String(ent.order_id), String(ent.id || ''), order.machine_id || '')
+          console.log('[webhook] payment.captured', String(ent.order_id), r.renewed ? 'renewal' : 'new key', r.key)
         }
       }
     } catch (e) {
@@ -299,15 +266,10 @@ async function handlePost(req, res, pathname) {
 
   if (pathname === '/api/admin/markpaid') {
     if (!adminOk(req)) return json(res, 401, { error: 'unauthorized' })
-    const order = store.getOrder(body.order_id)
+    const order = store.getOrder(String(body.order_id || ''))
     if (!order) return json(res, 404, { error: 'order_not_found' })
-    if (order.status !== 'paid') store.markPaid(body.order_id, body.payment_id || 'admin')
-    let key = store.keyForOrder(body.order_id)
-    if (!key) {
-      key = sign.makeLicenseKey()
-      store.issueLicense(key, body.order_id)
-    }
-    return json(res, 200, { ok: true, key })
+    const r = finalizePayment(String(body.order_id), String(body.payment_id || 'admin'), body.machine_id || order.machine_id || '')
+    return json(res, 200, { ok: true, key: r.key, renewed: r.renewed })
   }
 
   return json(res, 404, { error: 'not_found' })
@@ -331,7 +293,7 @@ const server = http.createServer((req, res) => {
 
   if (req.method === 'GET') {
     if (pathname === '/api/health') {
-      return json(res, 200, { ok: true, dev: razorpay.isDev(), host: HOST, price: PRICE_INR, grace_days: GRACE_DAYS, version: '101.0.0', codename: 'Starship Wonders' })
+      return json(res, 200, { ok: true, dev: razorpay.isDev(), host: HOST, price: PRICE_INR, period_days: PERIOD_DAYS, grace_days: GRACE_DAYS, version: '101.0.0', codename: 'Starship Wonders' })
     }
     const dl = pathname.match(/^\/api\/dl\/(.+)$/)
     if (dl) return servePremium(res, decodeURIComponent(dl[1]))
@@ -347,6 +309,6 @@ const server = http.createServer((req, res) => {
 
 server.listen(port, BIND_HOST, () => {
   console.log('[kastrava-licenses] listening on http://' + BIND_HOST + ':' + port)
-  console.log('[kastrava-licenses] host=' + HOST + ' price=INR ' + PRICE_INR + '/34d grace=' + GRACE_DAYS + 'd dev=' + razorpay.isDev())
+  console.log('[kastrava-licenses] host=' + HOST + ' price=INR ' + PRICE_INR + '/' + PERIOD_DAYS + 'd one-time grace=' + GRACE_DAYS + 'd dev=' + razorpay.isDev())
   console.log('[kastrava-licenses] premium_build=' + (PREMIUM_BUILD || '(not configured — set PREMIUM_BUILD)'))
 })

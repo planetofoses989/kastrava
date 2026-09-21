@@ -95,18 +95,40 @@ class Store {
     return this.data.licenses[key] || null
   }
 
-  issueLicense(key, orderId, subscriptionId) {
+  issueLicense(key, orderId, subscriptionId, expiresAt) {
     this.data.licenses[key] = {
       key,
       order_id: orderId || null,
       subscription_id: subscriptionId || null,
       status: 'issued',
       machine_id: null,
-      expires_at: null,
+      expires_at: expiresAt || null,
       issued_at: new Date().toISOString()
     }
     this.save()
     return this.data.licenses[key]
+  }
+
+  // Renewal: point a paid order back at the license it extended, so
+  // re-verification stays idempotent.
+  setLicenseOrder(key, orderId) {
+    const l = this.getLicense(key)
+    if (!l) return null
+    l.order_id = orderId
+    this.save()
+    return l
+  }
+
+  // The (single) license bound to a machine, used so a renewal payment with
+  // the machine code extends the existing key instead of minting a new one.
+  licenseForMachine(machineId) {
+    const m = String(machineId || '').toUpperCase()
+    if (!m) return null
+    for (const k in this.data.licenses) {
+      const l = this.data.licenses[k]
+      if (l.machine_id && l.machine_id.toUpperCase() === m) return l
+    }
+    return null
   }
 
   extendLicense(key, expiresAt) {
