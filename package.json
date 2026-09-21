@@ -28,7 +28,8 @@
     ],
     "linux": {
       "target": [
-        "deb"
+        "deb",
+        "pacman"
       ],
       "category": "Network",
       "icon": "static/logo.png"
