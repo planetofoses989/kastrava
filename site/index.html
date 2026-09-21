@@ -133,6 +133,7 @@ a.dl-link:hover{border-color:var(--deep);background:var(--card)}
 .guide-card ol li::before{content:counter(step);position:absolute;left:0;top:9px;width:24px;height:24px;border-radius:50%;background:var(--panel);color:var(--cream);font-family:'JetBrains Mono',monospace;font-size:11px;display:flex;align-items:center;justify-content:center}
 .guide-card ol li+li{border-top:1px solid var(--line)}
 .cmd{font-family:'JetBrains Mono',monospace;font-size:12px;background:var(--panel);color:#7ee2a8;border-radius:8px;padding:8px 12px;margin-top:7px;word-break:break-all;line-height:1.5}
+#prem-machine[readonly]{cursor:not-allowed;opacity:.85;background:#10131a}
 .faq{max-width:780px}
 .faq details{background:var(--card);border:2px solid var(--deep);border-radius:12px;padding:18px 22px;margin-bottom:10px;cursor:pointer}
 .faq summary{font-size:14.5px;font-weight:600;color:var(--ink);font-family:'Space Grotesk',sans-serif;list-style:none;cursor:pointer}
@@ -263,7 +264,7 @@ footer a{color:var(--blue);text-decoration:none}
           <li><b>Bookmark import/export</b> — move bookmarks in and out as HTML files</li>
           <li><b>Custom shortcuts</b> — remap every keyboard shortcut</li>
         </ul>
-        <input id="prem-machine" class="cmd" style="width:100%;border:none;background:#0c0e13;color:#7ee2a8;padding:12px 14px;font-size:12px" placeholder="Machine code (auto-filled if you clicked from the app) — optional">
+        <input id="prem-machine" class="cmd" style="width:100%;border:none;background:#0c0e13;color:#7ee2a8;padding:12px 14px;font-size:12px" placeholder="Machine code (auto-filled — and locked — when you click from the app)">
         <button class="prem-buy" id="prem-buy" style="margin-top:12px">Pay ₹199 with Razorpay — 34 days</button>
         <div class="prem-keyout" id="prem-keyout">
           <div class="tag" style="color:var(--key-c)">PAYMENT VERIFIED</div>
@@ -437,10 +438,18 @@ footer a{color:var(--blue);text-decoration:none}
   var renewedEl=document.getElementById('prem-renewed');
   var checker={};
 
-  // Auto-fill machine code when opened from the app (…/#premium?machine=…)
+  // Auto-fill machine code when opened from the app (…/#premium?machine=…).
+// It's locked read-only in that case: the code comes from your app, and
+// editing/erasing it would break renewal (a wiped code silently mints a new
+// key instead of extending yours). Manual entry stays enabled for direct
+// visits to the store.
   try{
     var mq=new URLSearchParams(location.hash.split('?')[1]||'');
-    if(mq.get('machine')&&machineInput)machineInput.value=mq.get('machine');
+    if(mq.get('machine')&&machineInput){
+      machineInput.value=mq.get('machine');
+      machineInput.readOnly=true;
+      machineInput.title='Auto-filled from your app — locked so renewal extends your existing key. Can\'t be typed over or erased.';
+    }
   }catch(e){}
 
   function setBusy(on){
