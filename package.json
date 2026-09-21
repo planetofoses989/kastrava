@@ -34,7 +34,11 @@
         "rpm"
       ],
       "category": "Network",
-      "icon": "static/logo.png"
+      "icon": "static/logo.png",
+      "syncDesktopName": true,
+      "desktop": {
+        "StartupWMClass": "Kastrava"
+      }
     },
     "win": {
       "target": [

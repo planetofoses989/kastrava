@@ -1,8 +1,19 @@
+# Canonical multi-platform release builder. Triggered by v* tags (builds e.g.
+# v101.0.0) and manually. Stamps the production API/store hosts into the
+# bundle, builds the Windows installers + Linux packages on native runners,
+# then publishes all artifacts to a GitHub Release for the tag.
+#
+# Note: Arch (.pkg.tar.zst) isn't built in CI — it's packaged on the Arch
+# dev box and uploaded to the site directly.
 name: Build Kastrava releases
+
 on:
   workflow_dispatch:
   push:
     tags: ["v*"]
+
+permissions:
+  contents: write
 
 jobs:
   windows:
@@ -18,14 +29,20 @@ jobs:
           node-version: "22"
           cache: npm
       - run: npm ci --no-audit --no-fund
-      - run: npm run build:prod
-      - run: npx electron-builder --win nsis portable
+      - name: Build premium bundle (stamped with live API/store hosts)
+        run: npm run build:prod
+        env:
+          KAS_API: https://nexufog.pp.ua
+          KAS_STORE: https://kastrava.pp.ua
+      - name: Package Windows installers (unsigned)
+        run: npx electron-builder --win nsis portable --x64 --publish never
       - uses: actions/upload-artifact@v4
         with:
           name: Kastrava-win
           path: |
             release/Kastrava-Setup-*.exe
             release/Kastrava-*.exe
+            release/latest.yml
           if-no-files-found: error
 
   linux:
@@ -39,12 +56,33 @@ jobs:
           cache: npm
       - run: sudo apt-get update && sudo apt-get install -y fakeroot rpm
       - run: npm ci --no-audit --no-fund
-      - run: npm run build:prod
-      - run: npx electron-builder --linux deb rpm
+      - name: Build premium bundle (stamped with live API/store hosts)
+        run: npm run build:prod
+        env:
+          KAS_API: https://nexufog.pp.ua
+          KAS_STORE: https://kastrava.pp.ua
+      - name: Package Linux (deb / rpm / AppImage)
+        run: npx electron-builder --linux deb rpm AppImage --x64 --publish never
       - uses: actions/upload-artifact@v4
         with:
           name: Kastrava-linux
           path: |
             release/*.deb
             release/*.rpm
+            release/*.AppImage
           if-no-files-found: error
+
+  publish:
+    needs: [windows, linux]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+      - uses: softprops/action-gh-release@v2
+        with:
+          name: Kastrava ${{ github.ref_name }}
+          files: |
+            artifacts/Kastrava-win/*
+            artifacts/Kastrava-linux/*

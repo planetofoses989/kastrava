@@ -291,7 +291,10 @@ const server = http.createServer((req, res) => {
 
   if (req.method === 'POST') return handlePost(req, res, pathname)
 
-  if (req.method === 'GET') {
+  // HEAD is served like GET (same headers incl. Content-Length; Node
+  // suppresses the response body automatically), so download managers and
+  // `curl -I` probes get a real 200 instead of 405.
+  if (req.method === 'GET' || req.method === 'HEAD') {
     if (pathname === '/api/health') {
       return json(res, 200, { ok: true, dev: razorpay.isDev(), host: HOST, price: PRICE_INR, period_days: PERIOD_DAYS, grace_days: GRACE_DAYS, version: '101.0.0', codename: 'Starship Wonders' })
     }
