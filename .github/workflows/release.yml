@@ -2,9 +2,6 @@
 # v101.0.0) and manually. Stamps the production API/store hosts into the
 # bundle, builds the Windows installers + Linux packages on native runners,
 # then publishes all artifacts to a GitHub Release for the tag.
-#
-# Note: Arch (.pkg.tar.zst) isn't built in CI — it's packaged on the Arch
-# dev box and uploaded to the site directly.
 name: Build Kastrava releases
 
 on:

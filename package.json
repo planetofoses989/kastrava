@@ -47,7 +47,10 @@
         "nsis",
         "portable"
       ],
-      "icon": "static/logo.ico"
+      "icon": "static/logo.ico",
+      "signtoolOptions": {
+        "sign": "./scripts/win-sign.js"
+      }
     },
     "portable": {
       "artifactName": "Kastrava-${version}.exe"
