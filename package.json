@@ -37,7 +37,9 @@
       "icon": "static/logo.png",
       "syncDesktopName": true,
       "desktop": {
-        "StartupWMClass": "Kastrava"
+        "entry": {
+          "StartupWMClass": "Kastrava"
+        }
       }
     },
     "win": {
