@@ -40,9 +40,9 @@ jobs:
         shell: pwsh
         run: |
           $cwd = ConvertTo-SecureString -String "kasbuild" -Force -AsPlainText
-          $cert = New-SelfSignedCertificate -Type Custom -Subject "CN=Kastrava" -KeyUsage DigitalSignature -FriendlyName "Kastrava MSIX" -TextExtension @("2.5.29.37={text}1.3.6.1.5.5.7.3.3") -CertStoreLocation "Cert:\CurrentUser\My" -KeyExportPolicy Exportable
+          $cert = New-SelfSignedCertificate -Type CodeSigningCert -Subject "CN=Kastrava" -KeyAlgorithm RSA -KeyLength 2048 -HashAlgorithm SHA256 -FriendlyName "Kastrava MSIX" -CertStoreLocation "Cert:\CurrentUser\My" -KeyExportPolicy Exportable
           Export-PfxCertificate -Cert $cert -FilePath "$env:RUNNER_TEMP\kastrava.pfx" -Password $cwd | Out-Null
-          Write-Host "self-signed cert exported"
+          Write-Host "self-signed code-signing cert exported"
       - name: Package MSIX (store-ready)
         shell: pwsh
         run: |
