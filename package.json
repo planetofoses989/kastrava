@@ -66,6 +66,16 @@
     },
     "deb": {
       "artifactName": "kastrava_${version}_amd64.deb"
+    },
+    "appx": {
+      "applicationId": "Kastrava",
+      "identityName": "Kastrava",
+      "displayName": "Kastrava",
+      "publisherDisplayName": "Kastrava",
+      "backgroundColor": "#0c0e13",
+      "languages": [
+        "en-US"
+      ]
     }
   },
   "devDependencies": {
