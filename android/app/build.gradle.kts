@@ -20,9 +20,6 @@ android {
         release {
             isMinifyEnabled = false
         }
-        debug {
-            applicationIdSuffix = ".debug"
-        }
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
