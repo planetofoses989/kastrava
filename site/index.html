@@ -113,7 +113,7 @@ section{padding:64px 0 8px}
 .priv .row:last-child{border-bottom:none}
 .priv .ok{width:26px;height:26px;border-radius:50%;background:rgba(76,175,80,.2);color:#7ee2a8;font-weight:800;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0}
 .priv b{color:#fff}
-.dl{display:grid;grid-template-columns:1fr 1fr;gap:14px;max-width:900px}
+.dl{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;max-width:1200px}
 .dl-card{background:var(--card);border:2px solid var(--deep);border-radius:18px;padding:32px 28px;transition:all .2s}
 .dl-card:hover{transform:translate(-2px,-2px);box-shadow:6px 6px 0 var(--deep)}
 .dl-card h3{font-size:20px;font-weight:600;color:var(--ink);margin:14px 0 4px}
@@ -318,6 +318,13 @@ footer a{color:var(--blue);text-decoration:none}
         <a class="dl-link" href="https://kastrava.pp.ua/dl/Kastrava-101.0.0.exe" target="_blank" rel="noopener">Portable (no install)<span class="fn">Kastrava-101.0.0.exe</span></a>
         <p style="font-size:13.5px;color:var(--muted);margin:10px 0 4px">The direct EXEs are unsigned — SmartScreen may warn; choose "More info → Run anyway". The Store build is signed by Microsoft.</p>
       </div>
+      <div class="dl-card reveal">
+        <svg width="40" height="40" viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="10" y="13" width="20" height="14" rx="4"/><path d="M14 9l2.5 3M26 9l-2.5 3" stroke-linecap="round"/><circle cx="16" cy="19" r="1" fill="currentColor"/><circle cx="24" cy="19" r="1" fill="currentColor"/><path d="M10 20v8M30 20v8M17 27v4M23 27v4" stroke-linecap="round"/></svg>
+        <h3>Android</h3>
+        <div class="plat">arm64 · v101.0.0</div>
+        <a class="dl-link" href="https://kastrava.pp.ua/dl/Kastrava-101.0.0.apk" target="_blank" rel="noopener">Direct APK<span class="fn">Kastrava-101.0.0.apk</span></a>
+        <p style="font-size:13.5px;color:var(--muted);margin:10px 0 4px">Sideload build — allow "Install unknown apps" when prompted. Same Premium keys work: activate in-app with this device's machine code.</p>
+      </div>
     </div>
   </div>
 </section>
@@ -370,7 +377,7 @@ footer a{color:var(--blue);text-decoration:none}
       <details><summary>I changed PCs / lost my key. What now?</summary><p>Email <a href="mailto:planetofoses989@gmail.com" style="color:var(--blue)">planetofoses989@gmail.com</a> with your order payment ID. We verify and re-issue / unbind your key. We'd rather re-key you than argue.</p></details>
       <details><summary>Does activation phone home my browsing data?</summary><p>No. Activation sends only a one-way hash of your hardware identifiers (a machine code) plus your license key — once. No history, no pages, no keystrokes, nothing you browse ever leaves the machine. And once activated, the app works even fully offline.</p></details>
       <details><summary>Why does it say Beta?</summary><p>Because it is. Kastrava (originally AnterSurf) is under active development — features land fast and rough edges exist. The privacy guarantees above are already enforced.</p></details>
-      <details><summary>Which platforms are supported?</summary><p>Linux (Arch, Debian/Ubuntu, AppImage, Fedora/RHEL rpm) and Windows (installer + portable). macOS and Android builds are discontinued.</p></details>
+      <details><summary>Which platforms are supported?</summary><p>Linux (Arch, Debian/Ubuntu, AppImage, Fedora/RHEL rpm), Windows (installer + portable, plus the Microsoft Store build) and Android (direct APK sideload; Play Store listing in progress). macOS builds are discontinued.</p></details>
       <details><summary>What search engine does it use?</summary><p>KastravaSearch (kastravasearch.pp.ua) — Kastrava's own search — is the default. DuckDuckGo, Brave, Google and Ecosia are one click away in Settings.</p></details>
     </div>
   </div>
