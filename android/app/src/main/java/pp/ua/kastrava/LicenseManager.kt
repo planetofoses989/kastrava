@@ -1,6 +1,7 @@
 package pp.ua.kastrava
 
 import android.content.Context
+import android.provider.Settings
 import android.util.Base64
 import org.bouncycastle.jce.provider.BouncyCastleProvider
 import org.json.JSONObject
