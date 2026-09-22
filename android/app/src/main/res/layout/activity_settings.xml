@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="20dp">
+
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Search engine"
+            android:textStyle="bold"
+            android:textSize="16sp" />
+
+        <RadioGroup
+            android:id="@+id/engineGroup"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:text="Theme"
+            android:textStyle="bold"
+            android:textSize="16sp" />
+
+        <RadioGroup
+            android:id="@+id/themeGroup"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp">
+            <RadioButton android:id="@+id/themeSystem" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="System" />
+            <RadioButton android:id="@+id/themeLight" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Light" />
+            <RadioButton android:id="@+id/themeDark" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Dark" />
+        </RadioGroup>
+
+        <CheckBox
+            android:id="@+id/cbBlockers"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:text="Tracker &amp; ad blocking" />
+
+        <CheckBox
+            android:id="@+id/cbJs"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="JavaScript (needed by most sites)" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:text="Website data (cookies, cache, storage) lives in memory and is wiped when Kastrava exits. Settings and license stay on this device."
+            android:textSize="13sp" />
+    </LinearLayout>
+</ScrollView>
