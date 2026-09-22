@@ -104,7 +104,8 @@ jobs:
         with:
           distribution: temurin
           java-version: "17"
-      - uses: android-actions/setup-android@v3
+      # ubuntu-latest runners ship the Android SDK preinstalled
+      # (ANDROID_HOME + accepted licenses); no setup action needed.
       - name: Install Gradle 8.9
         run: |
           curl -sL https://services.gradle.org/distributions/gradle-8.9-bin.zip -o /tmp/gradle.zip
