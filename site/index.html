@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Kastrava — The Browser That Forgets Everything</title>
-<meta name="description" content="Kastrava Beta is the most private desktop browser. Zero telemetry. Volatile RAM-only browsing — everything wiped on exit.">
+<meta name="description" content="Kastrava Beta is a private desktop browser. Zero telemetry. Website data lives in a memory-only session and is wiped on exit; your settings, bookmarks and history persist.">
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 :root{
@@ -221,7 +221,7 @@ footer a{color:var(--blue);text-decoration:none}
     <h2 class="sec-title reveal">Six mechanisms. No marketing.</h2>
     <p class="sec-sub reveal">Every claim below is enforced in code, verifiable in seconds.</p>
     <div class="grid">
-      <div class="card reveal"><div class="mono" style="font-size:11px;color:var(--blue);margin-bottom:12px">01</div><h3>Volatile memory sessions</h3><p>Cache, cookies, DOM storage and IndexedDB live in a private per-session sandbox — wiped on every exit, with crash leftovers purged at next launch. Quit, and there is nothing left to find.</p></div>
+      <div class="card reveal"><div class="mono" style="font-size:11px;color:var(--blue);margin-bottom:12px">01</div><h3>Session isolation</h3><p>Cache, cookies, DOM storage and IndexedDB live in a RAM-only per-session sandbox and are wiped when you quit; crash leftovers are purged at the next launch. Your settings, bookmarks and history stay on disk until you clear them.</p></div>
       <div class="card reveal"><div class="mono" style="font-size:11px;color:var(--blue);margin-bottom:12px">02</div><h3>Tracking radar</h3><p>Every third-party request and cookie is counted per tab, with a live score. Strict blocking, DNT headers, no referrers.</p></div>
       <div class="card reveal"><div class="mono" style="font-size:11px;color:var(--blue);margin-bottom:12px">03</div><h3>KastravaSearch by default</h3><p>Kastrava's own search at kastravasearch.pp.ua. Switchable to DuckDuckGo, Brave, Google or Ecosia.</p></div>
       <div class="card reveal"><div class="mono" style="font-size:11px;color:var(--blue);margin-bottom:12px">04</div><h3>Private-by-default downloads</h3><p>Click a download and it streams into a session-only area with pause, resume and progress tracking. Files stay locked to that browsing session and are wiped when you quit — save anything you want to keep to your Downloads folder.</p></div>
@@ -345,7 +345,7 @@ footer a{color:var(--blue);text-decoration:none}
       <div class="card reveal">
         <div class="mono" style="font-size:11px;color:var(--blue);margin-bottom:12px">AUDIT</div>
         <h3>Verify every privacy claim</h3>
-        <p>Zero telemetry, volatile sessions, one-machine keys — all in the source. You don't have to trust the marketing, you can read the code.</p>
+        <p>Zero telemetry, memory-only web sessions, one-machine keys — all in the source. You don't have to trust the marketing, you can read the code.</p>
       </div>
       <div class="card reveal">
         <div class="mono" style="font-size:11px;color:var(--blue);margin-bottom:12px">BUILD</div>
@@ -364,7 +364,7 @@ footer a{color:var(--blue);text-decoration:none}
     <p class="sec-sub reveal">Straight answers.</p>
     <div class="faq reveal" style="max-width:780px">
       <details><summary>What exactly is deleted when I quit?</summary><p>Everything websites stored: HTTP cache, cookies, DOM storage, IndexedDB, service-worker caches. They live in a private per-session sandbox and are wiped on every exit — even crash leftovers are purged at the next launch. Downloads follow the same rule: they stay locked to the session and are wiped unless you explicitly save them to your Downloads folder. Your own settings, bookmarks and history database stay — unless you switch those off too.</p></details>
-      <details><summary>Is the core really free? What's the catch?</summary><p>Free forever, no accounts, no telemetry to monetize. Premium (₹199 / 34 days, no auto-renew) is a one-time payment per cycle that powers development — but everything below is free: the volatile-memory engine, blockers, tracking protection, downloads, default keyboard shortcuts, KastravaSearch + DuckDuckGo, themes 1 light + 1 dark.</p></details>
+      <details><summary>Is the core really free? What's the catch?</summary><p>Free forever, no accounts, no telemetry to monetize. Premium (₹199 / 34 days, no auto-renew) is a one-time payment per cycle that powers development — but everything below is free: session isolation (website data never touches disk), blockers, tracking protection, downloads, default keyboard shortcuts, KastravaSearch + DuckDuckGo, themes 1 light + 1 dark.</p></details>
       <details><summary>What does Premium actually unlock?</summary><p>Tracking Radar (live per-tab privacy score), the full Cursor FX suite (all 8 effects + custom arrow), Workspaces, Split View, all 20 themes, extra search engines (Brave, Google, Ecosia), Reader Mode, Picture-in-Picture, Screenshot, the Localhost Dashboard, bookmark import/export, vertical tabs, and custom shortcut remapping. One license, one machine. No auto-renew — the app reminds you when it's time to renew.</p></details>
       <details><summary>Why is it bound to one machine?</summary><p>Each license key is cryptographically signed to the machine code of the PC that activates it. That's the whole "one copy, one owner" idea — you can't share one purchase across machines. Hardware changes break it on purpose. Same-PC Linux reinstalls keep working.</p></details>
       <details><summary>I changed PCs / lost my key. What now?</summary><p>Email <a href="mailto:planetofoses989@gmail.com" style="color:var(--blue)">planetofoses989@gmail.com</a> with your order payment ID. We verify and re-issue / unbind your key. We'd rather re-key you than argue.</p></details>
