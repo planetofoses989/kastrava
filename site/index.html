@@ -44,7 +44,13 @@ nav a.btn:hover{background:#0288d1}
 .theme-btn:hover{background:var(--card)}
 html[data-theme="light"] .theme-btn .ic-sun{display:none}
 html[data-theme="dark"] .theme-btn .ic-moon{display:none}
-header{padding:70px 0 30px}
+header{padding:84px 0 30px}
+.hero-center{text-align:center;max-width:860px;margin:0 auto}
+.hero-center .lede{margin:0 auto 30px}
+.hero-center .cta-row{justify-content:center}
+.hero-center .hero-meta{margin-top:24px}
+.hero-shot{max-width:980px;margin:60px auto 0}
+.hero-shot figcaption{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted2);margin-top:12px;text-align:center}
 .hero-grid{display:grid;grid-template-columns:1fr 1.1fr;gap:56px;align-items:center}
 .kicker{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--cream);background:var(--panel);padding:6px 14px;border-radius:8px;letter-spacing:1px;margin-bottom:22px}
 header h1{font-size:68px;font-weight:700;letter-spacing:-2px;line-height:.98;color:var(--ink);margin-bottom:20px}
@@ -72,6 +78,7 @@ section{padding:88px 0 12px}
 .sec-title{font-size:38px;font-weight:700;letter-spacing:-1px;color:var(--ink);margin-bottom:12px}
 .sec-sub{font-size:16px;color:var(--muted);margin-bottom:40px;max-width:620px}
 .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.card.span2{grid-column:span 2}
 .card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:28px 26px;transition:all .2s;position:relative}
 .card:hover{transform:translateY(-3px);box-shadow:0 16px 34px rgba(0,0,0,.12)}
 .card .n{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--blue);margin-bottom:12px}
@@ -83,7 +90,7 @@ section{padding:88px 0 12px}
 .stat .num{font-family:'Space Grotesk',sans-serif;font-size:34px;font-weight:700}
 .stat .num.cy{color:#4fc3f7}
 .stat .lbl{font-size:12px;color:var(--muted2);margin-top:2px}
-.prem{display:grid;grid-template-columns:1.05fr .95fr;gap:16px;max-width:960px}
+.prem{max-width:700px;margin:0 auto}
 .prem-card{background:var(--prem-bg);color:#ececf2;border:1px solid rgba(255,255,255,.1);border-radius:22px;padding:38px 34px;position:relative;box-shadow:0 24px 60px rgba(0,0,0,.3)}
 .prem-card .tag{font-family:'JetBrains Mono',monospace;font-size:11px;color:#4fc3f7;letter-spacing:2px}
 .prem-card h3{font-size:26px;font-weight:700;color:#fff;margin:10px 0 2px}
@@ -99,7 +106,7 @@ section{padding:88px 0 12px}
 .prem-buy:hover{background:#7dd6fa;transform:translateY(-1px)}
 .prem-buy:disabled{opacity:.45;cursor:not-allowed;transform:none}
 .prem-note{font-family:'JetBrains Mono',monospace;font-size:11px;color:#565b66;margin-top:12px;text-align:center}
-.prem-steps{display:grid;grid-template-columns:1fr;gap:12px;align-content:start}
+.prem-steps{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:16px}
 .prem-step{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:22px 24px}
 .prem-step .t{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--blue);margin-bottom:6px}
 .prem-step h4{font-size:15px;color:var(--ink);margin-bottom:4px;font-weight:600}
@@ -114,7 +121,13 @@ section{padding:88px 0 12px}
 .priv .row:last-child{border-bottom:none}
 .priv .ok{width:26px;height:26px;border-radius:50%;background:rgba(76,175,80,.2);color:#7ee2a8;font-weight:800;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0}
 .priv b{color:#fff}
-.dl{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;max-width:1200px}
+.dl{display:grid;grid-template-columns:1fr;gap:14px;max-width:920px}
+.dl-row{display:flex;gap:24px;align-items:flex-start}
+.dl-ic{flex-shrink:0;padding-top:2px}
+.dl-body{flex:1;min-width:0}
+.dl-row h3{margin:0 0 4px}
+.dl-links{display:flex;flex-wrap:wrap;gap:10px}
+.dl-links .dl-link{margin-top:0}
 .dl-card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:34px 30px;transition:all .2s}
 .dl-card:hover{transform:translateY(-3px);box-shadow:0 16px 34px rgba(0,0,0,.12)}
 .dl-card h3{font-size:20px;font-weight:600;color:var(--ink);margin:14px 0 4px}
@@ -127,7 +140,9 @@ a.dl-link:hover{border-color:var(--deep);background:var(--card)}
 .dl-soon{font-size:13.5px;color:var(--muted);margin:14px 0 6px}
 .cmd{font-family:'JetBrains Mono',monospace;font-size:12px;background:var(--panel);color:#7ee2a8;border-radius:8px;padding:8px 12px;margin-top:7px;word-break:break-all;line-height:1.5}
 #prem-machine[readonly]{cursor:not-allowed;opacity:.85;background:#10131a}
-.faq{max-width:780px}
+.faq{display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:start}
+.faq details{margin-bottom:0}
+.foot-grid{display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:24px}
 .faq details{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 22px;margin-bottom:10px;cursor:pointer}
 .faq summary{font-size:14.5px;font-weight:600;color:var(--ink);font-family:'Space Grotesk',sans-serif;list-style:none;cursor:pointer}
 .faq summary::-webkit-details-marker{display:none}
@@ -137,15 +152,18 @@ a.dl-link:hover{border-color:var(--deep);background:var(--card)}
 .os-band{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;background:#0288d1;color:#fff;padding:18px 26px;border-radius:14px;text-decoration:none;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:17px;letter-spacing:.5px;margin-bottom:14px;transition:all .18s}
 .os-band:hover{background:#039be5;transform:translateY(-1px)}
 .os-band-cta{font-size:13px;font-weight:600;background:rgba(255,255,255,.16);border:2px solid #fff;padding:8px 18px;border-radius:10px;white-space:nowrap}
-.os-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.os-grid{display:grid;grid-template-columns:1fr;gap:12px;max-width:920px}
+.os-row{display:flex;gap:24px;align-items:flex-start}
+.os-tag{flex:0 0 80px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--blue);padding-top:3px}
+.os-row h3{margin-top:0}
 footer{border-top:1px solid var(--line);margin-top:64px;padding:40px 0 52px;background:var(--card)}
 footer p{font-size:12.5px;color:var(--muted2)}
 footer a{color:var(--blue);text-decoration:none}
 ::selection{background:var(--blue);color:var(--bg)}
 .reveal{opacity:0;transform:translateY(20px);transition:opacity .55s ease,transform .55s ease}
 .reveal.in{opacity:1;transform:none}
-@media(max-width:900px){.hero-grid{grid-template-columns:1fr}header h1{font-size:46px}.grid{grid-template-columns:1fr 1fr}.stats{grid-template-columns:1fr 1fr}.os-grid{grid-template-columns:1fr}}
-@media(max-width:600px){.grid,.dl{grid-template-columns:1fr}header h1{font-size:36px}header{padding:52px 0 20px}.stats{grid-template-columns:1fr 1fr}}
+@media(max-width:900px){.hero-grid{grid-template-columns:1fr}header h1{font-size:46px}.grid{grid-template-columns:1fr 1fr}.stats{grid-template-columns:1fr 1fr}.os-grid{grid-template-columns:1fr}.prem-steps{grid-template-columns:1fr 1fr}.foot-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:600px){.grid,.dl{grid-template-columns:1fr}.card.span2{grid-column:auto}.dl-row{flex-direction:column;gap:12px}.os-row{flex-direction:column;gap:8px}.os-tag{flex:none}header h1{font-size:36px}header{padding:52px 0 20px}.stats{grid-template-columns:1fr 1fr}.prem-steps{grid-template-columns:1fr}.faq{grid-template-columns:1fr}.foot-grid{grid-template-columns:1fr}}
 @media(max-width:480px){nav .beta{display:none}nav .name{font-size:13px;letter-spacing:2px}nav a.btn{padding:8px 15px;font-size:12px}.theme-btn{width:34px;height:34px}}
 @media(prefers-reduced-motion:reduce){.marquee span{animation:none}.reveal{transition:none;opacity:1;transform:none}}
 </style>
@@ -187,24 +205,22 @@ footer a{color:var(--blue);text-decoration:none}
 
 <header>
   <div class="container">
-    <div class="hero-grid">
-      <div>
-        <div class="kicker" style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--blue);letter-spacing:1px;margin-bottom:18px">v101.0.0-beta · Codename: Starship Wonders · originally Antersurf</div>
-        <h1>Leave <span class="strike">nothing</span> behind.</h1>
-        <p class="lede" style="font-size:16.5px;color:var(--muted);max-width:480px;margin-bottom:26px">Kastrava keeps <b>zero</b> persistent web storage. No cache, no cookies, no site databases on your disk — everything runs in RAM and is <b>wiped on exit</b>.</p>
-        <div class="cta-row">
-          <a class="btn btn-primary" href="#download" style="display:inline-block;padding:15px 36px;border-radius:12px;font-size:15px;font-weight:600;background:#0288d1;color:#fff;text-decoration:none;font-family:'Space Grotesk',sans-serif">Download Free</a>
-          <a class="btn btn-ghost" href="#premium" style="display:inline-block;padding:15px 36px;border-radius:12px;font-size:15px;font-weight:600;background:transparent;border:2px solid var(--deep);color:var(--ink);text-decoration:none;font-family:'Space Grotesk',sans-serif">Go Premium — $2.59/34d</a>
-        </div>
-        <p class="mono" style="font-size:11.5px;color:var(--muted2);margin-top:22px">Linux &middot; Windows via bridge &middot; Free core, forever &middot; Premium $2.59/34 days, one machine &middot; 100% Open Source (GPLv3)</p>
+    <div class="hero-center">
+      <div class="kicker" style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--blue);letter-spacing:1px;margin-bottom:18px">v101.0.0-beta · Codename: Starship Wonders · originally Antersurf</div>
+      <h1>Leave <span class="strike">nothing</span> behind.</h1>
+      <p class="lede" style="font-size:16.5px;color:var(--muted);max-width:560px;margin-bottom:26px">Kastrava keeps <b>zero</b> persistent web storage. No cache, no cookies, no site databases on your disk — everything runs in RAM and is <b>wiped on exit</b>.</p>
+      <div class="cta-row">
+        <a class="btn btn-primary" href="#download" style="display:inline-block;padding:15px 36px;border-radius:12px;font-size:15px;font-weight:600;background:#0288d1;color:#fff;text-decoration:none;font-family:'Space Grotesk',sans-serif">Download Free</a>
+        <a class="btn btn-ghost" href="#premium" style="display:inline-block;padding:15px 36px;border-radius:12px;font-size:15px;font-weight:600;background:transparent;border:2px solid var(--deep);color:var(--ink);text-decoration:none;font-family:'Space Grotesk',sans-serif">Go Premium — $2.59/34d</a>
       </div>
-      <div>
-        <div class="shot-frame reveal in">
-          <img src="shot-ntp.png" alt="Kastrava browser showing a new tab page" style="display:block;width:100%;height:auto">
-        </div>
-        <p class="mono" style="font-size:11px;color:var(--muted2);margin-top:12px;text-align:center">the actual browser — pitch black, KastravaSearch, zero clutter</p>
-      </div>
+      <p class="mono hero-meta" style="font-size:11.5px;color:var(--muted2);margin-top:22px">Linux &middot; Windows &middot; Android &middot; Free core, forever &middot; Premium $2.59/34 days, one machine &middot; 100% Open Source (GPLv3)</p>
     </div>
+    <figure class="hero-shot reveal">
+      <div class="shot-frame">
+        <img src="shot-ntp.png" alt="Kastrava browser showing a new tab page" style="display:block;width:100%;height:auto">
+      </div>
+      <figcaption>the actual browser — pitch black, KastravaSearch, zero clutter</figcaption>
+    </figure>
     <div class="stats">
       <div class="stat reveal"><div class="num cy">0</div><div class="lbl">bytes of telemetry</div></div>
       <div class="stat reveal"><div class="num cy">0</div><div class="lbl">cookies left on disk</div></div>
@@ -222,10 +238,10 @@ footer a{color:var(--blue);text-decoration:none}
     <h2 class="sec-title reveal">Six mechanisms. No marketing.</h2>
     <p class="sec-sub reveal">Every claim below is enforced in code, verifiable in seconds.</p>
     <div class="grid">
-      <div class="card reveal"><div class="mono" style="font-size:11px;color:var(--blue);margin-bottom:12px">01</div><h3>Session isolation</h3><p>Cache, cookies, DOM storage and IndexedDB live in a RAM-only per-session sandbox and are wiped when you quit; crash leftovers are purged at the next launch. Your settings, bookmarks and history stay on disk until you clear them.</p></div>
+      <div class="card span2 reveal"><div class="mono" style="font-size:11px;color:var(--blue);margin-bottom:12px">01</div><h3>Session isolation</h3><p>Cache, cookies, DOM storage and IndexedDB live in a RAM-only per-session sandbox and are wiped when you quit; crash leftovers are purged at the next launch. Your settings, bookmarks and history stay on disk until you clear them.</p></div>
       <div class="card reveal"><div class="mono" style="font-size:11px;color:var(--blue);margin-bottom:12px">02</div><h3>Tracking radar</h3><p>Every third-party request and cookie is counted per tab, with a live score. Strict blocking, DNT headers, no referrers.</p></div>
       <div class="card reveal"><div class="mono" style="font-size:11px;color:var(--blue);margin-bottom:12px">03</div><h3>KastravaSearch by default</h3><p>Kastrava's own search at kastravasearch.pp.ua. Switchable to DuckDuckGo, Brave, Google or Ecosia.</p></div>
-      <div class="card reveal"><div class="mono" style="font-size:11px;color:var(--blue);margin-bottom:12px">04</div><h3>Private-by-default downloads</h3><p>Click a download and it streams into a session-only area with pause, resume and progress tracking. Files stay locked to that browsing session and are wiped when you quit — save anything you want to keep to your Downloads folder.</p></div>
+      <div class="card span2 reveal"><div class="mono" style="font-size:11px;color:var(--blue);margin-bottom:12px">04</div><h3>Private-by-default downloads</h3><p>Click a download and it streams into a session-only area with pause, resume and progress tracking. Files stay locked to that browsing session and are wiped when you quit — save anything you want to keep to your Downloads folder.</p></div>
       <div class="card reveal"><div class="mono" style="font-size:11px;color:var(--blue);margin-bottom:12px">05</div><h3>Real keyboard control</h3><p>Ctrl+T/W/Tab, Ctrl+Shift+T, F12 DevTools — OS-level shortcuts that work even with a page focused.</p></div>
       <div class="card reveal"><div class="mono" style="font-size:11px;color:var(--blue);margin-bottom:12px">06</div><h3>Guided first-run setup</h3><p>Nine-step welcome: engine, theme, tracking, startup. Beta-labeled, honestly unfinished where it is.</p></div>
     </div>
@@ -271,12 +287,12 @@ footer a{color:var(--blue);text-decoration:none}
         </div>
         <div class="prem-note">Secure checkout via Razorpay. UPI / cards / netbanking. <b>One-time $2.59 — no recurring mandate needed</b>. Instantly verified, key issued on this page.</div>
       </div>
-      <div class="prem-steps">
+    </div>
+    <div class="prem-steps">
         <div class="prem-step reveal"><div class="t">STEP 1 — INSTALL</div><h4>Grab the free build</h4><p>It's the whole app. Premium is inside — locked until you activate.</p></div>
         <div class="prem-step reveal"><div class="t">STEP 2 — PAY</div><h4>Pay here ($2.59 one-time · 34 days)</h4><p>Any UPI, card or netbanking via Razorpay. Your key appears on this page instantly. Renewing? Enter your machine code first and the same key just gets extended.</p></div>
         <div class="prem-step reveal"><div class="t">STEP 3 — ACTIVATE</div><h4>Paste key in the app</h4><p>Open <code>Settings → Kastrava Premium</code>, paste the <code>KAS-…</code> key, hit Activate. It binds to <b>this</b> PC and unlocks Premium for 34 days. No auto-renew — the app pops a reminder when renewal's due.</p></div>
         <div class="prem-step reveal"><div class="t">ONE MACHINE, ON PURPOSE</div><h4>Copying it elsewhere doesn't work</h4><p>Your key is signed to your machine code. Move the app to another PC and it stays Free — Linux reinstall on the same hardware keeps working.</p></div>
-      </div>
     </div>
   </div>
 </section>
@@ -302,30 +318,42 @@ footer a{color:var(--blue);text-decoration:none}
     <h2 class="sec-title reveal">Download Kastrava Beta</h2>
     <p class="sec-sub reveal">v101.0.0 — free core, forever. Premium unlocks inside the app (Settings → Kastrava Premium).</p>
     <div class="dl">
-      <div class="dl-card reveal">
-        <svg width="40" height="40" viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="6" y="9" width="28" height="19" rx="2"/><path d="M12 15l4 3.5L12 22" stroke-linecap="round" stroke-linejoin="round"/><path d="M19 22h7" stroke-linecap="round"/><path d="M16 32h8" stroke-linecap="round"/></svg>
+      <div class="dl-card dl-row reveal">
+        <div class="dl-ic"><svg width="40" height="40" viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="6" y="9" width="28" height="19" rx="2"/><path d="M12 15l4 3.5L12 22" stroke-linecap="round" stroke-linejoin="round"/><path d="M19 22h7" stroke-linecap="round"/><path d="M16 32h8" stroke-linecap="round"/></svg></div>
+        <div class="dl-body">
         <h3>Linux</h3>
         <div class="plat">x86_64 · v101.0.0-beta</div>
+        <div class="dl-links">
         <a class="dl-link" href="https://kastrava.pp.ua/dl/kastrava-101.0.0-1-x86_64.pkg.tar.zst" target="_blank" rel="noopener">Arch<span class="fn">kastrava-101.0.0-1-x86_64.pkg.tar.zst</span></a>
         <a class="dl-link" href="https://kastrava.pp.ua/dl/kastrava_101.0.0_amd64.deb" target="_blank" rel="noopener">Debian / Ubuntu<span class="fn">kastrava_101.0.0_amd64.deb</span></a>
         <a class="dl-link" href="https://kastrava.pp.ua/dl/Kastrava-101.0.0.AppImage" target="_blank" rel="noopener">AppImage (any distro)<span class="fn">Kastrava-101.0.0.AppImage</span></a>
         <a class="dl-link" href="https://kastrava.pp.ua/dl/kastrava-101.0.0.x86_64.rpm" target="_blank" rel="noopener">Fedora / RHEL (rpm)<span class="fn">kastrava-101.0.0.x86_64.rpm</span></a>
+        </div>
+        </div>
       </div>
-      <div class="dl-card reveal">
-        <svg width="40" height="40" viewBox="0 0 40 40" fill="currentColor"><rect x="8" y="8" width="11" height="11" rx="1"/><rect x="21" y="8" width="11" height="11" rx="1"/><rect x="8" y="21" width="11" height="11" rx="1"/><rect x="21" y="21" width="11" height="11" rx="1"/></svg>
+      <div class="dl-card dl-row reveal">
+        <div class="dl-ic"><svg width="40" height="40" viewBox="0 0 40 40" fill="currentColor"><rect x="8" y="8" width="11" height="11" rx="1"/><rect x="21" y="8" width="11" height="11" rx="1"/><rect x="8" y="21" width="11" height="11" rx="1"/><rect x="21" y="21" width="11" height="11" rx="1"/></svg></div>
+        <div class="dl-body">
         <h3>Windows</h3>
         <div class="plat">x86_64 · v101.0.0</div>
+        <div class="dl-links">
         <a class="dl-link" href="https://apps.microsoft.com/search?query=Kastrava" target="_blank" rel="noopener">Microsoft Store<span class="fn">Microsoft-signed · one-click install</span></a>
         <a class="dl-link" href="https://kastrava.pp.ua/dl/Kastrava-Setup-101.0.0.exe" target="_blank" rel="noopener">Windows installer<span class="fn">Kastrava-Setup-101.0.0.exe</span></a>
         <a class="dl-link" href="https://kastrava.pp.ua/dl/Kastrava-101.0.0.exe" target="_blank" rel="noopener">Portable (no install)<span class="fn">Kastrava-101.0.0.exe</span></a>
+        </div>
         <p style="font-size:13.5px;color:var(--muted);margin:10px 0 4px">The direct EXEs are unsigned — SmartScreen may warn; choose "More info → Run anyway". The Store build is signed by Microsoft.</p>
+        </div>
       </div>
-      <div class="dl-card reveal">
-        <svg width="40" height="40" viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="10" y="13" width="20" height="14" rx="4"/><path d="M14 9l2.5 3M26 9l-2.5 3" stroke-linecap="round"/><circle cx="16" cy="19" r="1" fill="currentColor"/><circle cx="24" cy="19" r="1" fill="currentColor"/><path d="M10 20v8M30 20v8M17 27v4M23 27v4" stroke-linecap="round"/></svg>
+      <div class="dl-card dl-row reveal">
+        <div class="dl-ic"><svg width="40" height="40" viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="10" y="13" width="20" height="14" rx="4"/><path d="M14 9l2.5 3M26 9l-2.5 3" stroke-linecap="round"/><circle cx="16" cy="19" r="1" fill="currentColor"/><circle cx="24" cy="19" r="1" fill="currentColor"/><path d="M10 20v8M30 20v8M17 27v4M23 27v4" stroke-linecap="round"/></svg></div>
+        <div class="dl-body">
         <h3>Android</h3>
         <div class="plat">arm64 · v101.0.0</div>
+        <div class="dl-links">
         <a class="dl-link" href="https://kastrava.pp.ua/dl/Kastrava-101.0.0.apk" target="_blank" rel="noopener">Direct APK<span class="fn">Kastrava-101.0.0.apk</span></a>
+        </div>
         <p style="font-size:13.5px;color:var(--muted);margin:10px 0 4px">Sideload build — allow "Install unknown apps" when prompted. Same Premium keys work: activate in-app with this device's machine code.</p>
+        </div>
       </div>
     </div>
   </div>
@@ -345,22 +373,28 @@ footer a{color:var(--blue);text-decoration:none}
   </div>
   <div class="container">
     <div class="os-grid">
-      <div class="card reveal">
-        <div class="mono" style="font-size:11px;color:var(--blue);margin-bottom:12px">LICENSE</div>
+      <div class="card os-row reveal">
+        <div class="os-tag">LICENSE</div>
+        <div>
         <h3>GPLv3, unambiguously</h3>
         <p>Copyleft, no exceptions. If you fork it, your changes stay open too — no proprietary re-skins of a private-browser idea.</p>
         <a href="/license.html" style="color:var(--blue);font-weight:600;font-size:13.5px;display:inline-block;margin-top:10px;text-decoration:none;border-bottom:2px solid currentColor;padding-bottom:1px">Read the full GPLv3 license →</a>
+        </div>
       </div>
-      <div class="card reveal">
-        <div class="mono" style="font-size:11px;color:var(--blue);margin-bottom:12px">AUDIT</div>
+      <div class="card os-row reveal">
+        <div class="os-tag">AUDIT</div>
+        <div>
         <h3>Verify every privacy claim</h3>
         <p>Zero telemetry, memory-only web sessions, one-machine keys — all in the source. You don't have to trust the marketing, you can read the code.</p>
+        </div>
       </div>
-      <div class="card reveal">
-        <div class="mono" style="font-size:11px;color:var(--blue);margin-bottom:12px">BUILD</div>
+      <div class="card os-row reveal">
+        <div class="os-tag">BUILD</div>
+        <div>
         <h3>Build it yourself</h3>
         <p>Clone, package and run your own copy — nothing to register, no accounts.</p>
         <div class="cmd">git clone https://github.com/planetofoses989/kastrava.git</div>
+        </div>
       </div>
     </div>
   </div>
@@ -371,7 +405,7 @@ footer a{color:var(--blue);text-decoration:none}
     <div class="sec-kicker reveal">06 — QUESTIONS</div>
     <h2 class="sec-title reveal">Asked often</h2>
     <p class="sec-sub reveal">Straight answers.</p>
-    <div class="faq reveal" style="max-width:780px">
+    <div class="faq reveal">
       <details><summary>What exactly is deleted when I quit?</summary><p>Everything websites stored: HTTP cache, cookies, DOM storage, IndexedDB, service-worker caches. They live in a private per-session sandbox and are wiped on every exit — even crash leftovers are purged at the next launch. Downloads follow the same rule: they stay locked to the session and are wiped unless you explicitly save them to your Downloads folder. Your own settings, bookmarks and history database stay — unless you switch those off too.</p></details>
       <details><summary>Is the core really free? What's the catch?</summary><p>Free forever, no accounts, no telemetry to monetize. Premium ($2.59 / 34 days, no auto-renew) is a one-time payment per cycle that powers development — but everything below is free: session isolation (website data never touches disk), blockers, tracking protection, downloads, default keyboard shortcuts, KastravaSearch + DuckDuckGo, themes 1 light + 1 dark.</p></details>
       <details><summary>What does Premium actually unlock?</summary><p>Tracking Radar (live per-tab privacy score), the full Cursor FX suite (all 8 effects + custom arrow), Workspaces, Split View, all 20 themes, extra search engines (Brave, Google, Ecosia), Reader Mode, Picture-in-Picture, Screenshot, the Localhost Dashboard, bookmark import/export, vertical tabs, and custom shortcut remapping. One license, one machine. No auto-renew — the app reminds you when it's time to renew.</p></details>
@@ -387,10 +421,21 @@ footer a{color:var(--blue);text-decoration:none}
 
 <footer>
   <div class="container">
-    <p>Kastrava 101 Beta &ldquo;Starship Wonders&rdquo; · Originally AnterSurf · Built by Kastrasoft</p>
-    <p style="margin-top:10px;font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:700;color:var(--ink)"><a href="https://github.com/planetofoses989/kastrava" target="_blank" rel="noopener" style="color:inherit">★ 100% Open Source — GPLv3</a> · github.com/planetofoses989/kastrava</p>
-    <p style="margin-top:4px;font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--muted2)"><a href="/license.html" style="color:var(--muted2)">Read the complete GNU GPL v3 license</a></p>
-    <p style="margin-top:6px">Support: <a href="mailto:planetofoses989@gmail.com">planetofoses989@gmail.com</a></p>
+    <div class="foot-grid">
+      <div>
+        <p style="font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:700;color:var(--ink)">KASTRAVA</p>
+        <p style="margin-top:6px">Kastrava 101 Beta &ldquo;Starship Wonders&rdquo; · Originally AnterSurf · Built by Kastrasoft</p>
+      </div>
+      <div>
+        <p style="font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:700;color:var(--ink)">Open source</p>
+        <p style="margin-top:6px"><a href="https://github.com/planetofoses989/kastrava" target="_blank" rel="noopener">★ GitHub — GPLv3</a></p>
+        <p style="margin-top:4px;font-family:'JetBrains Mono',monospace;font-size:11.5px"><a href="/license.html" style="color:var(--muted2)">Read the complete GNU GPL v3 license</a></p>
+      </div>
+      <div>
+        <p style="font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:700;color:var(--ink)">Support</p>
+        <p style="margin-top:6px"><a href="mailto:planetofoses989@gmail.com">planetofoses989@gmail.com</a></p>
+      </div>
+    </div>
   </div>
 </footer>
 
