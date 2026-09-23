@@ -34,7 +34,7 @@
         "rpm"
       ],
       "category": "Network",
-      "icon": "static/logo.png",
+      "icon": "packaging/icons",
       "syncDesktopName": true,
       "desktop": {
         "entry": {
