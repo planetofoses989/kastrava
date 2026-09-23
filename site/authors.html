@@ -47,6 +47,17 @@ h1{font-size:40px;font-weight:700;letter-spacing:-1px;line-height:1.05;color:var
 .sub a:hover{text-decoration:underline}
 .lic-card{background:var(--card);border:2px solid var(--deep);border-radius:16px;padding:34px 30px;margin-top:28px}
 .sec-h{font-family:'JetBrains Mono',monospace;font-size:13px;letter-spacing:2px;color:var(--blue);margin:34px 0 0}
+.authors-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px;margin-top:14px}
+.author-card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:26px;display:flex;gap:18px;transition:all .2s}
+.author-card:hover{transform:translateY(-3px);box-shadow:0 16px 34px rgba(0,0,0,.12)}
+.avatar{flex-shrink:0;width:64px;height:64px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:22px;color:#fff}
+.avatar.tk{background:linear-gradient(135deg,#0288d1,#4fc3f7)}
+.avatar.aa{background:linear-gradient(135deg,#6a1b9a,#ab47bc)}
+.avatar.lm{background:linear-gradient(135deg,#f57c00,#ffb300)}
+.author-card h2{font-size:19px;margin-bottom:6px}
+.role{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:2px;color:var(--blue);border:1px solid var(--blue);border-radius:20px;padding:3px 12px;margin-bottom:10px}
+.author-card p{font-size:14px}
+.author-card .links{margin-top:12px;font-size:13.5px}
 .lic{font-family:'JetBrains Mono',monospace;font-size:12px;line-height:1.75;color:var(--text);white-space:pre-wrap;word-break:break-word}
 footer{border-top:2px solid var(--deep);margin-top:64px;padding:36px 0 48px;background:var(--card)}
 footer p{font-size:12.5px;color:var(--muted2)}
@@ -93,34 +104,53 @@ footer a{color:var(--blue);text-decoration:none}
     <h1>The people behind Kastrava</h1>
     <p class="sub">Kastrava is built in the open under <b>GPLv3</b> — every line below is a real human, not a brand.</p>
     <div class="sec-h">CORE MAINTAINERS</div>
-    <div class="lic-card">
-      <h2 style="font-size:20px;margin-bottom:4px">Tejas Khanna</h2>
-      <p class="mono" style="font-size:12px;color:var(--blue);margin-bottom:10px">LEAD MAINTAINER · planetofoses989</p>
-      <p>Created Kastrava (originally AnterSurf) and maintains everything: the browser, the license server, the site, the releases. One-machine Premium, volatile sessions, the Store and Play builds — all of it.</p>
-      <p style="margin-top:10px"><a href="https://github.com/planetofoses989" target="_blank" rel="noopener">github.com/planetofoses989 →</a> · <a href="mailto:planetofoses989@gmail.com">planetofoses989@gmail.com</a></p>
+    <div class="authors-grid">
+      <div class="author-card">
+        <div class="avatar tk">TK</div>
+        <div>
+          <h2>Tejas Khanna</h2>
+          <span class="role">LEAD MAINTAINER</span>
+          <p>Created Kastrava (originally AnterSurf) and maintains everything: the browser, the license server, the site, the releases. One-machine Premium, volatile sessions, the Store and Play builds — all of it.</p>
+          <p class="links"><a href="https://github.com/planetofoses989" target="_blank" rel="noopener">github.com/planetofoses989 →</a> · <a href="mailto:planetofoses989@gmail.com">email →</a></p>
+        </div>
+      </div>
     </div>
     <div class="sec-h">CONTRIBUTORS</div>
-    <div class="lic-card" style="margin-top:14px">
-      <h2 style="font-size:20px;margin-bottom:4px">Aryan</h2>
-      <p class="mono" style="font-size:12px;color:var(--blue);margin-bottom:10px">CONTRIBUTOR · Aryan447</p>
-      <p>Vertical tabs implementation and core optimizations — including the sidebar testers now love.</p>
-      <p style="margin-top:10px"><a href="https://github.com/Aryan447" target="_blank" rel="noopener">github.com/Aryan447 →</a></p>
+    <div class="authors-grid">
+      <div class="author-card">
+        <div class="avatar aa">A</div>
+        <div>
+          <h2>Aryan</h2>
+          <span class="role">CONTRIBUTOR</span>
+          <p>Vertical tabs implementation and core optimizations — including the sidebar testers now love.</p>
+          <p class="links"><a href="https://github.com/Aryan447" target="_blank" rel="noopener">github.com/Aryan447 →</a></p>
+        </div>
+      </div>
     </div>
     <div class="sec-h">BUG TESTERS</div>
-    <div class="lic-card" style="margin-top:14px">
-      <h2 style="font-size:20px;margin-bottom:4px">LEMON</h2>
-      <p class="mono" style="font-size:12px;color:var(--blue);margin-bottom:10px">QA · community tester</p>
-      <p>Caught the vertical-tabs gating bug and the missing app-grid icon in live testing. Testers like LEMON are why beta works.</p>
+    <div class="authors-grid">
+      <div class="author-card">
+        <div class="avatar lm">L</div>
+        <div>
+          <h2>LEMON</h2>
+          <span class="role">QA · COMMUNITY TESTER</span>
+          <p>Caught the vertical-tabs gating bug and the missing app-grid icon in live testing. Testers like LEMON are why beta works.</p>
+        </div>
+      </div>
     </div>
     <div class="sec-h">GET INVOLVED</div>
-    <div class="lic-card" style="margin-top:14px">
+    <div class="authors-grid">
+    <div class="lic-card" style="margin-top:0">
       <h2 style="font-size:20px;margin-bottom:4px">Want your name here?</h2>
       <p>Contributions are welcome at <a href="https://github.com/planetofoses989/kastrava" target="_blank" rel="noopener">github.com/planetofoses989/kastrava</a> — code, docs, icons, translations. Land a PR and you land on this page.</p>
     </div>
-    <div class="lic-card" style="margin-top:14px">
+    </div>
+    <div class="authors-grid" style="margin-top:14px">
+    <div class="lic-card" style="margin-top:0">
       <h2 style="font-size:20px;margin-bottom:4px">Bug testing</h2>
       <p>Found something broken? Come report bugs — and hang out — on the <b>KendraServer</b> Discord.</p>
       <p style="margin-top:10px"><a href="https://discord.gg/UsgF73RJbx" target="_blank" rel="noopener">discord.gg/UsgF73RJbx →</a></p>
+    </div>
     </div>
   </div>
 </main>
