@@ -287,6 +287,13 @@ footer a{color:var(--blue);text-decoration:none}
           <a id="prem-dl" class="btn btn-primary" style="display:none;margin-top:14px;width:100%;text-align:center;padding:14px 18px">Download Premium build</a>
           <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted2);margin-top:10px">Key is bound to the first machine that activates it. Lose it? <a href="mailto:planetofoses989@gmail.com" style="color:var(--blue)">We re-issue</a>.</div>
         </div>
+        <div style="margin-top:14px;padding-top:14px;border-top:1px solid rgba(255,255,255,.08)">
+          <div style="font-size:13px;color:var(--muted)">Already paid? Enter your key to download the premium build anytime:</div>
+          <div style="display:flex;gap:8px;margin-top:8px">
+            <input id="prem-dl-key" class="cmd" style="flex:1;border:none;background:#0c0e13;color:#7ee2a8;padding:12px 14px;font-size:12px;margin-top:0" placeholder="KAS-XXXX">
+            <button class="prem-buy" id="prem-dl-btn" style="width:auto;margin-top:0;padding:12px 20px;white-space:nowrap">Download</button>
+          </div>
+        </div>
         <div class="prem-note">Secure checkout via Razorpay. UPI / cards / netbanking. <b>One-time $2.59 — no recurring mandate needed</b>. Instantly verified, key issued on this page.</div>
       </div>
     </div>
@@ -488,6 +495,28 @@ footer a{color:var(--blue);text-decoration:none}
   function fail(msg){alert(msg||'Something went wrong. Please try again.');setBusy(false);}
 
   function machineValue(){return machineInput&&machineInput.value?machineInput.value.trim():'';}
+
+  // Persistent premium-build download: works anytime after purchase (even
+  // after a reload), not just in the payment session. The server 403s
+  // unknown keys, but we pre-check with a 1-byte range fetch first so a
+  // typo shows an alert instead of a raw JSON error page.
+  (function(){
+    var keyInput=document.getElementById('prem-dl-key');
+    var dlBtn=document.getElementById('prem-dl-btn');
+    if(!dlBtn)return;
+    dlBtn.addEventListener('click',function(){
+      var k=keyInput&&keyInput.value.trim();
+      if(!k){alert('Enter your license key first.');return;}
+      dlBtn.disabled=true;
+      fetch(KAS_API+'/api/dl/'+encodeURIComponent(k),{headers:{Range:'bytes=0-0'}})
+      .then(function(r){
+        dlBtn.disabled=false;
+        if(r.ok){window.location.href=KAS_API+'/api/dl/'+encodeURIComponent(k);}
+        else alert('That key is not valid for downloads. Check it and try again.');
+      })
+      .catch(function(){dlBtn.disabled=false;alert('Could not reach the store. Try again.');});
+    });
+  })();
 
   function openRazorpay(o){
     if(!window.Razorpay){
