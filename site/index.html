@@ -274,8 +274,9 @@ footer a{color:var(--blue);text-decoration:none}
           <li><b>Custom shortcuts</b> — remap every keyboard shortcut</li>
         </ul>
         <input id="prem-machine" class="cmd" style="width:100%;border:none;background:#0c0e13;color:#7ee2a8;padding:12px 14px;font-size:12px" placeholder="Machine code (auto-filled — and locked — when you click from the app)">
-        <button class="prem-buy" id="prem-buy" style="margin-top:12px">Pay $2.59 with Razorpay — 34 days</button>
-        <p style="font-size:12px;color:var(--muted2);margin-top:8px">Charged in INR (₹248) — your bank converts the $2.59 at checkout.</p>
+        <div id="pp-buttons" style="margin-top:12px;min-height:120px"></div>
+        <button class="prem-buy" id="prem-buy" style="display:none;margin-top:12px">Simulate $2.59 payment (dev mode)</button>
+        <p style="font-size:12px;color:var(--muted2);margin-top:8px">Charged $2.59 USD via PayPal.</p>
         <div class="prem-keyout" id="prem-keyout">
           <div class="tag" style="color:var(--key-c)">PAYMENT VERIFIED</div>
           <div style="font-size:13px;color:var(--muted);margin-top:4px">Your license key:</div>
@@ -285,12 +286,12 @@ footer a{color:var(--blue);text-decoration:none}
           <a id="prem-dl" class="btn btn-primary" style="display:none;margin-top:14px;width:100%;text-align:center;padding:14px 18px">Download Premium build</a>
           <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted2);margin-top:10px">Key is bound to the first machine that activates it. Lose it? <a href="mailto:planetofoses989@gmail.com" style="color:var(--blue)">We re-issue</a>.</div>
         </div>
-        <div class="prem-note">Secure checkout via Razorpay. UPI / cards / netbanking. <b>One-time $2.59 — no recurring mandate needed</b>. Instantly verified, key issued on this page.</div>
+        <div class="prem-note">Secure checkout via PayPal. <b>One-time $2.59 — no recurring mandate needed</b>. Instantly verified, key issued on this page.</div>
       </div>
     </div>
     <div class="prem-steps">
         <div class="prem-step reveal"><div class="t">STEP 1 — INSTALL</div><h4>Grab the free build</h4><p>It's the whole app. Premium is inside — locked until you activate.</p></div>
-        <div class="prem-step reveal"><div class="t">STEP 2 — PAY</div><h4>Pay here ($2.59 one-time · 34 days)</h4><p>Any UPI, card or netbanking via Razorpay. Your key appears on this page instantly. Renewing? Enter your machine code first and the same key just gets extended.</p></div>
+        <div class="prem-step reveal"><div class="t">STEP 2 — PAY</div><h4>Pay here ($2.59 one-time · 34 days)</h4><p>PayPal balance, card or bank via PayPal. Your key appears on this page instantly. Renewing? Enter your machine code first and the same key just gets extended.</p></div>
         <div class="prem-step reveal"><div class="t">STEP 3 — ACTIVATE</div><h4>Paste key in the app</h4><p>Open <code>Settings → Kastrava Premium</code>, paste the <code>KAS-…</code> key, hit Activate. It binds to <b>this</b> PC and unlocks Premium for 34 days. No auto-renew — the app pops a reminder when renewal's due.</p></div>
         <div class="prem-step reveal"><div class="t">ONE MACHINE, ON PURPOSE</div><h4>Copying it elsewhere doesn't work</h4><p>Your key is signed to your machine code. Move the app to another PC and it stays Free — Linux reinstall on the same hardware keeps working.</p></div>
     </div>
@@ -444,7 +445,7 @@ footer a{color:var(--blue);text-decoration:none}
   var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target);}});},{threshold:.1});
   document.querySelectorAll('.reveal').forEach(function(el){io.observe(el);});
 
-  // ---- Premium: Razorpay one-time checkout + license key issuance ----
+  // ---- Premium: PayPal one-time checkout + license key issuance ----
   var buyBtn=document.getElementById('prem-buy');
   var machineInput=document.getElementById('prem-machine');
   // Purchase/verification API. Defaults to the Kastrava license server; the
@@ -473,11 +474,13 @@ footer a{color:var(--blue);text-decoration:none}
   function setBusy(on){
     if(!buyBtn)return;
     buyBtn.disabled=on;
-    buyBtn.textContent=on?'Contacting store…':'Pay $2.59 with Razorpay — 34 days';
+    buyBtn.textContent=on?'Contacting store…':'Simulate $2.59 payment (dev mode)';
   }
   function showKey(key,renewed){
     if(keyEl)keyEl.textContent=key;
     if(keyout)keyout.style.display='block';
+    var ppBox=document.getElementById('pp-buttons');
+    if(ppBox)ppBox.style.display='none';
     if(machineInput){machineInput.value=machineInput.value?(renewed?'(machine code sent — same key extended)':'(machine code sent with purchase)'):machineInput.value;}
     if(dlEl){dlEl.href=KAS_API+'/api/dl/'+encodeURIComponent(key);dlEl.style.display='block';}
     if(renewedEl){renewedEl.style.display=renewed?'block':'none';}
@@ -487,70 +490,78 @@ footer a{color:var(--blue);text-decoration:none}
 
   function machineValue(){return machineInput&&machineInput.value?machineInput.value.trim():'';}
 
-  function openRazorpay(o){
-    if(!window.Razorpay){
-      fail('Razorpay checkout failed to load. Refresh and try again.');
-      return;
-    }
-    var opts={
-      key:o.key_id,
-      amount:o.amount,
-      currency:o.currency,
-      order_id:o.order_id,
-      name:'Kastrava Premium',
-      description:'One-time $2.59 · 34 days · one machine · no auto-renew',
-      prefill:{name:'',email:''},
-      theme:{color:document.documentElement.getAttribute('data-theme')==='dark'?'#f3eee4':'#16130e'},
-      handler:function(res){
-        setBusy(true);
-        fetch(KAS_API+'/api/verify',{method:'POST',headers:{'Content-Type':'application/json'},
-          body:JSON.stringify({order_id:res.razorpay_order_id,payment_id:res.razorpay_payment_id,signature:res.razorpay_signature,machine_id:machineValue()})})
-        .then(function(r){return r.json();})
-        .then(function(v){
-          if(v.ok&&v.key){showKey(v.key,!!v.renewed);setBusy(false);}
-          else fail((v&&v.msg)||'Payment could not be verified.');
-        })
-        .catch(function(){fail('Could not verify payment — your payment may still have gone through. Email the payment ID to planetofoses989@gmail.com');});
-      },
-      modal:{ondismiss:function(){setBusy(false);}}
-    };
-    var rzp=new Razorpay(opts);
-    checker.rzp=rzp;
-    rzp.on('payment.failed',function(){setBusy(false);alert('Payment failed. No charge was made.')});
-    rzp.open();
+  // PayPal checkout (Orders API v2). The buyer approves in the PayPal
+  // popup, then the server captures server-to-server — only a COMPLETED
+  // capture mints a license. Same key-out UI as before.
+  function ppCapture(orderId){
+    setBusy(true);
+    return fetch(KAS_API+'/api/pp-capture',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({order_id:orderId,machine_id:machineValue()})})
+    .then(function(r){return r.json();})
+    .then(function(v){
+      if(v.ok&&v.key){showKey(v.key,!!v.renewed);setBusy(false);}
+      else fail((v&&v.msg)||'Payment could not be verified.');
+    })
+    .catch(function(){fail('Could not verify payment — your payment may still have gone through. Email the payment ID to planetofoses989@gmail.com');});
   }
 
-  if(buyBtn)buyBtn.addEventListener('click',function(){
-    setBusy(true);
-    fetch(KAS_API+'/api/order',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({machine_id:machineValue()})})
-    .then(function(r){return r.json();})
-    .then(function(o){
-      if(!o||!o.order_id)throw new Error(o&&o.msg||'no order');
-      if(o.dev){
-        // Dev mode (no Razorpay keys configured): simulate the paid callback.
-        fetch(KAS_API+'/api/verify',{method:'POST',headers:{'Content-Type':'application/json'},
-          body:JSON.stringify({order_id:o.order_id,payment_id:'pay_dev_'+Date.now(),signature:'dev',machine_id:machineValue()})})
-        .then(function(r){return r.json();})
-        .then(function(v){if(v.ok&&v.key)showKey(v.key,!!v.renewed);setBusy(false);})
-        .catch(function(){fail('Dev checkout failed.');});
-        return;
-      }
-      if(!window.__razorpayLoaded){loadRazorpay(function(){openRazorpay(o);});}
-      else openRazorpay(o);
-    })
-    .catch(function(e){fail(e&&e.message);});
-  });
-
-  function loadRazorpay(cb){
-    if(window.__razorpayLoading){var t=checker.t||null;checker.t=setInterval(function(){if(window.__razorpayLoaded){clearInterval(checker.t);cb();}},150);return;}
-    window.__razorpayLoading=true;
+  function loadPayPalSdk(clientId,cb){
+    if(window.paypal)return cb();
+    if(window.__ppLoading){var t=setInterval(function(){if(window.paypal){clearInterval(t);cb();}},150);return;}
+    window.__ppLoading=true;
     var s=document.createElement('script');
-    s.src='https://checkout.razorpay.com/v1/checkout.js';
-    s.onload=function(){window.__razorpayLoaded=true;cb();};
-    s.onerror=function(){window.__razorpayLoaded=true;fail('Could not load Razorpay. Try again.');setBusy(false);};
+    s.src='https://www.paypal.com/sdk/js?client-id='+encodeURIComponent(clientId)+'&currency=USD&intent=capture';
+    s.onload=function(){window.__ppLoading=false;cb();};
+    s.onerror=function(){window.__ppLoading=false;fail('Could not load PayPal. Try again.');setBusy(false);};
     document.head.appendChild(s);
   }
+
+  function initPayPal(){
+    fetch(KAS_API+'/api/pp-config')
+    .then(function(r){return r.json();})
+    .then(function(cfg){
+      if(!cfg)throw new Error('no config');
+      if(cfg.dev||!cfg.client_id){
+        // Dev mode (no PayPal credentials): simulate the paid callback.
+        var ppBox=document.getElementById('pp-buttons');
+        if(ppBox)ppBox.style.display='none';
+        if(buyBtn){buyBtn.style.display='block';buyBtn.disabled=false;
+          buyBtn.onclick=function(){
+            setBusy(true);
+            fetch(KAS_API+'/api/pp-order',{method:'POST',headers:{'Content-Type':'application/json'},
+              body:JSON.stringify({machine_id:machineValue()})})
+            .then(function(r){return r.json();})
+            .then(function(o){
+              if(!o||!o.order_id)throw new Error((o&&o.msg)||'no order');
+              ppCapture(o.order_id);
+            })
+            .catch(function(e){fail(e&&e.message);});
+          };
+        }
+        return;
+      }
+      loadPayPalSdk(cfg.client_id,function(){
+        if(!window.paypal){fail('PayPal failed to load. Refresh and try again.');return;}
+        window.paypal.Buttons({
+          style:{layout:'vertical',color:'blue',shape:'rect',label:'pay'},
+          createOrder:function(){
+            return fetch(KAS_API+'/api/pp-order',{method:'POST',headers:{'Content-Type':'application/json'},
+              body:JSON.stringify({machine_id:machineValue()})})
+            .then(function(r){return r.json();})
+            .then(function(o){
+              if(!o||!o.order_id)throw new Error((o&&o.msg)||'no order');
+              return o.order_id;
+            });
+          },
+          onApprove:function(data){return ppCapture(data.orderID);},
+          onCancel:function(){setBusy(false);},
+          onError:function(){setBusy(false);alert('Payment failed. No charge was made.');}
+        }).render('#pp-buttons');
+      });
+    })
+    .catch(function(){fail('Could not reach the store. Try again.');});
+  }
+  try{initPayPal();}catch(e){fail('Store failed to start.');}
 })();
 </script>
 </body>
