@@ -9,9 +9,9 @@ Target state after this runbook:
 
 - `RAZORPAY_KEY_ID=rzp_live_…` / `RAZORPAY_KEY_SECRET=…` in `server/.env`
 - Existing webhook delivers `payment.captured` (account-wide; see §2)
-- `curl https://nexufog.pp.ua/api/health` → `{"dev":false,"price":199,"period_days":34,"grace_days":3,…}`
-- A real ₹199 purchase mints a 34-day license, activation binds it to the first
-  machine, a second ₹199 payment with the same machine code **extends the same
+- `curl https://nexufog.pp.ua/api/health` → `{"dev":false,"price":248,"period_days":34,"grace_days":3,…}`
+- A real ₹248 purchase mints a 34-day license, activation binds it to the first
+  machine, a second ₹248 payment with the same machine code **extends the same
   key**, and `/api/dl/<key>` serves the premium installer.
 
 ---
@@ -20,7 +20,7 @@ Target state after this runbook:
 
 ```bash
 curl -s https://nexufog.pp.ua/api/health
-# expect 200, "dev":false, price 199, period_days 34, grace_days 3
+# expect 200, "dev":false, price 248, period_days 34, grace_days 3
 ```
 
 `dev:false` only means "keys are loaded" — it does **not** prove live. Confirm
@@ -98,7 +98,7 @@ sudo systemctl status kastrava-license      # active (running)
 1. **Health**
    ```bash
    curl -s https://nexufog.pp.ua/api/health
-   # 200, dev:false, price:199, period_days:34, grace_days:3
+   # 200, dev:false, price:248, period_days:34, grace_days:3
    ```
 
 2. **Live key in play** — smoke order (do NOT pay it):
@@ -119,8 +119,8 @@ sudo systemctl status kastrava-license      # active (running)
    first purchase and `… renewal …` for a renewal.
 
 4. **Real purchase — the decisive test** (do it when you're happy to take real
-   ₹199):
-   - https://kastrava.pp.ua → **Premium** → pay ₹199 (card/UPI/netbanking).
+   ₹248):
+   - https://kastrava.pp.ua → **Premium** → pay ₹248 (card/UPI/netbanking).
    - Checkout callback settles → key shown (34 days + 3 grace).
    - **Renewal**: open Premium again from the app (brings your machine code,
      locked read-only) → pay again → **same key**, expiry extends; the app

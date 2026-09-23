@@ -5,7 +5,7 @@
 //   PORT                  default 8787
 //   BIND_HOST             interface to bind, default 127.0.0.1 (0.0.0.0 for a public/bare deployment)
 //   KAS_HOST              public base URL used in responses, default http://127.0.0.1:8787
-//   PRICE_INR             one-time price per 34-day license, default 199
+//   PRICE_INR             one-time price per 34-day license, default 248
 //   PERIOD_DAYS           license validity days per payment, default 34
 //   GRACE_DAYS            days past expiry before access is revoked, default 3
 //   RAZORPAY_WEBHOOK_SECRET  secret for /api/webhook signature verification
@@ -24,7 +24,7 @@ const razorpay = require('./lib/razorpay')
 const port = parseInt(process.env.PORT || '8787', 10)
 const BIND_HOST = process.env.BIND_HOST || '127.0.0.1'
 const HOST = process.env.KAS_HOST || 'http://127.0.0.1:' + port
-const PRICE_INR = parseInt(process.env.PRICE_INR || '199', 10)
+const PRICE_INR = parseInt(process.env.PRICE_INR || '248', 10)
 const PERIOD_DAYS = parseInt(process.env.PERIOD_DAYS || '34', 10)
 const GRACE_DAYS = parseInt(process.env.GRACE_DAYS || '3', 10)
 const LICENSE_YEARS = parseInt(process.env.LICENSE_YEARS || '10', 10)
