@@ -58,6 +58,15 @@ h1{font-size:40px;font-weight:700;letter-spacing:-1px;line-height:1.05;color:var
 .role{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:2px;color:var(--blue);border:1px solid var(--blue);border-radius:20px;padding:3px 12px;margin-bottom:10px}
 .author-card p{font-size:14px}
 .author-card .links{margin-top:12px;font-size:13.5px}
+.author-card.big{padding:34px}
+.author-card.big .avatar{width:84px;height:84px;font-size:30px}
+.author-card.big h2{font-size:24px}
+.mini-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin-top:10px}
+.mini-card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;gap:12px;align-items:center}
+.mini-card .avatar{width:40px;height:40px;font-size:15px}
+.mini-card h2{font-size:14px;margin-bottom:2px}
+.mini-card p{font-size:11.5px;color:var(--muted)}
+.count-pill{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:1px;color:var(--muted2);border:1px solid var(--line);border-radius:20px;padding:2px 10px;margin-left:8px;vertical-align:2px}
 .lic{font-family:'JetBrains Mono',monospace;font-size:12px;line-height:1.75;color:var(--text);white-space:pre-wrap;word-break:break-word}
 footer{border-top:2px solid var(--deep);margin-top:64px;padding:36px 0 48px;background:var(--card)}
 footer p{font-size:12.5px;color:var(--muted2)}
@@ -105,7 +114,7 @@ footer a{color:var(--blue);text-decoration:none}
     <p class="sub">Kastrava is built in the open under <b>GPLv3</b> — every line below is a real human, not a brand.</p>
     <div class="sec-h">CORE MAINTAINERS</div>
     <div class="authors-grid">
-      <div class="author-card">
+      <div class="author-card big">
         <div class="avatar tk">TK</div>
         <div>
           <h2>Tejas Khanna</h2>
@@ -115,26 +124,23 @@ footer a{color:var(--blue);text-decoration:none}
         </div>
       </div>
     </div>
-    <div class="sec-h">CONTRIBUTORS</div>
-    <div class="authors-grid">
-      <div class="author-card">
+    <div class="sec-h">CONTRIBUTORS<span class="count-pill" id="gh-count">… on GitHub</span></div>
+    <div class="mini-grid">
+      <div class="mini-card">
         <div class="avatar aa">A</div>
         <div>
           <h2>Aryan</h2>
-          <span class="role">CONTRIBUTOR</span>
-          <p>Vertical tabs implementation and core optimizations — including the sidebar testers now love.</p>
-          <p class="links"><a href="https://github.com/Aryan447" target="_blank" rel="noopener">github.com/Aryan447 →</a></p>
+          <p>Vertical tabs + core optimizations · <a href="https://github.com/Aryan447" target="_blank" rel="noopener">Aryan447 →</a></p>
         </div>
       </div>
     </div>
     <div class="sec-h">BUG TESTERS</div>
-    <div class="authors-grid">
-      <div class="author-card">
+    <div class="mini-grid">
+      <div class="mini-card">
         <div class="avatar lm">L</div>
         <div>
           <h2>LEMON</h2>
-          <span class="role">QA · COMMUNITY TESTER</span>
-          <p>Caught the vertical-tabs gating bug and the missing app-grid icon in live testing. Testers like LEMON are why beta works.</p>
+          <p>Live QA — caught the vtabs gate bypass + missing grid icon.</p>
         </div>
       </div>
     </div>
@@ -161,5 +167,18 @@ footer a{color:var(--blue);text-decoration:none}
     <p style="margin-top:8px"><a href="https://github.com/planetofoses989/kastrava" target="_blank" rel="noopener">100% Open Source (GPLv3)</a> · <a href="/license.html">Read the license</a></p>
   </div>
 </footer>
+<script>
+(function(){
+  try{
+    fetch('https://api.github.com/repos/planetofoses989/kastrava/contributors?per_page=100')
+    .then(function(r){return r.json();})
+    .then(function(d){
+      var el=document.getElementById('gh-count');
+      if(el&&d&&d.length!==undefined)el.textContent=d.length+' on GitHub';
+    })
+    .catch(function(){});
+  }catch(e){}
+})();
+</script>
 </body>
 </html>
