@@ -64,7 +64,7 @@ h1{font-size:40px;font-weight:700;letter-spacing:-1px;line-height:1.05;color:var
 .mini-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin-top:10px}
 .mini-card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;gap:12px;align-items:center}
 .mini-card .avatar{width:40px;height:40px;font-size:15px}
-.mini-card h2{font-size:14px;margin-bottom:2px}
+.mini-card h2{font-size:12px;margin-bottom:2px}
 .mini-card p{font-size:11.5px;color:var(--muted)}
 .count-pill{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:1px;color:var(--muted2);border:1px solid var(--line);border-radius:20px;padding:2px 10px;margin-left:8px;vertical-align:2px}
 .lic{font-family:'JetBrains Mono',monospace;font-size:12px;line-height:1.75;color:var(--text);white-space:pre-wrap;word-break:break-word}
@@ -125,7 +125,7 @@ footer a{color:var(--blue);text-decoration:none}
       </div>
     </div>
     <div class="sec-h">CONTRIBUTORS<span class="count-pill" id="gh-count">… on GitHub</span></div>
-    <div class="mini-grid">
+    <div class="mini-grid" id="contrib-grid">
       <div class="mini-card">
         <div class="avatar aa">A</div>
         <div>
@@ -133,9 +133,6 @@ footer a{color:var(--blue);text-decoration:none}
           <p>Vertical tabs + core optimizations · <a href="https://github.com/Aryan447" target="_blank" rel="noopener">Aryan447 →</a></p>
         </div>
       </div>
-    </div>
-    <div class="sec-h">BUG TESTERS</div>
-    <div class="mini-grid">
       <div class="mini-card">
         <div class="avatar lm">L</div>
         <div>
@@ -169,12 +166,40 @@ footer a{color:var(--blue);text-decoration:none}
 </footer>
 <script>
 (function(){
+  var grads=['aa','lm','tk'];
+  function gradFor(name){
+    var h=0;for(var i=0;i<name.length;i++)h=(h*31+name.charCodeAt(i))>>>0;
+    return grads[h%grads.length];
+  }
+  function esc(t){return String(t||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+  function card(name,handle,desc){
+    var gh=handle?'<a href="https://github.com/'+encodeURIComponent(handle)+'" target="_blank" rel="noopener">'+esc(handle)+' →</a>':'';
+    return '<div class="mini-card"><div class="avatar '+gradFor(name)+'">'+esc(name.trim().charAt(0).toUpperCase())+'</div><div><h2>'+esc(name)+'</h2><p>'+esc(desc)+(gh?' · '+gh:'')+'</p></div></div>';
+  }
   try{
+    // contributor count, live from GitHub
     fetch('https://api.github.com/repos/planetofoses989/kastrava/contributors?per_page=100')
     .then(function(r){return r.json();})
     .then(function(d){
       var el=document.getElementById('gh-count');
       if(el&&d&&d.length!==undefined)el.textContent=d.length+' on GitHub';
+    })
+    .catch(function(){});
+    // names + roles, live from the AUTHOR file — Contributors and Bug
+    // Testers merged into one Contributors grid
+    fetch('https://raw.githubusercontent.com/planetofoses989/kastrava/main/AUTHOR')
+    .then(function(r){if(!r.ok)throw 0;return r.text();})
+    .then(function(t){
+      var want=false,html='';
+      t.split('\n').forEach(function(line){
+        var h=line.match(/^##\s*(.+)/);
+        if(h){want=/contributor|bug tester/i.test(h[1]);return;}
+        if(!want)return;
+        var m=line.match(/^\*\s*(.+?)\s*(?:<([^>]+)>)?\s*(?:-\s*(.*))?$/);
+        if(m&&m[1])html+=card(m[1].trim(),(m[2]||'').trim(),(m[3]||'').trim());
+      });
+      var grid=document.getElementById('contrib-grid');
+      if(grid&&html)grid.innerHTML=html;
     })
     .catch(function(){});
   }catch(e){}
