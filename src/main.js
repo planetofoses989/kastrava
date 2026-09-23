@@ -366,16 +366,42 @@ app.whenReady().then(async () => {
   wipeLegacyWebData()
 
   app.on('web-contents-created', (_, wc) => {
-    wc.setWindowOpenHandler(({ url }) => {
+    wc.setWindowOpenHandler(({ url, disposition }) => {
       try {
         const proto = new URL(url).protocol
-        if (proto === 'http:' || proto === 'https:') {
-          if (mainWindow) mainWindow.webContents.send('open-new-tab', url)
-          return { action: 'deny' }
-        }
         // Never hand local files to outside apps; mailto is safe to delegate
         if (proto === 'mailto:') {
           shell.openExternal(url)
+          return { action: 'deny' }
+        }
+        if (proto === 'http:' || proto === 'https:' || proto === 'about:') {
+          // Script popups (payment/bank redirects like Razorpay) must stay
+          // real windows: the opener page talks to them via window.opener,
+          // which breaks if we force them into tabs. Plain link clicks
+          // (foreground/background-tab) still open as tabs.
+          // about:blank is the standard precursor popup that the payment
+          // page then navigates to the bank — deny it and checkout hangs.
+          if (disposition === 'new-window' || disposition === 'other') {
+            const isShell = mainWindow && wc === mainWindow.webContents
+            return {
+              action: 'allow',
+              overrideBrowserWindowOptions: {
+                parent: mainWindow && !mainWindow.isDestroyed() ? mainWindow : undefined,
+                show: true,
+                autoHideMenuBar: true,
+                backgroundColor: '#ffffff',
+                webPreferences: {
+                  contextIsolation: true,
+                  nodeIntegration: false,
+                  sandbox: false,
+                  // Same volatile session as the opener tab — never the
+                  // persistent default session (bank cookies must die too).
+                  partition: isShell ? 'kastrava-shell' : 'kastrava'
+                }
+              }
+            }
+          }
+          if (proto !== 'about:' && mainWindow) mainWindow.webContents.send('open-new-tab', url)
           return { action: 'deny' }
         }
       } catch {}
