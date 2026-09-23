@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Authors — Kastrava</title>
+<meta name="description" content="The people behind Kastrava Browser.complete license text.">
+<style>
+:root{
+  --bg:#faf7f1; --card:#ffffff; --ink:#14110b; --text:#2b2620; --muted:#5c564a; --muted2:#8a8474;
+  --line:#f0ede6; --deep:#16130e; --cream:#faf7f1; --navbg:rgba(250,247,241,.9);
+  --pill:#16130e; --pill-fg:#ffffff; --blue:#0288d1; color-scheme:light;
+}
+html[data-theme="dark"]{
+  --bg:#12100c; --card:#1b1812; --ink:#f3eee4; --text:#cfc8ba; --muted:#9d9484; --muted2:#7c7466;
+  --line:#262117; --deep:#3b3428; --cream:#f3eee4; --navbg:rgba(18,16,12,.9);
+  --pill:#f3eee4; --pill-fg:#14110b; --blue:#4fc3f7; color-scheme:dark;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-height:1.65;overflow-x:hidden;-webkit-font-smoothing:antialiased;transition:background .25s,color .25s}
+h1,h2,h3,.name{font-family:'Space Grotesk',sans-serif}
+.mono{font-family:'JetBrains Mono',monospace}
+.container{max-width:960px;margin:0 auto;padding:0 28px;position:relative;z-index:1}
+nav{position:sticky;top:0;z-index:50;background:var(--navbg);backdrop-filter:blur(12px);border-bottom:2px solid var(--deep)}
+nav .container{display:flex;align-items:center;gap:12px;padding-top:13px;padding-bottom:13px}
+nav img{width:36px;height:36px;border-radius:9px}
+nav .beta{font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:500;color:var(--pill-fg);background:var(--pill);padding:3px 9px;border-radius:6px;letter-spacing:1px}
+nav .name{font-size:15px;font-weight:700;letter-spacing:4px;color:var(--ink);text-decoration:none}
+nav .sp{flex:1}
+nav a.btn{font-size:13px;font-weight:600;color:var(--pill-fg);background:var(--pill);padding:10px 24px;border-radius:10px;text-decoration:none;font-family:'Space Grotesk',sans-serif}
+nav a.btn:hover{background:#0288d1}
+.theme-btn{display:flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:10px;border:2px solid var(--deep);background:transparent;color:var(--ink);cursor:pointer;transition:all .18s}
+.theme-btn:hover{background:var(--card)}
+html[data-theme="light"] .theme-btn .ic-sun{display:none}
+html[data-theme="dark"] .theme-btn .ic-moon{display:none}
+main{padding:56px 0 30px}
+.back{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--blue);text-decoration:none}
+.back:hover{text-decoration:underline}
+.kick{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--cream);background:var(--pill);padding:6px 14px;border-radius:8px;letter-spacing:1px;margin:22px 0 16px}
+html[data-theme="dark"] .kick{color:var(--pill-fg);background:var(--pill)}
+h1{font-size:40px;font-weight:700;letter-spacing:-1px;line-height:1.05;color:var(--ink);margin-bottom:12px}
+.sub{font-size:15px;color:var(--muted);max-width:760px}
+.sub code{font-family:'JetBrains Mono',monospace;font-size:12.5px;background:var(--deep);color:var(--cream);padding:2px 7px;border-radius:6px}
+.sub a{color:var(--blue);text-decoration:none}
+.lic-card a{color:var(--blue);text-decoration:none}
+.lic-card a:hover{text-decoration:underline}
+.sub a:hover{text-decoration:underline}
+.lic-card{background:var(--card);border:2px solid var(--deep);border-radius:16px;padding:34px 30px;margin-top:28px}
+.lic{font-family:'JetBrains Mono',monospace;font-size:12px;line-height:1.75;color:var(--text);white-space:pre-wrap;word-break:break-word}
+footer{border-top:2px solid var(--deep);margin-top:64px;padding:36px 0 48px;background:var(--card)}
+footer p{font-size:12.5px;color:var(--muted2)}
+footer a{color:var(--blue);text-decoration:none}
+@media(max-width:600px){h1{font-size:30px}.lic-card{padding:22px 18px}}
+</style>
+<script>
+(function(){
+  var root=document.documentElement;
+  var saved=null;try{saved=localStorage.getItem('kas-theme');}catch(e){}
+  var dark=saved?saved==='dark':!!(window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches);
+  root.setAttribute('data-theme',dark?'dark':'light');
+  document.addEventListener('DOMContentLoaded',function(){
+    var btn=document.getElementById('theme-btn');
+    if(!btn)return;
+    btn.addEventListener('click',function(){
+      var next=root.getAttribute('data-theme')==='dark'?'light':'dark';
+      root.setAttribute('data-theme',next);
+      try{localStorage.setItem('kas-theme',next);}catch(e){}
+    });
+  });
+})();
+</script>
+</head>
+<body>
+<nav>
+  <div class="container">
+    <a href="/"><img src="logo.png" alt="Kastrava"></a>
+    <a class="name" href="/">KASTRAVA</a>
+    <span class="beta">BETA</span>
+    <button id="theme-btn" class="theme-btn" title="Toggle dark mode" aria-label="Toggle dark mode">
+      <svg class="ic-moon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      <svg class="ic-sun" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+    </button>
+    <span class="sp"></span>
+    <a class="btn" href="/#download">Download</a>
+  </div>
+</nav>
+
+<main>
+  <div class="container">
+    <a class="back" href="/">← Back to kastrava.pp.ua</a>
+    <div class="kick">AUTHORS</div>
+    <h1>The people behind Kastrava</h1>
+    <p class="sub">Kastrava is built in the open under <b>GPLv3</b> — every line below is a real human, not a brand.</p>
+    <div class="lic-card">
+      <h2 style="font-size:20px;margin-bottom:4px">Tejas Khanna</h2>
+      <p class="mono" style="font-size:12px;color:var(--blue);margin-bottom:10px">LEAD MAINTAINER · planetofoses989</p>
+      <p>Created Kastrava (originally AnterSurf) and maintains everything: the browser, the license server, the site, the releases. One-machine Premium, volatile sessions, the Store and Play builds — all of it.</p>
+      <p style="margin-top:10px"><a href="https://github.com/planetofoses989" target="_blank" rel="noopener">github.com/planetofoses989 →</a> · <a href="mailto:planetofoses989@gmail.com">planetofoses989@gmail.com</a></p>
+    </div>
+    <div class="lic-card" style="margin-top:14px">
+      <h2 style="font-size:20px;margin-bottom:4px">Aryan</h2>
+      <p class="mono" style="font-size:12px;color:var(--blue);margin-bottom:10px">CONTRIBUTOR · Aryan447</p>
+      <p>Vertical tabs implementation and core optimizations — including the sidebar testers now love.</p>
+      <p style="margin-top:10px"><a href="https://github.com/Aryan447" target="_blank" rel="noopener">github.com/Aryan447 →</a></p>
+    </div>
+    <div class="lic-card" style="margin-top:14px">
+      <h2 style="font-size:20px;margin-bottom:4px">LEMON</h2>
+      <p class="mono" style="font-size:12px;color:var(--blue);margin-bottom:10px">QA · community tester</p>
+      <p>Caught the vertical-tabs gating bug and the missing app-grid icon in live testing. Testers like LEMON are why beta works.</p>
+    </div>
+    <p class="sub" style="margin-top:22px">Want your name here? Contributions are welcome at <a href="https://github.com/planetofoses989/kastrava" target="_blank" rel="noopener">github.com/planetofoses989/kastrava</a>.</p>
+  </div>
+</main>
+
+<footer>
+  <div class="container">
+    <p>Kastrava 101 Beta &ldquo;Starship Wonders&rdquo; · Originally AnterSurf · Built by Kastrasoft</p>
+    <p style="margin-top:8px"><a href="https://github.com/planetofoses989/kastrava" target="_blank" rel="noopener">100% Open Source (GPLv3)</a> · <a href="/license.html">Read the license</a></p>
+  </div>
+</footer>
+</body>
+</html>
