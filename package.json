@@ -70,6 +70,22 @@
     "deb": {
       "artifactName": "kastrava_${version}_amd64.deb"
     },
+    "pacman": {
+      "depends": [
+        "c-ares",
+        "ffmpeg",
+        "gtk3",
+        "libevent",
+        "libvpx",
+        "libxslt",
+        "libxss",
+        "minizip",
+        "nss",
+        "re2",
+        "snappy",
+        "libnotify"
+      ]
+    },
     "appx": {
       "applicationId": "Kastrava",
       "identityName": "TejasKhanna.KastravaBrowser",
