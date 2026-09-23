@@ -9,9 +9,6 @@
 //   PERIOD_DAYS           license validity days per payment, default 34
 //   GRACE_DAYS            days past expiry before access is revoked, default 3
 //   RAZORPAY_WEBHOOK_SECRET  secret for /api/webhook signature verification
-//   PRICE_USD             one-time PayPal price in USD, default 2.59
-//   PAYPAL_CLIENT_ID / PAYPAL_SECRET / PAYPAL_MODE  PayPal REST credentials
-//                          ('live' or sandbox); without them PayPal runs dev
 //   LICENSE_YEARS         legacy fallback for old one-time keys, default 10
 //   PREMIUM_BUILD         filesystem path to the premium install package served after payment
 //   DATA_DIR              store location, default ../data
@@ -23,13 +20,11 @@ const crypto = require('crypto')
 require('./lib/env').loadEnv()
 const sign = require('./lib/sign')
 const razorpay = require('./lib/razorpay')
-const paypal = require('./lib/paypal')
 
 const port = parseInt(process.env.PORT || '8787', 10)
 const BIND_HOST = process.env.BIND_HOST || '127.0.0.1'
 const HOST = process.env.KAS_HOST || 'http://127.0.0.1:' + port
 const PRICE_INR = parseInt(process.env.PRICE_INR || '248', 10)
-const PRICE_USD = String(process.env.PRICE_USD || '2.59')
 const PERIOD_DAYS = parseInt(process.env.PERIOD_DAYS || '34', 10)
 const GRACE_DAYS = parseInt(process.env.GRACE_DAYS || '3', 10)
 const LICENSE_YEARS = parseInt(process.env.LICENSE_YEARS || '10', 10)
@@ -187,40 +182,6 @@ function finalizePayment(orderId, paymentId, machineIdRaw) {
 async function handlePost(req, res, pathname) {
   const { raw, parsed: body } = await readBody(req)
 
-  if (pathname === '/api/pp-order') {
-    try {
-      const machine = typeof body.machine_id === 'string' ? body.machine_id.trim().toUpperCase() : ''
-      const o = await paypal.createOrder(PRICE_USD, machine)
-      store.createOrder(o.order_id, { provider: 'paypal', machine_id: machine || null, amount_usd: PRICE_USD })
-      return json(res, 200, { order_id: o.order_id, dev: !!o.dev })
-    } catch (e) {
-      return json(res, 500, { error: 'order_failed', msg: String(e.message || e) })
-    }
-  }
-
-  if (pathname === '/api/pp-capture') {
-    const orderId = String(body.order_id || '')
-    const machineId = String(body.machine_id || '').trim().toUpperCase()
-    if (!orderId) return json(res, 400, { error: 'bad_request' })
-    const order = store.getOrder(orderId)
-    if (!order) return json(res, 404, { error: 'order_not_found' })
-    if (order.status === 'paid') {
-      const k = store.keyForOrder(orderId)
-      if (k) return json(res, 200, { ok: true, already_paid: true, key: k })
-    }
-    try {
-      const c = await paypal.capture(orderId)
-      if (c.status !== 'COMPLETED') {
-        return json(res, 402, { error: 'not_captured', msg: 'PayPal did not complete the capture.' })
-      }
-      store.markPaid(orderId, c.captureId)
-      const r = finalizePayment(orderId, c.captureId, machineId || order.machine_id || '')
-      return json(res, 200, { ok: true, key: r.key, renewed: r.renewed, already_paid: false })
-    } catch (e) {
-      return json(res, 500, { error: 'capture_failed', msg: String(e.message || e).slice(0, 200) })
-    }
-  }
-
   if (pathname === '/api/order') {
     try {
       const o = await razorpay.createOrder(PRICE_INR * 100)
@@ -335,16 +296,7 @@ const server = http.createServer((req, res) => {
   // `curl -I` probes get a real 200 instead of 405.
   if (req.method === 'GET' || req.method === 'HEAD') {
     if (pathname === '/api/health') {
-      return json(res, 200, { ok: true, dev: razorpay.isDev(), host: HOST, price: PRICE_INR, period_days: PERIOD_DAYS, grace_days: GRACE_DAYS, version: '101.0.0', codename: 'Starship Wonders', pp: paypal.hasKeys(), pp_mode: paypal.mode(), price_usd: PRICE_USD })
-    }
-    if (pathname === '/api/pp-config') {
-      // Client ID is public by design (it ships in the PayPal JS SDK URL).
-      return json(res, 200, {
-        client_id: process.env.PAYPAL_CLIENT_ID || '',
-        mode: paypal.mode(),
-        amount_usd: PRICE_USD,
-        dev: paypal.isDev()
-      })
+      return json(res, 200, { ok: true, dev: razorpay.isDev(), host: HOST, price: PRICE_INR, period_days: PERIOD_DAYS, grace_days: GRACE_DAYS, version: '101.0.0', codename: 'Starship Wonders' })
     }
     const dl = pathname.match(/^\/api\/dl\/(.+)$/)
     if (dl) return servePremium(res, decodeURIComponent(dl[1]))
