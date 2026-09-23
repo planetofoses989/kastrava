@@ -138,22 +138,18 @@ function createWindow() {
 
   if (!globalThis.__kastravaAgRegistered) {
     globalThis.__kastravaAgRegistered = true
-    // Volatile downloads: purge anything a crashed session left behind so a
-    // surviving file never outlives the session that created it.
+    // Crash leftovers: purge anything an older volatile-downloads build left
+    // behind. New downloads go straight to the user's real Downloads folder
+    // (a user-initiated download IS explicit save consent — hiding files in
+    // a session-only area and requiring a second Save click is why users
+    // reported "nothing downloads").
     try { fs.rmSync(agVolatileDir(), { recursive: true, force: true }) } catch {}
-    ses.on('will-download', (event, item) => {
-      // Downloads stream into the volatile per-session area, NOT the real
-      // Downloads folder: web-derived files die with the session like every
-      // other piece of website storage. Chromium still handles networking
-      // (cookies, auth, redirects) and pause/resume; the file is copied to
-      // the user's actual Downloads folder only via an explicit Save action.
-      const id = ++agIdCounter
-      const fp = agFinalPath(item.getFilename())
-      const dl = { id, url: item.getURL(), filename: path.basename(fp), outputPath: fp, received: 0, total: 0, speed: 0, state: 'downloading', proc: null, item: null, _timer: null, _lastCheck: null, _lastBytes: 0 }
-      agDownloads.set(id, dl)
-      attachNativeDownload(id, item)
-      dl._timer = setTimeout(() => agPoll(id), 500)
-    })
+    const { session } = require('electron')
+    for (const part of ['kastrava', 'kastrava-shell']) {
+      try { registerAgDownloadHandler(session.fromPartition(part)) } catch {}
+    }
+    try { registerAgDownloadHandler(session.defaultSession) } catch {}
+    ses.on('will-download', (event, item) => agWillDownload(item))
   }
 
   // Tracking Radar: live per-tab tracker monitoring
@@ -366,6 +362,10 @@ app.whenReady().then(async () => {
   wipeLegacyWebData()
 
   app.on('web-contents-created', (_, wc) => {
+    // Cover any session a guest/popup ends up with, so downloads from
+    // popups (payment flows, drive links, blob: URLs) can't miss the
+    // will-download handler and silently do nothing.
+    try { registerAgDownloadHandler(wc.session) } catch {}
     wc.setWindowOpenHandler(({ url, disposition }) => {
       try {
         const proto = new URL(url).protocol
@@ -438,7 +438,8 @@ app.on('before-quit', () => {
     }
     try { session.defaultSession.clearStorageData().catch(() => {}) } catch {}
     try { session.defaultSession.clearCache().catch(() => {}) } catch {}
-    // Volatile downloads die with the session, exactly like the claims say.
+    // Downloads are real user files in ~/Downloads now — never wipe them.
+    // Only purge stale volatile-downloads leftovers from older builds.
     try { fs.rmSync(agVolatileDir(), { recursive: true, force: true }) } catch {}
   } catch {}
   if (lastSessionData) {
@@ -552,7 +553,8 @@ ipcMain.handle('open-external', (_, url) => {
 })
 
 ipcMain.handle('open-path', (_, p) => {
-  try { shell.openPath(String(p)) } catch {}
+  // Reveal in folder rather than launching — never auto-execute downloads.
+  try { shell.showItemInFolder(String(p)) } catch {}
 })
 
 // Session restore
@@ -573,6 +575,44 @@ ipcMain.handle('load-session', () => {
 const agDownloads = new Map()
 let agIdCounter = 0
 
+// Registers will-download on a session. Called for every session the app
+// uses (tab session, shell session, default session, popup windows) so a
+// download can never silently miss its handler and appear to do nothing.
+function registerAgDownloadHandler(targetSes) {
+  if (!targetSes || targetSes.__agRegistered) return
+  targetSes.__agRegistered = true
+  targetSes.on('will-download', (event, item) => agWillDownload(item))
+}
+
+// User-initiated downloads save straight to the real Downloads folder,
+// like every other browser. Chromium still handles networking (cookies,
+// auth, redirects) and pause/resume.
+function agWillDownload(item) {
+  const id = ++agIdCounter
+  const fp = agFinalPath(agSafeFilename(item))
+  const dl = { id, url: item.getURL(), filename: path.basename(fp), outputPath: fp, received: 0, total: 0, speed: 0, state: 'downloading', proc: null, item: null, _timer: null, _lastCheck: null, _lastBytes: 0, savedTo: fp }
+  agDownloads.set(id, dl)
+  attachNativeDownload(id, item)
+  dl._timer = setTimeout(() => agPoll(id), 500)
+}
+
+// will-download sometimes reports an empty filename (blob:/data: URLs,
+// Content-Disposition quirks). Fall back to the URL basename so setSavePath
+// never receives a directory path (which fails the download with 'error').
+function agSafeFilename(item) {
+  let name = ''
+  try { name = item.getFilename() || '' } catch {}
+  name = String(name).trim()
+  if (!name) {
+    try {
+      const u = new URL(item.getURL())
+      name = path.basename(decodeURIComponent(u.pathname)) || ''
+    } catch {}
+  }
+  if (!name || name === '/' || name === '.') name = 'download'
+  return name.replace(/[<>:"/\\|?*\x00-\x1f]/g, '_').slice(0, 180) || 'download'
+}
+
 // Volatile scratch area: downloads live here for the session only. It is
 // purged at startup (crash leftovers) and wiped on exit, so website-derived
 // files never persist on disk unless the user explicitly saves them.
@@ -591,7 +631,8 @@ function agSend(id) {
   mainWindow.webContents.send('ag-update', {
     id: d.id, filename: d.filename, url: d.url,
     received: d.received, total: d.total,
-    speed: d.speed, state: d.state, outputPath: d.outputPath
+    speed: d.speed, state: d.state, outputPath: d.outputPath,
+    savedTo: d.savedTo || (d.state === 'done' ? d.outputPath : null)
   })
 }
 
@@ -614,7 +655,11 @@ function agPoll(id) {
   d._timer = setTimeout(() => agPoll(id), 500)
 }
 
-const dlDir = () => agVolatileDir()
+const dlDir = () => {
+  const dir = realDownloadDir()
+  try { fs.mkdirSync(dir, { recursive: true }) } catch {}
+  return dir
+}
 
 function agFinalPath(filename, dir) {
   let p = path.join(dir || dlDir(), filename)
@@ -700,20 +745,18 @@ ipcMain.handle('ag-list', () => {
   }))
 })
 
-// Explicit, deliberate save: copy a finished download out of the volatile
-// session area into the user's real Downloads folder. The volatile copy
-// stays (and dies with the session); nothing reaches disk unintentionally.
+// Save action: downloads already live in the real Downloads folder, so this
+// just confirms the path (kept for renderer compatibility — the button now
+// reads "Saved ✓" immediately).
 ipcMain.handle('ag-save', (_, id) => {
   const d = agDownloads.get(id)
-  if (!d || d.state !== 'done' || !d.outputPath || !fs.existsSync(d.outputPath)) {
+  if (!d || !d.outputPath || !fs.existsSync(d.outputPath)) {
     return { ok: false, error: 'not_done', msg: 'Only finished downloads can be saved.' }
   }
   try {
-    const fp = agFinalPath(d.filename, realDownloadDir())
-    fs.copyFileSync(d.outputPath, fp)
-    d.savedTo = fp
+    d.savedTo = d.outputPath
     agSend(id)
-    return { ok: true, path: fp }
+    return { ok: true, path: d.outputPath }
   } catch (e) {
     return { ok: false, error: 'copy_failed', msg: String((e && e.message) || e) }
   }
