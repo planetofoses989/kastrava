@@ -19,6 +19,23 @@ android {
     buildTypes {
         release {
             isMinifyEnabled = false
+            // Release signing comes from env (CI secrets). Without it the
+            // build falls back to debug signing so dispatch builds still
+            // compile — but only the secret-signed APK ships to users.
+            //   KASTRAVA_KS_FILE, KASTRAVA_KS_PASS, KASTRAVA_KEY_ALIAS
+            val ksFile = System.getenv("KASTRAVA_KS_FILE")
+            val ksPass = System.getenv("KASTRAVA_KS_PASS")
+            if (!ksFile.isNullOrBlank() && !ksPass.isNullOrBlank() && file(ksFile).exists()) {
+                signingConfig = signingConfigs.create("kastravaRelease") {
+                    storeFile = file(ksFile)
+                    storePassword = ksPass
+                    keyAlias = System.getenv("KASTRAVA_KEY_ALIAS") ?: "kastrava"
+                    keyPassword = ksPass
+                }
+            } else {
+                signingConfig = signingConfigs.getByName("debug")
+                println("WARNING: no release keystore in env — signing release with debug key (do not ship)")
+            }
         }
     }
     compileOptions {

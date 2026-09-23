@@ -23,10 +23,11 @@ license server.
 
 ## Build
 
-CI (`android` job in `.github/workflows/release.yml`) builds the debug APK
-on every tag/dispatch: `Kastrava-<version>.apk`, attached to the GitHub
-Release and served from `kastrava.pp.ua/dl/`. Debug-signed = installable
-directly; **not** for the Play Store.
+CI (`android` job in `.github/workflows/release.yml`) builds a **release**
+APK on every tag/dispatch: `Kastrava-<version>.apk`, attached to the GitHub
+Release and served from `kastrava.pp.ua/dl/`. It is signed with the release
+keystore when the `ANDROID_KS_B64` / `ANDROID_KS_PASS` repo secrets exist,
+otherwise debug-signed (CI says so in the log — never ship that one).
 
 Local build needs the Android SDK (API 34) + JDK 17:
 
@@ -38,8 +39,10 @@ gradle :app:assembleDebug
 ## Play Store (you publish, like the MSIX)
 
 1. Create the app in Play Console (`pp.ua.kastrava`).
-2. Generate an upload keystore **once**, keep it private:
-   `keytool -genkeypair -keystore kastrava-upload.jks -alias kastrava -keyalg RSA -keysize 2048 -validity 9125`
+2. The upload keystore already exists (RSA-2048, 30y, alias `kastrava`,
+   held by the maintainer — never committed). Its base64 + password live in
+   the `ANDROID_KS_B64` / `ANDROID_KS_PASS` GitHub secrets; **back them up
+   offline — losing the keystore means losing update continuity forever**.
 3. Add a `release` signing config pointing at it (never commit the
    keystore/passwords — use env vars or `local.properties`).
 4. `gradle :app:bundleRelease` → upload the `.aab`. Google signs the APKs.
