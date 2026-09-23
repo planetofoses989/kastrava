@@ -3693,7 +3693,7 @@ function bindSettingsEvents(id){
       setSel("s-scsize",settings.speedDial||"comfortable");
       bindChange("s-scsize",function(v){sv("speedDial",v);applySpeedDial(v);});
       setSel("s-tablayout",settings.tabLayout||"horizontal");
-      bindChange("s-tablayout",function(v){sv("tabLayout",v);applyTabLayout(v);});
+      bindChange("s-tablayout",function(v){if(v==="vertical"&&!isPremium()){setSel("s-tablayout","horizontal");requirePremium();return;}sv("tabLayout",v);applyTabLayout(v);});
       setCheck("s-vtabscollapse","on",settings.vtabsCollapsed);
       bindCheck("s-vtabscollapse","on","off",function(v){sv("vtabsCollapsed",v);applyVtabsCollapsed(v);});
       setCheck("s-homebtn","on",settings.showHomeBtn);
