@@ -465,8 +465,6 @@ footer a{color:var(--blue);text-decoration:none}
 
 <script>
 (function(){
-  var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target);}});},{threshold:.1});
-  document.querySelectorAll('.reveal').forEach(function(el){io.observe(el);});
 
   // ---- Premium: Razorpay one-time checkout + license key issuance ----
   var buyBtn=document.getElementById('prem-buy');
