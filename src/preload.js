@@ -73,5 +73,8 @@ contextBridge.exposeInMainWorld('api', {
   onRadarUpdate: (cb) => ipcRenderer.on('radar-update', (_, wcId, ev) => cb(wcId, ev)),
   licMachine: () => ipcRenderer.invoke('lic-machine'),
   licStatus: () => ipcRenderer.invoke('lic-status'),
-  licActivate: (key) => ipcRenderer.invoke('lic-activate', key)
+  licActivate: (key) => ipcRenderer.invoke('lic-activate', key),
+
+  // Auto-update (NSIS installer + AppImage; no-op elsewhere)
+  checkUpdates: () => ipcRenderer.invoke('check-updates')
 })

@@ -48,9 +48,15 @@
         "portable"
       ],
       "icon": "static/logo.ico",
+      "verifyUpdateCodeSignature": false,
       "signtoolOptions": {
         "sign": "./scripts/win-sign.js"
       }
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "planetofoses989",
+      "repo": "kastrava"
     },
     "portable": {
       "artifactName": "Kastrava-${version}.exe"

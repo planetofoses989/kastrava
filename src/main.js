@@ -356,10 +356,61 @@ function wipeLegacyWebData() {
   } catch {}
 }
 
+// ---- Auto-update: push force updates from GitHub releases ----
+// Feed: latest.yml embedded as app-update.yml (provider in package.json
+// `publish`). Covers the NSIS installer and AppImage. NOT covered by
+// design: portable EXE (electron-updater cannot self-replace it), Store
+// MSIX (the Store updates it itself), pacman/deb/rpm (system package
+// managers own those).
+// Unsigned builds need win.verifyUpdateCodeSignature=false, otherwise the
+// updater rejects every payload on the signature check.
+let updater = null
+function initAutoUpdate() {
+  if (!app.isPackaged) return
+  try {
+    const { autoUpdater } = require('electron-updater')
+    updater = autoUpdater
+    updater.autoDownload = true
+    updater.autoInstallOnAppQuit = true
+    updater.on('error', (e) => {
+      try { console.error('[update] error', String((e && e.message) || e)) } catch {}
+    })
+    updater.on('update-downloaded', () => {
+      try {
+        if (!mainWindow || mainWindow.isDestroyed()) {
+          try { updater.quitAndInstall(false, true) } catch {}
+          return
+        }
+        dialog.showMessageBox(mainWindow, {
+          type: 'info',
+          title: 'Kastrava update ready',
+          message: 'A new Kastrava version downloaded. Restart now to apply it?',
+          buttons: ['Restart now', 'On next quit'],
+          defaultId: 0,
+          cancelId: 1
+        }).then(({ response }) => {
+          if (response === 0) {
+            setImmediate(() => { try { updater.quitAndInstall(false, true) } catch {} })
+          }
+        }).catch(() => {})
+      } catch {}
+    })
+    const check = () => { try { updater.checkForUpdates().catch(() => {}) } catch {} }
+    setTimeout(check, 30000)
+    setInterval(check, 6 * 60 * 60 * 1000)
+    ipcMain.handle('check-updates', async () => {
+      try { await updater.checkForUpdates(); return { ok: true } } catch { return { ok: false } }
+    })
+  } catch (e) {
+    try { console.error('[update] disabled:', String((e && e.message) || e)) } catch {}
+  }
+}
+
 app.whenReady().then(async () => {
   await initDatabase()
   initBackend()
   wipeLegacyWebData()
+  initAutoUpdate()
 
   app.on('web-contents-created', (_, wc) => {
     // Cover any session a guest/popup ends up with, so downloads from
