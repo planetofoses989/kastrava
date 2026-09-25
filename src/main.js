@@ -1,6 +1,8 @@
 const { app, BrowserWindow, ipcMain, Menu, nativeTheme, nativeImage, clipboard, shell, dialog, protocol } = require('electron')
 const path = require('path')
 const fs = require('fs')
+const os = require('os')
+const { execFileSync, spawn } = require('child_process')
 const backend = require('./backend')
 const license = require('./license')
 
@@ -356,16 +358,32 @@ function wipeLegacyWebData() {
   } catch {}
 }
 
-// ---- Auto-update: push force updates from GitHub releases ----
-// Feed: latest.yml embedded as app-update.yml (provider in package.json
-// `publish`). Covers the NSIS installer and AppImage. NOT covered by
-// design: portable EXE (electron-updater cannot self-replace it), Store
-// MSIX (the Store updates it itself), pacman/deb/rpm (system package
-// managers own those).
+// ---- Auto-update: push force updates ----
+// Per-format policy (explicit):
+//   NSIS Setup .exe .... electron-updater over the GitHub latest.yml feed
+//   deb / rpm / pacman . custom flow below: version popup, download the
+//                          matching package, verify exact byte size against
+//                          the release API, privileged install, relaunch
+//   AppImage ............ excluded by choice (no popups, no checks)
+//   Store MSIX .......... excluded (the Store updates it itself)
+//   portable .exe ........ excluded (cannot self-replace)
 // Unsigned builds need win.verifyUpdateCodeSignature=false, otherwise the
-// updater rejects every payload on the signature check.
+// electron-updater leg rejects every payload on the signature check.
 let updater = null
 function initAutoUpdate() {
+  if (!app.isPackaged) return
+  if (process.platform === 'win32') {
+    if (process.windowsStore) return
+    if (process.env.PORTABLE_EXECUTABLE_DIR) return
+    initElectronUpdater()
+    return
+  }
+  if (process.platform === 'linux') {
+    if (process.env.APPIMAGE) return
+    initLinuxSysUpdate()
+  }
+}
+function initElectronUpdater() {
   if (!app.isPackaged) return
   try {
     const { autoUpdater } = require('electron-updater')
@@ -399,11 +417,130 @@ function initAutoUpdate() {
     setTimeout(check, 30000)
     setInterval(check, 6 * 60 * 60 * 1000)
     ipcMain.handle('check-updates', async () => {
-      try { await updater.checkForUpdates(); return { ok: true } } catch { return { ok: false } }
+      try {
+        if (updater) { await updater.checkForUpdates(); return { ok: true } }
+        if (process.platform === 'linux' && !process.env.APPIMAGE) {
+          linuxUpdateCheck(true)
+          return { ok: true }
+        }
+        return { ok: false }
+      } catch { return { ok: false } }
     })
   } catch (e) {
     try { console.error('[update] disabled:', String((e && e.message) || e)) } catch {}
   }
+}
+
+// ---- Linux system packages (deb / rpm / pacman): version popup,
+// download the matching package, verify exact byte size against the
+// release API, privileged install, relaunch. Never runs for AppImage.
+const UPDATE_REPO = 'planetofoses989/kastrava'
+let linuxUpdateBusy = false
+function cmpVer(a, b) {
+  const pa = String(a).split('.').map((x) => parseInt(x, 10) || 0)
+  const pb = String(b).split('.').map((x) => parseInt(x, 10) || 0)
+  for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+    const d = (pa[i] || 0) - (pb[i] || 0)
+    if (d) return d > 0 ? 1 : -1
+  }
+  return 0
+}
+function detectSysPkg() {
+  const exe = process.execPath
+  const owns = (cmd, args) => {
+    try { execFileSync(cmd, args, { stdio: 'pipe', timeout: 10000 }); return true } catch { return false }
+  }
+  try {
+    if (owns('pacman', ['-Qo', exe])) return 'pacman'
+    if (owns('dpkg', ['-S', exe])) return 'deb'
+    if (owns('rpm', ['-qf', exe])) return 'rpm'
+  } catch {}
+  return null
+}
+function sysPkgAsset(type, assets) {
+  const re = type === 'pacman' ? /^kastrava-.*-x86_64\.pkg\.tar\.zst$/
+    : type === 'deb' ? /^kastrava_.*_amd64\.deb$/
+    : /^kastrava-.*\.x86_64\.rpm$/
+  return (assets || []).find((a) => re.test(a.name || ''))
+}
+function sysPkgExt(type) {
+  return type === 'pacman' ? '.pkg.tar.zst' : type === 'deb' ? '.deb' : '.rpm'
+}
+async function linuxUpdateCheck(manual) {
+  if (linuxUpdateBusy) return
+  linuxUpdateBusy = true
+  try {
+    const type = detectSysPkg()
+    if (!type) return
+    const rel = await (await fetch('https://api.github.com/repos/' + UPDATE_REPO + '/releases/latest', {
+      headers: { 'User-Agent': 'Kastrava', Accept: 'application/vnd.github+json' },
+      signal: AbortSignal.timeout(20000)
+    })).json()
+    const tag = String((rel && rel.tag_name) || '').replace(/^v/, '')
+    if (!tag || cmpVer(tag, app.getVersion()) <= 0) return
+    const asset = sysPkgAsset(type, rel.assets)
+    if (!asset || !asset.browser_download_url || !asset.size) return
+    const parent = mainWindow && !mainWindow.isDestroyed() ? mainWindow : undefined
+    const { response } = await dialog.showMessageBox(parent || undefined, {
+      type: 'info',
+      title: 'Kastrava update ready',
+      message: 'Kastrava ' + tag + ' is available (you have ' + app.getVersion() + '). Download and install it now? System password will be asked once.',
+      buttons: ['Update now', 'Later'],
+      defaultId: 0,
+      cancelId: 1
+    }).catch(() => ({ response: 1 }))
+    if (response !== 0) return
+    const buf = Buffer.from(await (await fetch(asset.browser_download_url, {
+      headers: { 'User-Agent': 'Kastrava' },
+      signal: AbortSignal.timeout(300000)
+    })).arrayBuffer())
+    if (!buf.length || buf.length !== asset.size) throw new Error('size mismatch')
+    const file = path.join(os.tmpdir(), 'kastrava-update-' + Date.now() + sysPkgExt(type))
+    fs.writeFileSync(file, buf, { mode: 0o600 })
+    const args = type === 'pacman' ? ['pacman', '-U', '--noconfirm', file]
+      : type === 'deb' ? ['dpkg', '-i', file]
+      : ['rpm', '-Uvh', file]
+    const code = await new Promise((resolve) => {
+      try {
+        const child = spawn('pkexec', args, { stdio: 'ignore' })
+        child.on('error', () => resolve(-1))
+        child.on('close', (c) => resolve(c))
+      } catch { resolve(-1) }
+    })
+    try { fs.rmSync(file, { force: true }) } catch {}
+    if (code !== 0) {
+      await dialog.showMessageBox(parent || undefined, {
+        type: 'warning', title: 'Kastrava update',
+        message: 'Automatic install did not complete. Update any time with your package manager.'
+      }).catch(() => {})
+      return
+    }
+    const { response: restart } = await dialog.showMessageBox(parent || undefined, {
+      type: 'info', title: 'Kastrava updated',
+      message: 'Kastrava ' + tag + ' installed. Restart now to use it?',
+      buttons: ['Restart now', 'Later'],
+      defaultId: 0, cancelId: 1
+    }).catch(() => ({ response: 1 }))
+    if (restart === 0) {
+      try { app.relaunch() } catch {}
+      try { app.quit() } catch {}
+    }
+  } catch (e) {
+    try { console.error('[update] linux check failed:', String((e && e.message) || e)) } catch {}
+  } finally {
+    linuxUpdateBusy = false
+  }
+}
+function initLinuxSysUpdate() {
+  const check = () => { linuxUpdateCheck(false) }
+  setTimeout(check, 45000)
+  setInterval(check, 6 * 60 * 60 * 1000)
+  try {
+    ipcMain.handle('check-updates', async () => {
+      linuxUpdateCheck(true)
+      return { ok: true }
+    })
+  } catch {}
 }
 
 app.whenReady().then(async () => {
