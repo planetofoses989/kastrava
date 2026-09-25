@@ -296,7 +296,7 @@ const server = http.createServer((req, res) => {
   // `curl -I` probes get a real 200 instead of 405.
   if (req.method === 'GET' || req.method === 'HEAD') {
     if (pathname === '/api/health') {
-      return json(res, 200, { ok: true, dev: razorpay.isDev(), host: HOST, price: PRICE_INR, period_days: PERIOD_DAYS, grace_days: GRACE_DAYS, version: '101.0.0', codename: 'Starship Wonders' })
+      return json(res, 200, { ok: true, dev: razorpay.isDev(), host: HOST, price: PRICE_INR, period_days: PERIOD_DAYS, grace_days: GRACE_DAYS, version: '101.2.0', codename: 'Starship Wonders' })
     }
     const dl = pathname.match(/^\/api\/dl\/(.+)$/)
     if (dl) return servePremium(res, decodeURIComponent(dl[1]))
