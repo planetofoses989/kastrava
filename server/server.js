@@ -334,6 +334,38 @@ async function handlePost(req, res, pathname) {
       receipt: rc && rc.receipt, receipt_sig: rc && rc.receipt_sig })
   }
 
+  if (pathname === '/api/admin/extend') {
+    if (!adminOk(req)) return json(res, 401, { error: 'unauthorized' })
+    const key = String(body.key || '').trim().toUpperCase()
+    const days = Math.floor(Number(body.days) || 0)
+    const lic = store.getLicense(key)
+    if (!lic) return json(res, 404, { error: 'invalid_key' })
+    if (!(days >= 1 && days <= 3650)) return json(res, 400, { error: 'bad_request' })
+    const base = lic.expires_at ? Math.max(Date.now(), new Date(lic.expires_at).getTime()) : Date.now()
+    const expires = new Date(base + days * 86400000).toISOString()
+    store.extendLicense(key, expires)
+    if (lic.status === 'revoked' || lic.status === 'cancelled') {
+      lic.status = 'issued'
+      delete lic.revoked_at
+      delete lic.cancelled_at
+      store.save()
+    }
+    return json(res, 200, { ok: true, key, expires_at: expires })
+  }
+
+  if (pathname === '/api/admin/rebind') {
+    if (!adminOk(req)) return json(res, 401, { error: 'unauthorized' })
+    const key = String(body.key || '').trim().toUpperCase()
+    const machine = String(body.machine_id || '').trim().toUpperCase()
+    const lic = store.getLicense(key)
+    if (!lic) return json(res, 404, { error: 'invalid_key' })
+    if (!machine) return json(res, 400, { error: 'bad_request' })
+    lic.machine_id = machine
+    lic.rebound_at = new Date().toISOString()
+    store.save()
+    return json(res, 200, { ok: true, key, machine_id: machine })
+  }
+
   if (pathname === '/api/admin/revoke') {
     if (!adminOk(req)) return json(res, 401, { error: 'unauthorized' })
     const key = String(body.key || '').trim().toUpperCase()
