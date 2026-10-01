@@ -129,7 +129,8 @@ function makeReceipt(orderId, machineRaw) {
     product: 'kastrava-premium',
     iss: 'kastrasoft',
     iat: Math.floor(Date.now() / 1000),
-    exp: licenseExpirySeconds(lic) || null
+    exp: licenseExpirySeconds(lic) || null,
+    paid_thru: (lic && lic.expires_at) || null
   }
   return { receipt, receipt_sig: sign.signPayload(receipt, keys.privateKey) }
 }
@@ -313,6 +314,23 @@ async function handlePost(req, res, pathname) {
     if (machine) store.bindLicense(key, machine)
     const rc = makeReceipt(orderId)
     return json(res, 200, { ok: true, key, order_id: orderId, expires_at: expires,
+      receipt: rc && rc.receipt, receipt_sig: rc && rc.receipt_sig })
+  }
+
+  // Full order dossier for the admin panel: order + license + a freshly
+  // signed receipt. Powers PDF cross-checks (extracted PDF fields are
+  // compared against this server truth).
+  if (pathname === '/api/admin/order') {
+    if (!adminOk(req)) return json(res, 401, { error: 'unauthorized' })
+    const orderId = String(body.order_id || '').trim()
+    const order = store.getOrder(orderId)
+    if (!order) return json(res, 404, { error: 'order_not_found' })
+    const key = store.keyForOrder(orderId)
+    const lic = key ? store.getLicense(key) : null
+    const rc = makeReceipt(orderId)
+    return json(res, 200, { ok: true, order,
+      license: lic ? { key: lic.key, status: lic.status, machine_id: lic.machine_id,
+        expires_at: lic.expires_at, issued_at: lic.issued_at } : null,
       receipt: rc && rc.receipt, receipt_sig: rc && rc.receipt_sig })
   }
 

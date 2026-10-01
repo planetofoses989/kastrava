@@ -651,7 +651,8 @@ footer a{color:var(--blue);text-decoration:none}
       ['License key',keyEl?keyEl.textContent:'-'],
       ['Machine code',(d.machine_id||machineValue())||'-'],
       ['Amount charged',amt],
-      ['Valid until',(sr&&sr.exp)?new Date(sr.exp*1000).toLocaleDateString():'-']
+      ['Paid through',(sr&&sr.paid_thru)?new Date(sr.paid_thru).toLocaleDateString():((sr&&sr.exp)?new Date(sr.exp*1000).toLocaleDateString():'-')],
+      ['Grace until',(sr&&sr.exp)?new Date(sr.exp*1000).toLocaleDateString():'-']
     ];
     rows.forEach(function(r){
       doc.setFont('helvetica','bold');doc.text(receiptText(r[0]+':'),x,y);
