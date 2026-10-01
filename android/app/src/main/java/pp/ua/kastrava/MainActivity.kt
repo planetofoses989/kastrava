@@ -9,6 +9,7 @@ import android.os.Bundle
 import android.view.GestureDetector
 import android.view.KeyEvent
 import android.view.MotionEvent
+import com.google.android.material.snackbar.Snackbar
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import android.webkit.CookieManager
@@ -243,8 +244,21 @@ class MainActivity : AppCompatActivity() {
         switchTo(next)
     }
 
+    private var lastClosedUrl: String? = null
+
     private fun closeAllTabs() {
-        tabs.toList().indices.reversed().forEach { closeTab(it) }
+        tabs.toList().indices.reversed().forEach { closeTab(it, quiet = true) }
+        showUndoSnackbar()
+    }
+
+    private fun showUndoSnackbar() {
+        val url = lastClosedUrl ?: return
+        lastClosedUrl = null
+        try {
+            Snackbar.make(container, "Tab closed", Snackbar.LENGTH_LONG)
+                .setAction("Undo") { newTab(url) }
+                .show()
+        } catch (e: Exception) { }
     }
 
     private fun showHistory(backward: Boolean) {
@@ -284,8 +298,9 @@ class MainActivity : AppCompatActivity() {
         syncOmnibox()
     }
 
-    private fun closeTab(i: Int) {
+    private fun closeTab(i: Int, quiet: Boolean = false) {
         if (i !in tabs.indices) return
+        lastClosedUrl = tabs[i].view.url
         val wv = tabs.removeAt(i).view
         container.removeView(wv)
         wv.destroy()
@@ -297,6 +312,7 @@ class MainActivity : AppCompatActivity() {
             current = -1
             switchTo(i.coerceAtMost(tabs.size - 1))
         }
+        if (!quiet) showUndoSnackbar()
     }
 
     private fun showHome() {
@@ -444,7 +460,7 @@ class MainActivity : AppCompatActivity() {
         val desktopLabel = if (currentWebTab()?.desktopMode == true) "Desktop site ✓" else "Desktop site"
         val pageUrl = currentTab()?.url
         val saved = pageUrl != null && BookmarkStore(this).contains(pageUrl)
-        val entries = listOf("New tab", if (saved) "★ Bookmarked" else "Bookmark this page", "Bookmarks", "Share page", "Find in page", desktopLabel, "Delete browsing data", "Downloads", "Premium", "Settings", "About")
+        val entries = listOf("New tab", "Set as default browser", if (saved) "★ Bookmarked" else "Bookmark this page", "Bookmarks", "Share page", "Find in page", desktopLabel, "Delete browsing data", "Downloads", "Premium", "Settings", "About")
         entries.forEach { title ->
             val row = TextView(this).apply {
                 text = title
@@ -458,9 +474,10 @@ class MainActivity : AppCompatActivity() {
                     sheet.dismiss()
                     when {
                         title == "New tab" -> newTab()
+                        title == "Set as default browser" -> requestDefaultBrowser()
                         title == "Bookmark this page" -> toggleBookmark()
                         title == "★ Bookmarked" -> toggleBookmark()
-                        title == "Bookmarks" -> startActivity(Intent(this, BookmarksActivity::class.java))
+                        title == "Bookmarks" -> startActivity(Intent(this@MainActivity, BookmarksActivity::class.java))
                         title == "Delete browsing data" -> wipeNow()
                         title == "Share page" -> sharePage()
                         title == "Find in page" -> openFindBar()
@@ -520,6 +537,27 @@ class MainActivity : AppCompatActivity() {
             } catch (e: Exception) { }
         }
         Toast.makeText(this, "Browsing data deleted", Toast.LENGTH_SHORT).show()
+    }
+
+    private fun requestDefaultBrowser() {
+        try {
+            if (android.os.Build.VERSION.SDK_INT < 29) {
+                Toast.makeText(this, "Not supported on this Android version", Toast.LENGTH_SHORT).show()
+                return
+            }
+            val rm = getSystemService(android.app.role.RoleManager::class.java) ?: return
+            if (!rm.isRoleAvailable(android.app.role.RoleManager.ROLE_BROWSER)) {
+                Toast.makeText(this, "Not supported on this device", Toast.LENGTH_SHORT).show()
+                return
+            }
+            if (rm.isRoleHeldByApp(android.app.role.RoleManager.ROLE_BROWSER)) {
+                Toast.makeText(this, "Already the default browser", Toast.LENGTH_SHORT).show()
+                return
+            }
+            startActivity(rm.createRequestRoleIntent(android.app.role.RoleManager.ROLE_BROWSER))
+        } catch (e: Exception) {
+            Toast.makeText(this, "Could not open system settings", Toast.LENGTH_SHORT).show()
+        }
     }
 
     private fun sharePage() {
