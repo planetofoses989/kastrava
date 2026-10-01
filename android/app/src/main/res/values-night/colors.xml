@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Browser chrome, dark -->
+    <color name="chrome_bg">#12100C</color>
+    <color name="chrome_field">#221E15</color>
+    <color name="chrome_text">#F3EEE4</color>
+    <color name="chrome_hint">#7C7466</color>
+    <color name="chrome_icon">#CFC8BA</color>
+    <color name="chrome_divider">#2A251B</color>
+    <color name="chrome_pill">#0E2A3A</color>
+    <color name="chrome_pill_text">#4FC3F7</color>
+</resources>

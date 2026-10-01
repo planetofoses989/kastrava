@@ -68,7 +68,7 @@ class PremiumActivity : AppCompatActivity() {
                 msg.text = "No active Premium on this device."
                 return@setOnClickListener
             }
-            androidx.appcompat.app.AlertDialog.Builder(this)
+            com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
                 .setTitle("Stop Premium?")
                 .setMessage("This ends Premium on this device immediately. No refund is issued.")
                 .setPositiveButton("Stop") { _, _ ->

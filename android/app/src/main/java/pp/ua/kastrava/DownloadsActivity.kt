@@ -4,7 +4,7 @@ import android.os.Bundle
 import android.widget.ArrayAdapter
 import android.widget.ListView
 import android.widget.Toast
-import androidx.appcompat.app.AlertDialog
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import androidx.appcompat.app.AppCompatActivity
 
 class DownloadsActivity : AppCompatActivity() {
@@ -22,7 +22,7 @@ class DownloadsActivity : AppCompatActivity() {
         list.adapter = adapter
         list.setOnItemClickListener { _, _, pos, _ ->
             val item = app.downloads.items.getOrNull(pos) ?: return@setOnItemClickListener
-            AlertDialog.Builder(this)
+            MaterialAlertDialogBuilder(this)
                 .setTitle(item.filename)
                 .setMessage("State: ${item.state}\nSize: ${formatSize(item.received)}")
                 .setPositiveButton("Save to Downloads") { _, _ ->

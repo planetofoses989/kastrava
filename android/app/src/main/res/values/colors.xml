@@ -5,4 +5,14 @@
     <color name="kas_cream">#FAF7F1</color>
     <color name="kas_panel">#0C0E13</color>
     <color name="kas_green">#7EE2A8</color>
+
+    <!-- Browser chrome, light -->
+    <color name="chrome_bg">#FFFFFF</color>
+    <color name="chrome_field">#F1F0EC</color>
+    <color name="chrome_text">#16130E</color>
+    <color name="chrome_hint">#8A8474</color>
+    <color name="chrome_icon">#5C564A</color>
+    <color name="chrome_divider">#E7E3D9</color>
+    <color name="chrome_pill">#E1F3FD</color>
+    <color name="chrome_pill_text">#0277BD</color>
 </resources>

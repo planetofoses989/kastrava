@@ -14,12 +14,14 @@ import android.webkit.WebView
 import android.widget.EditText
 import android.widget.FrameLayout
 import android.widget.ImageButton
-import android.widget.PopupMenu
+import android.widget.LinearLayout
+import android.widget.TextView
+import com.google.android.material.bottomsheet.BottomSheetDialog
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import android.widget.ProgressBar
 import android.widget.ScrollView
 import android.widget.TextView
 import android.widget.Toast
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 
 /**
@@ -39,6 +41,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var homePremium: TextView
     private lateinit var progress: ProgressBar
     private lateinit var btnTabs: ImageButton
+    private lateinit var tabCount: TextView
 
     private val tabs = mutableListOf<WebView>()
     private var current = -1
@@ -55,6 +58,12 @@ class MainActivity : AppCompatActivity() {
         homePremium = findViewById(R.id.homePremium)
         progress = findViewById(R.id.progress)
         btnTabs = findViewById(R.id.btnTabs)
+        tabCount = findViewById(R.id.tabCount)
+        findViewById<LinearLayout>(R.id.tileNewTab).setOnClickListener { newTab() }
+        findViewById<LinearLayout>(R.id.tileDownloads).setOnClickListener { openDownloads() }
+        findViewById<LinearLayout>(R.id.tilePremium).setOnClickListener { openPremium() }
+        findViewById<LinearLayout>(R.id.tileSettings).setOnClickListener { openSettings() }
+        updateTabCount()
 
         CookieManager.getInstance().setAcceptCookie(true)
 
@@ -138,8 +147,13 @@ class MainActivity : AppCompatActivity() {
                 FrameLayout.LayoutParams.MATCH_PARENT,
             ),
         )
+        updateTabCount()
         switchTo(tabs.size - 1)
         if (url != null) wv.loadUrl(url) else showHome()
+    }
+
+    private fun updateTabCount() {
+        tabCount.text = tabs.size.toString()
     }
 
     private fun switchTo(i: Int) {
@@ -159,6 +173,7 @@ class MainActivity : AppCompatActivity() {
         wv.destroy()
         if (tabs.isEmpty()) {
             current = -1
+            updateTabCount()
             showHome()
         } else {
             current = -1
@@ -170,6 +185,7 @@ class MainActivity : AppCompatActivity() {
         currentTab()?.visibility = WebView.GONE
         current = -1
         homeView.visibility = ScrollView.VISIBLE
+        updateTabCount()
         omnibox.setText("")
         progress.visibility = ProgressBar.GONE
     }
@@ -179,7 +195,7 @@ class MainActivity : AppCompatActivity() {
             val t = wv.title?.takeIf { it.isNotBlank() } ?: wv.url ?: "New tab"
             "${if (i == current) "● " else "○ "}$t"
         }.toTypedArray()
-        AlertDialog.Builder(this)
+        MaterialAlertDialogBuilder(this)
             .setTitle("Tabs (${tabs.size})")
             .setItems(names) { _, which -> switchTo(which) }
             .setPositiveButton("New tab") { _, _ -> newTab() }
@@ -206,33 +222,59 @@ class MainActivity : AppCompatActivity() {
         omnibox.setText(wv?.url ?: "")
     }
 
+    private fun openDownloads() {
+        startActivity(Intent(this, DownloadsActivity::class.java))
+    }
+
+    private fun openPremium() {
+        startActivity(Intent(this, PremiumActivity::class.java))
+    }
+
+    private fun openSettings() {
+        startActivity(Intent(this, SettingsActivity::class.java))
+    }
+
     private fun showMenu(anchor: android.view.View) {
-        PopupMenu(this, anchor).apply {
-            menu.add("New tab")
-            menu.add("Downloads")
-            menu.add("Premium")
-            menu.add("Settings")
-            menu.add("About")
-            setOnMenuItemClickListener { item ->
-                when (item.title.toString()) {
-                    "New tab" -> newTab()
-                    "Downloads" -> startActivity(Intent(this@MainActivity, DownloadsActivity::class.java))
-                    "Premium" -> startActivity(Intent(this@MainActivity, PremiumActivity::class.java))
-                    "Settings" -> startActivity(Intent(this@MainActivity, SettingsActivity::class.java))
-                    "About" -> AlertDialog.Builder(this@MainActivity)
-                        .setTitle("Kastrava 101.0.0")
-                        .setMessage(
-                            "Private browser · zero telemetry.\n" +
-                                "Website data lives in memory and is wiped on exit.\n" +
-                                "GPLv3 · kastrava.pp.ua",
-                        )
-                        .setPositiveButton("OK", null)
-                        .show()
-                }
-                true
-            }
-            show()
+        val sheet = BottomSheetDialog(this)
+        val list = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            val pad = (20 * resources.displayMetrics.density).toInt()
+            setPadding(pad, pad / 2, pad, pad)
         }
+        val entries = listOf("New tab", "Downloads", "Premium", "Settings", "About")
+        entries.forEach { title ->
+            val row = TextView(this).apply {
+                text = title
+                textSize = 16f
+                val vpad = (14 * resources.displayMetrics.density).toInt()
+                setPadding(0, vpad, 0, vpad)
+                setOnClickListener {
+                    sheet.dismiss()
+                    when (title) {
+                        "New tab" -> newTab()
+                        "Downloads" -> openDownloads()
+                        "Premium" -> openPremium()
+                        "Settings" -> openSettings()
+                        "About" -> showAbout()
+                    }
+                }
+            }
+            list.addView(row)
+        }
+        sheet.setContentView(list)
+        sheet.show()
+    }
+
+    private fun showAbout() {
+        MaterialAlertDialogBuilder(this)
+            .setTitle("Kastrava 101.0.0")
+            .setMessage(
+                "Private browser · zero telemetry.\n" +
+                    "Website data lives in memory and is wiped on exit.\n" +
+                    "GPLv3 · kastrava.pp.ua",
+            )
+            .setPositiveButton("OK", null)
+            .show()
     }
 
     private fun refreshPremiumLine() {
