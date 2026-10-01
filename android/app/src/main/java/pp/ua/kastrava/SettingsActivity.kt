@@ -1,7 +1,9 @@
 package pp.ua.kastrava
 
 import android.os.Bundle
+import android.widget.Button
 import android.widget.CheckBox
+import android.widget.TextView
 import android.widget.SeekBar
 import android.widget.TextView
 import android.widget.RadioButton
@@ -68,6 +70,28 @@ class SettingsActivity : AppCompatActivity() {
                 Toast.makeText(this@SettingsActivity, "Applies to tabs", Toast.LENGTH_SHORT).show()
             }
         })
+
+        val tvUpdate: TextView = findViewById(R.id.tvUpdateStatus)
+        val btnUpd: Button = findViewById(R.id.btnCheckUpdates)
+        fun showUpdate(u: UpdateInfo?) {
+            tvUpdate.text = if (u == null) "Up to date."
+            else "Kastrava ${u.name} available." + (if (u.notes.isNotBlank()) " " + u.notes.take(120) else "")
+        }
+        btnUpd.setOnClickListener {
+            tvUpdate.text = "Checking..."
+            btnUpd.isEnabled = false
+            Thread {
+                val u = Updater.check(this, force = true)
+                runOnUiThread {
+                    btnUpd.isEnabled = true
+                    showUpdate(u)
+                    if (u != null) {
+                        Updater.download(this, u)
+                        tvUpdate.text = "Downloading Kastrava ${u.name}..."
+                    }
+                }
+            }.start()
+        }
 
         val cbJs: CheckBox = findViewById(R.id.cbJs)
         cbJs.isChecked = app.prefs.javaScript

@@ -153,6 +153,12 @@ class MainActivity : AppCompatActivity() {
         handleIntent(intent)
         if (current < 0) showHome()
         refreshPremiumLine()
+        Thread {
+            val u = Updater.check(this)
+            if (u != null) runOnUiThread {
+                Toast.makeText(this, "Kastrava ${u.name} available — update in Settings", Toast.LENGTH_LONG).show()
+            }
+        }.start()
     }
 
     override fun onNewIntent(intent: Intent) {
