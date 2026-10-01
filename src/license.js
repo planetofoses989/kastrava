@@ -128,6 +128,7 @@ async function activate(key) {
       const msg = body.msg || 'Activation failed (' + res.status + ')'
       if (body.error === 'machine_mismatch') return { ok: false, error: 'machine_mismatch', msg }
       if (body.error === 'invalid_key') return { ok: false, error: 'invalid_key', msg }
+      if (body.error === 'license_revoked') return { ok: false, error: 'license_revoked', msg }
       return { ok: false, error: 'server', msg }
     }
     if (!body.license) return { ok: false, error: 'server', msg: 'Empty activation response' }
@@ -152,7 +153,12 @@ async function refreshIfLicensed() {
   if (!lic || !lic.key) return
   const st = status()
   if (!st.activated && st.reason !== 'expired') return
-  await activate(lic.key).catch(() => {})
+  try {
+    const r = await activate(lic.key)
+    // Revoked server-side: drop the local copy so Premium switches off
+    // even before the signed payload itself expires.
+    if (r && !r.ok && r.error === 'license_revoked') { try { clear() } catch {} }
+  } catch {}
 }
 
 module.exports = { machineCode, machineIdRaw, status, activate, verifyPayload, loadLicense, refreshIfLicensed, clear, API }

@@ -109,6 +109,33 @@ function makeLicensePayload(key, machineId) {
   return payload
 }
 
+// Signed purchase receipt: Ed25519 over the exact payload with the same
+// license-signing key. Anyone can verify it (public key never leaves the
+// server here — /api/receipt/verify does it), nobody can forge it.
+function makeReceipt(orderId, machineRaw) {
+  const order = store.getOrder(orderId)
+  if (!order) return null
+  const key = store.keyForOrder(orderId)
+  const lic = key ? store.getLicense(key) : null
+  const machine = String(machineRaw || (order && order.machine_id) || '').trim().toUpperCase() || null
+  const receipt = {
+    kind: 'kastrava-receipt',
+    version: 1,
+    order_id: orderId,
+    payment_id: order.payment_id || null,
+    key: key,
+    machine_id: machine,
+    amount_paise: PRICE_INR * 100,
+    currency: 'INR',
+    plan: 'premium-34d',
+    product: 'kastrava-premium',
+    iss: 'kastrasoft',
+    iat: Math.floor(Date.now() / 1000),
+    exp: licenseExpirySeconds(lic) || null
+  }
+  return { receipt, receipt_sig: sign.signPayload(receipt, keys.privateKey) }
+}
+
 function adminOk(req) {
   const t = (req.headers['x-admin-token'] || '').toString()
   return !!ADMIN_TOKEN && t.length === ADMIN_TOKEN.length && crypto.timingSafeEqual(Buffer.from(t), Buffer.from(ADMIN_TOKEN))
@@ -203,13 +230,19 @@ async function handlePost(req, res, pathname) {
     if (!order) return json(res, 404, { error: 'order_not_found' })
     if (order.status === 'paid') {
       const k = store.keyForOrder(order_id)
-      if (k) return json(res, 200, { ok: true, already_paid: true, key: k })
+      if (k) {
+        const rc = makeReceipt(String(order_id), machine_id)
+        return json(res, 200, { ok: true, already_paid: true, key: k,
+          receipt: rc && rc.receipt, receipt_sig: rc && rc.receipt_sig })
+      }
     }
     if (!razorpay.verifySignature(String(order_id), String(payment_id), String(signature || ''))) {
       return json(res, 403, { error: 'bad_signature', msg: 'Payment could not be verified.' })
     }
     const r = finalizePayment(String(order_id), String(payment_id), machine_id)
-    return json(res, 200, { ok: true, key: r.key, renewed: r.renewed, already_paid: false })
+    const rc = makeReceipt(String(order_id), machine_id)
+    return json(res, 200, { ok: true, key: r.key, renewed: r.renewed, already_paid: false,
+      receipt: rc && rc.receipt, receipt_sig: rc && rc.receipt_sig })
   }
 
   // ---- one-time payments: webhook safety net (payment.captured) ----
@@ -236,12 +269,54 @@ async function handlePost(req, res, pathname) {
     return json(res, 200, { ok: true })
   }
 
+  if (pathname === '/api/receipt/verify') {
+    const { receipt, receipt_sig } = body
+    if (!receipt || !receipt_sig) return json(res, 400, { error: 'bad_request' })
+    let valid = false
+    try { valid = sign.verifyPayload(receipt, String(receipt_sig), keys.publicKey) } catch {}
+    if (!valid) return json(res, 200, { ok: true, valid: false })
+    const lic = receipt.key ? store.getLicense(receipt.key) : null
+    return json(res, 200, { ok: true, valid: true, receipt,
+      key_status: lic ? lic.status : 'unknown',
+      key_expires_at: lic ? (lic.expires_at || null) : null })
+  }
+
+  if (pathname === '/api/admin/issue') {
+    if (!adminOk(req)) return json(res, 401, { error: 'unauthorized' })
+    const machine = String(body.machine_id || '').trim().toUpperCase() || null
+    const note = String(body.note || '').slice(0, 200)
+    const orderId = 'admin_' + Date.now().toString(36)
+    store.createOrder(orderId, { provider: 'manual', machine_id: machine, note })
+    store.markPaid(orderId, 'manual')
+    const key = sign.makeLicenseKey()
+    const expires = new Date(Date.now() + PERIOD_DAYS * 86400000).toISOString()
+    store.issueLicense(key, orderId, null, expires)
+    if (machine) store.bindLicense(key, machine)
+    const rc = makeReceipt(orderId)
+    return json(res, 200, { ok: true, key, order_id: orderId, expires_at: expires,
+      receipt: rc && rc.receipt, receipt_sig: rc && rc.receipt_sig })
+  }
+
+  if (pathname === '/api/admin/revoke') {
+    if (!adminOk(req)) return json(res, 401, { error: 'unauthorized' })
+    const key = String(body.key || '').trim().toUpperCase()
+    const lic = store.getLicense(key)
+    if (!lic) return json(res, 404, { error: 'invalid_key' })
+    lic.status = 'revoked'
+    lic.revoked_at = new Date().toISOString()
+    store.save()
+    return json(res, 200, { ok: true, key })
+  }
+
   if (pathname === '/api/activate') {
     const key = String(body.key || '').trim().toUpperCase()
     const machineId = String(body.machine_id || '').trim().toUpperCase()
     if (!key || !machineId) return json(res, 400, { error: 'bad_request' })
     const lic = store.getLicense(key)
     if (!lic) return json(res, 404, { error: 'invalid_key', msg: 'No such license key.' })
+    if (lic.status === 'revoked') {
+      return json(res, 403, { error: 'license_revoked', msg: 'This license was revoked. Contact support.' })
+    }
     if (lic.status === 'activated' && lic.machine_id !== machineId) {
       return json(res, 403, { error: 'machine_mismatch', msg: 'This key is already activated on another machine.' })
     }

@@ -538,7 +538,7 @@ footer a{color:var(--blue);text-decoration:none}
           body:JSON.stringify({order_id:res.razorpay_order_id,payment_id:res.razorpay_payment_id,signature:res.razorpay_signature,machine_id:mach})})
         .then(function(r){return r.json();})
         .then(function(v){
-          if(v.ok&&v.key){showKey(v.key,!!v.renewed,{order_id:res.razorpay_order_id,payment_id:res.razorpay_payment_id,amount:o.amount,currency:o.currency,machine_id:mach});setBusy(false);}
+          if(v.ok&&v.key){showKey(v.key,!!v.renewed,{order_id:res.razorpay_order_id,payment_id:res.razorpay_payment_id,amount:o.amount,currency:o.currency,machine_id:mach,server_receipt:v.receipt||null,receipt_sig:v.receipt_sig||null});setBusy(false);}
           else fail((v&&v.msg)||'Payment could not be verified.');
         })
         .catch(function(){fail('Could not verify payment - your payment may still have gone through. Email the payment ID to planetofoses989@gmail.com');});
@@ -606,7 +606,8 @@ footer a{color:var(--blue);text-decoration:none}
   }
   function buildReceipt(){
     var d=receiptData||{};
-    var now=new Date();
+    var sr=d.server_receipt||null;
+    var now=sr&&sr.iat?new Date(sr.iat*1000):new Date();
     var amt=(d.amount!=null&&d.currency==='INR')?('INR '+(d.amount/100).toFixed(2)):receiptText(d.currency||'INR')+' '+receiptText(d.amount==null?'':d.amount);
     var doc=new window.jspdf.jsPDF({unit:'pt',format:'a4'});
     var x=56,y=72;
@@ -622,7 +623,8 @@ footer a{color:var(--blue);text-decoration:none}
       ['Payment ID',d.payment_id||'-'],
       ['License key',keyEl?keyEl.textContent:'-'],
       ['Machine code',(d.machine_id||machineValue())||'-'],
-      ['Amount charged',amt]
+      ['Amount charged',amt],
+      ['Valid until',(sr&&sr.exp)?new Date(sr.exp*1000).toLocaleDateString():'-']
     ];
     rows.forEach(function(r){
       doc.setFont('helvetica','bold');doc.text(receiptText(r[0]+':'),x,y);
@@ -633,7 +635,19 @@ footer a{color:var(--blue);text-decoration:none}
     y+=10;
     doc.setFont('helvetica','normal');doc.setFontSize(10);
     doc.text(receiptText('One license, one machine. The key above is bound to the machine code shown.'),x,y);y+=14;
-    doc.text(receiptText('Support: planetofoses989@gmail.com - keep this receipt with your key.'),x,y);
+    doc.text(receiptText('Support: planetofoses989@gmail.com - keep this receipt with your key.'),x,y);y+=20;
+    if(sr&&d.receipt_sig){
+      doc.setFont('helvetica','bold');doc.setFontSize(11);
+      doc.text('Receipt signature (Ed25519 - verifiable):',x,y);y+=14;
+      doc.setFont('courier','normal');doc.setFontSize(9);
+      var sig=receiptText(d.receipt_sig);
+      var chunks=sig.match(/.{1,64}/g)||[sig];
+      chunks.forEach(function(c){doc.text(c,x,y);y+=11;});
+      y+=4;
+      doc.setFont('helvetica','normal');doc.setFontSize(10);
+      doc.text(receiptText('Verify at kastrava.pp.ua/admin.html - this signature proves'),x,y);y+=14;
+      doc.text(receiptText('the details above were issued by Kastrasoft and unaltered.'),x,y);
+    }
     var oid=receiptText(d.order_id||'receipt').replace(/[^A-Za-z0-9_-]/g,'');
     doc.save('kastrava-receipt-'+oid+'.pdf');
   }

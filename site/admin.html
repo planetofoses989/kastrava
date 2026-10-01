@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pro Admin — Kastrava</title>
+<meta name="description" content="Kastrava Pro administration: verify receipts, issue and revoke license keys.complete license text.">
+<style>
+:root{
+  --bg:#faf7f1; --card:#ffffff; --ink:#14110b; --text:#2b2620; --muted:#5c564a; --muted2:#8a8474;
+  --line:#f0ede6; --deep:#16130e; --cream:#faf7f1; --navbg:rgba(250,247,241,.9);
+  --pill:#16130e; --pill-fg:#ffffff; --blue:#0288d1; color-scheme:light;
+}
+html[data-theme="dark"]{
+  --bg:#12100c; --card:#1b1812; --ink:#f3eee4; --text:#cfc8ba; --muted:#9d9484; --muted2:#7c7466;
+  --line:#262117; --deep:#3b3428; --cream:#f3eee4; --navbg:rgba(18,16,12,.9);
+  --pill:#f3eee4; --pill-fg:#14110b; --blue:#4fc3f7; color-scheme:dark;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-height:1.65;overflow-x:hidden;-webkit-font-smoothing:antialiased;transition:background .25s,color .25s}
+h1,h2,h3,.name{font-family:'Space Grotesk',sans-serif}
+.mono{font-family:'JetBrains Mono',monospace}
+.container{max-width:960px;margin:0 auto;padding:0 28px;position:relative;z-index:1}
+nav{position:sticky;top:0;z-index:50;background:var(--navbg);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+nav .container{display:flex;align-items:center;gap:12px;padding-top:13px;padding-bottom:13px}
+nav img{width:36px;height:36px;border-radius:9px}
+nav .beta{font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:500;color:var(--pill-fg);background:var(--pill);padding:3px 9px;border-radius:6px;letter-spacing:1px}
+nav .name{font-size:15px;font-weight:700;letter-spacing:4px;color:var(--ink);text-decoration:none}
+nav .sp{flex:1}
+nav a.btn{font-size:13px;font-weight:600;color:var(--pill-fg);background:var(--pill);padding:10px 24px;border-radius:10px;text-decoration:none;font-family:'Space Grotesk',sans-serif}
+nav a.btn:hover{background:#0288d1}
+.theme-btn{display:flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:10px;border:1px solid var(--line);background:transparent;color:var(--ink);cursor:pointer;transition:background .15s}
+.theme-btn:hover{background:var(--card)}
+html[data-theme="light"] .theme-btn .ic-sun{display:none}
+html[data-theme="dark"] .theme-btn .ic-moon{display:none}
+main{padding:56px 0 30px}
+.back{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--blue);text-decoration:none}
+.back:hover{text-decoration:underline}
+.kick{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--cream);background:var(--pill);padding:6px 14px;border-radius:8px;letter-spacing:1px;margin:22px 0 16px}
+html[data-theme="dark"] .kick{color:var(--pill-fg);background:var(--pill)}
+h1{font-size:40px;font-weight:700;letter-spacing:-1px;line-height:1.05;color:var(--ink);margin-bottom:12px}
+.sub{font-size:15px;color:var(--muted);max-width:760px}
+.sub code{font-family:'JetBrains Mono',monospace;font-size:12.5px;background:var(--deep);color:var(--cream);padding:2px 7px;border-radius:6px}
+.sub a{color:var(--blue);text-decoration:none}
+.sub a:hover{text-decoration:underline}
+.lic-card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:34px 30px;margin-top:28px}
+.lic{font-family:'JetBrains Mono',monospace;font-size:12px;line-height:1.75;color:var(--text);white-space:pre-wrap;word-break:break-word}
+footer{border-top:1px solid var(--line);margin-top:64px;padding:36px 0 48px;background:var(--card)}
+footer p{font-size:12.5px;color:var(--muted2)}
+footer a{color:var(--blue);text-decoration:none}
+@media(max-width:600px){h1{font-size:30px}.lic-card{padding:22px 18px}}
+</style>
+<script>
+(function(){
+  var root=document.documentElement;
+  var saved=null;try{saved=localStorage.getItem('kas-theme');}catch(e){}
+  var dark=saved?saved==='dark':!!(window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches);
+  root.setAttribute('data-theme',dark?'dark':'light');
+  document.addEventListener('DOMContentLoaded',function(){
+    var btn=document.getElementById('theme-btn');
+    if(!btn)return;
+    btn.addEventListener('click',function(){
+      var next=root.getAttribute('data-theme')==='dark'?'light':'dark';
+      root.setAttribute('data-theme',next);
+      try{localStorage.setItem('kas-theme',next);}catch(e){}
+    });
+  });
+})();
+</script>
+</head>
+<body>
+<nav>
+  <div class="container">
+    <a href="/"><img src="logo.png" alt="Kastrava"></a>
+    <a class="name" href="/">KASTRAVA</a>
+    <span class="beta">BETA</span>
+    <button id="theme-btn" class="theme-btn" title="Toggle dark mode" aria-label="Toggle dark mode">
+      <svg class="ic-moon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      <svg class="ic-sun" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+    </button>
+    <span class="sp"></span>
+    <a class="btn" href="/#download">Download</a>
+  </div>
+</nav>
+
+<main>
+  <div class="container">
+    <a class="back" href="/">Back to kastrava.pp.ua</a>
+    <div class="kick">PRO ADMIN</div>
+    <h1>Kastrava Pro settings</h1>
+    <p class="sub">Verify signed receipts, issue keys directly, revoke keys, inspect licenses. Everything here needs the admin token.</p>
+    <div class="lic-card">
+      <h2 style="font-size:16px;margin-bottom:8px">Admin token</h2>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <input id="adm-token" type="password" class="cmd" style="flex:1;min-width:220px;border:none;background:#0c0e13;color:#7ee2a8;padding:12px 14px;font-size:12px;margin-top:0" placeholder="Admin token" autocomplete="off">
+        <button id="adm-save" class="btn btn-primary" style="padding:12px 22px">Unlock</button>
+      </div>
+      <p id="adm-status" class="mono" style="font-size:12px;color:var(--muted2);margin-top:10px">Locked.</p>
+    </div>
+    <div id="adm-tabs" style="display:none">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin:22px 0 4px">
+        <button class="btn btn-ghost atab" data-t="verify" style="padding:10px 18px">Verify receipt</button>
+        <button class="btn btn-ghost atab" data-t="issue" style="padding:10px 18px">Issue key</button>
+        <button class="btn btn-ghost atab" data-t="list" style="padding:10px 18px">Licenses</button>
+      </div>
+      <div class="lic-card apane" id="pane-verify" style="margin-top:14px">
+        <h2 style="font-size:16px;margin-bottom:8px">Verify a signed receipt</h2>
+        <p class="sub">Paste the receipt JSON from a customer PDF (<span class="mono">{"receipt":{...},"receipt_sig":"..."}</span>). The signature is checked cryptographically; tampered copies fail.</p>
+        <textarea id="vrf-json" class="cmd" style="width:100%;min-height:120px;border:none;background:#0c0e13;color:#7ee2a8;padding:12px 14px;font-size:11px" placeholder='{"receipt":{...},"receipt_sig":"..."}'></textarea>
+        <button id="vrf-go" class="btn btn-primary" style="margin-top:10px;padding:12px 22px">Verify</button>
+        <div id="vrf-out" style="margin-top:12px;font-size:13px"></div>
+      </div>
+      <div class="lic-card apane" id="pane-issue" style="margin-top:14px;display:none">
+        <h2 style="font-size:16px;margin-bottom:8px">Issue a key directly</h2>
+        <p class="sub">Mint a 34-day key with no purchase. Bind it now with a machine code, or leave blank and let first activation bind it.</p>
+        <input id="iss-machine" class="cmd" style="width:100%;border:none;background:#0c0e13;color:#7ee2a8;padding:12px 14px;font-size:12px;margin-top:0" placeholder="Machine code (optional, e.g. KAS2-...)">
+        <input id="iss-note" class="cmd" style="width:100%;border:none;background:#0c0e13;color:#7ee2a8;padding:12px 14px;font-size:12px" placeholder="Note (optional, e.g. tester name)">
+        <button id="iss-go" class="btn btn-primary" style="margin-top:10px;padding:12px 22px">Mint key</button>
+        <div id="iss-out" style="margin-top:12px;font-size:13px"></div>
+      </div>
+      <div class="lic-card apane" id="pane-list" style="margin-top:14px;display:none">
+        <h2 style="font-size:16px;margin-bottom:8px">Licenses <button id="lst-go" class="btn btn-ghost" style="padding:6px 14px;font-size:12px;margin-left:8px">Refresh</button></h2>
+        <div id="lst-out" style="margin-top:8px;font-size:13px;overflow-x:auto"></div>
+      </div>
+    </div>
+  </div>
+</main><script>
+(function(){
+  var KAS_API=((window.KAS_API)||(location.search.match(/[?&]api=([^&]+)/)||[])[1]||'https://nexufog.pp.ua').replace(/\/$/,'');
+  function token(){try{return sessionStorage.getItem('kas_admin_token')||'';}catch(e){return '';}}
+  function headers(){return {'Content-Type':'application/json','X-Admin-Token':token()};}
+  function esc(t){return String(t==null?'':t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+  var tokEl=document.getElementById('adm-token'),stEl=document.getElementById('adm-status'),
+      tabsEl=document.getElementById('adm-tabs');
+  function refreshLock(){
+    var has=!!token();
+    if(tokEl&&!tokEl.value&&has){/* keep field empty, token in memory */}
+    if(stEl)stEl.textContent=has?'Unlocked for this tab session.':'Locked.';
+    if(tabsEl)tabsEl.style.display=has?'block':'none';
+  }
+  var saveBtn=document.getElementById('adm-save');
+  if(saveBtn)saveBtn.addEventListener('click',function(){
+    var v=tokEl?tokEl.value.trim():'';
+    if(!v){alert('Enter the admin token.');return;}
+    try{sessionStorage.setItem('kas_admin_token',v);}catch(e){}
+    if(tokEl)tokEl.value='';
+    refreshLock();loadList();
+  });
+  document.querySelectorAll('.atab').forEach(function(b){
+    b.addEventListener('click',function(){
+      document.querySelectorAll('.apane').forEach(function(p){p.style.display='none';});
+      var p=document.getElementById('pane-'+b.dataset.t);
+      if(p)p.style.display='block';
+      if(b.dataset.t==='list')loadList();
+    });
+  });
+  function api(path,body,cb){
+    fetch(KAS_API+path,{method:'POST',headers:headers(),body:body?JSON.stringify(body):'{}'})
+    .then(function(r){return r.json().then(function(j){return {status:r.status,json:j};});})
+    .then(function(r){cb(null,r);})
+    .catch(function(e){cb(e||new Error('net'));});
+  }
+  var vrfGo=document.getElementById('vrf-go'),vrfOut=document.getElementById('vrf-out');
+  if(vrfGo)vrfGo.addEventListener('click',function(){
+    var ta=document.getElementById('vrf-json');
+    var parsed=null;
+    try{parsed=JSON.parse(ta?ta.value:'');}catch(e){vrfOut.innerHTML='Invalid JSON.';return;}
+    vrfOut.textContent='Checking...';
+    api('/api/receipt/verify',parsed,function(err,r){
+      if(err){vrfOut.textContent='Network error.';return;}
+      var j=r.json;
+      if(!j||!j.valid){vrfOut.innerHTML='<b style="color:#c62828">INVALID</b> - signature does not match. Tampered or forged.';return;}
+      var rc=j.receipt||{};
+      vrfOut.innerHTML='<b style="color:#2e7d32">VALID</b> - genuinely issued by Kastrasoft.<br>'+
+        'Order: <span class="mono">'+esc(rc.order_id)+'</span><br>'+
+        'Key: <span class="mono">'+esc(rc.key)+'</span> (status: <b>'+esc(j.key_status||'?')+'</b>'+(j.key_expires_at?', expires '+esc(j.key_expires_at):'')+')<br>'+
+        'Amount: '+esc(rc.amount_paise!=null?(rc.currency||'')+' '+(rc.amount_paise/100).toFixed(2):'-');
+    });
+  });
+  var issGo=document.getElementById('iss-go'),issOut=document.getElementById('iss-out');
+  if(issGo)issGo.addEventListener('click',function(){
+    var m=document.getElementById('iss-machine'),n=document.getElementById('iss-note');
+    issOut.textContent='Minting...';
+    api('/api/admin/issue',{machine_id:m?m.value.trim():'',note:n?n.value.trim():''},function(err,r){
+      if(err){issOut.textContent='Network error.';return;}
+      if(r.status===401){issOut.textContent='Wrong token.';return;}
+      var j=r.json;
+      if(!j||!j.ok){issOut.textContent='Failed: '+((j&&(j.error||j.msg))||r.status);return;}
+      issOut.innerHTML='Key minted: <span class="mono" style="font-size:16px;font-weight:700">'+esc(j.key)+'</span><br>Order: <span class="mono">'+esc(j.order_id)+'</span> - expires '+esc(j.expires_at||'?');
+      loadList();
+    });
+  });
+  function loadList(){
+    var out=document.getElementById('lst-out');
+    if(!out||!token())return;
+    out.textContent='Loading...';
+    fetch(KAS_API+'/api/admin/list',{headers:headers()})
+    .then(function(r){return r.json().then(function(j){return {status:r.status,json:j};});})
+    .then(function(r){
+      if(r.status===401){out.textContent='Wrong token.';return;}
+      var j=r.json||{},lics=j.licenses||{};
+      var keys=Object.keys(lics);
+      if(!keys.length){out.textContent='No licenses yet.';return;}
+      var h='<table style="border-collapse:collapse;min-width:640px"><tr><th align="left">Key</th><th align="left">Status</th><th align="left">Machine</th><th align="left">Expires</th><th align="left">Order</th><th></th></tr>';
+      keys.forEach(function(k){
+        var l=lics[k]||{};
+        var col=l.status==='activated'?'#2e7d32':(l.status==='revoked'?'#c62828':'inherit');
+        h+='<tr><td class="mono">'+esc(k)+'</td><td style="color:'+col+'"><b>'+esc(l.status||'?')+'</b></td><td class="mono">'+esc((l.machine_id||'').slice(0,18))+'</td><td>'+esc(l.expires_at||'?')+'</td><td class="mono">'+esc(l.order_id||'')+'</td>';
+        h+='<td>'+(l.status!=='revoked'?'<button data-revoke="'+esc(k)+'" style="cursor:pointer">Revoke</button>':'')+'</td></tr>';
+      });
+      out.innerHTML=h+'</table>';
+      out.querySelectorAll('[data-revoke]').forEach(function(b){
+        b.addEventListener('click',function(){
+          if(!confirm('Revoke '+b.dataset.revoke+'? The app drops Premium on next refresh.'))return;
+          api('/api/admin/revoke',{key:b.dataset.revoke},function(err2,r2){
+            if(err2||!r2.json||!r2.json.ok){alert('Revoke failed.');return;}
+            loadList();
+          });
+        });
+      });
+    })
+    .catch(function(){out.textContent='Network error.';});
+  }
+  var lstGo=document.getElementById('lst-go');
+  if(lstGo)lstGo.addEventListener('click',loadList);
+  refreshLock();
+})();
+</script>
+</body>
+</html>
