@@ -298,7 +298,7 @@ footer a{color:var(--blue);text-decoration:none}
           <div class="k" id="prem-key"></div>
           <div class="tag" id="prem-renewed" style="display:none;margin-top:8px">RENEWAL APPLIED — re-activate in the app to refresh</div>
           <div style="font-size:13px;color:var(--muted)">Open <b>Settings → Kastrava Premium</b> in the app, paste this key, click Activate. That's it.</div>
-          <button id="prem-receipt" class="btn btn-ghost" style="display:none;margin-top:10px;width:100%;text-align:center;padding:12px 18px;cursor:pointer">Download receipt (PDF)</button>
+          <button id="prem-receipt" class="btn btn-ghost" style="margin-top:10px;width:100%;text-align:center;padding:12px 18px;cursor:pointer">Download receipt (PDF)</button>
           <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted2);margin-top:10px">Key is bound to the first machine that activates it. Lose it? <a href="mailto:planetofoses989@gmail.com" style="color:var(--blue)">We re-issue</a>.</div>
         </div>
         <div class="prem-note">Secure checkout via Razorpay. UPI / cards / netbanking. <b>One-time $2.59 — no recurring mandate needed</b>. Instantly verified, key issued on this page.</div>
@@ -495,7 +495,9 @@ footer a{color:var(--blue);text-decoration:none}
     if(keyEl)keyEl.textContent=key;
     if(keyout)keyout.style.display='block';
     if(machineInput){machineInput.value=machineInput.value?(renewed?'(machine code sent — same key extended)':'(machine code sent with purchase)'):machineInput.value;}
-    if(receipt){receiptData=receipt;if(receiptBtn)receiptBtn.style.display='block';
+    if(receipt){
+      receiptData=receipt;
+      if(receiptBtn)receiptBtn.style.display='block';
       // Auto-download the PDF immediately (jsPDF was preloaded at Pay time);
       // the button stays as a fallback if the browser blocks the auto-save.
       try{
@@ -651,8 +653,33 @@ footer a{color:var(--blue);text-decoration:none}
     var oid=receiptText(d.order_id||'receipt').replace(/[^A-Za-z0-9_-]/g,'');
     doc.save('kastrava-receipt-'+oid+'.pdf');
   }
+  // Past orders: no fresh payment in this session, so ask for the order
+  // ID + license key and re-issue the signed receipt from the server.
+  // Both secrets are required; either one alone gets nothing.
+  function lookupReceipt(){
+    var oid=prompt('Order ID from your purchase (e.g. order_...):');
+    if(!oid||!oid.trim())return;
+    var k=prompt('License key from that purchase (e.g. KAS-XXXX-...):');
+    if(!k||!k.trim())return;
+    receiptBtn.disabled=true;
+    fetch(KAS_API+'/api/receipt/reissue',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({order_id:oid.trim(),key:k.trim()})})
+    .then(function(r){return r.json().then(function(j){return {status:r.status,json:j};});})
+    .then(function(r){
+      receiptBtn.disabled=false;
+      var j=r.json||{};
+      if(!j.ok||!j.receipt){alert(j.error==='key_mismatch'?'Order ID and key do not match.':(j.error==='order_not_found'?'Order not found.':(j.msg||'Lookup failed.')));return;}
+      receiptData={order_id:j.receipt.order_id,payment_id:j.receipt.payment_id,amount:j.receipt.amount_paise,currency:j.receipt.currency,machine_id:j.receipt.machine_id,server_receipt:j.receipt,receipt_sig:j.receipt_sig};
+      if(keyEl)keyEl.textContent=j.key;
+      if(keyout)keyout.style.display='block';
+      loadJsPdf(function(){
+        try{if(window.jspdf&&window.jspdf.jsPDF)buildReceipt();}catch(e){alert('Could not build the receipt.');}
+      });
+    })
+    .catch(function(){receiptBtn.disabled=false;alert('Could not reach the store. Try again.');});
+  }
   if(receiptBtn)receiptBtn.addEventListener('click',function(){
-    if(!receiptData){alert('No payment details for a receipt yet.');return;}
+    if(!receiptData){lookupReceipt();return;}
     receiptBtn.disabled=true;
     loadJsPdf(function(){
       receiptBtn.disabled=false;
