@@ -14,6 +14,7 @@ import android.webkit.URLUtil
 import android.webkit.WebChromeClient
 import android.webkit.WebView
 import android.graphics.Bitmap
+import android.util.TypedValue
 import android.widget.EditText
 import android.widget.FrameLayout
 import android.widget.ImageButton
@@ -102,6 +103,15 @@ class MainActivity : AppCompatActivity() {
         findViewById<ImageButton>(R.id.btnMenu).setOnClickListener { showMenu(it) }
 
         val go = { query: String -> openQuery(query); true }
+        omnibox.setOnFocusChangeListener { v, focused ->
+            val wv = currentTab()
+            if (focused) {
+                (v as EditText).setText(wv?.url ?: "")
+                (v as EditText).selectAll()
+            } else {
+                syncOmnibox()
+            }
+        }
         omnibox.setOnEditorActionListener { v, actionId, _ ->
             if (actionId == EditorInfo.IME_ACTION_GO) {
                 hideKeyboard(v)
@@ -254,6 +264,9 @@ class MainActivity : AppCompatActivity() {
             val row = LinearLayout(this).apply {
                 orientation = LinearLayout.HORIZONTAL
                 gravity = android.view.Gravity.CENTER_VERTICAL
+                isClickable = true
+                isFocusable = true
+                setBackgroundResource(selectableBackground())
                 setPadding(0, (8 * density).toInt(), 0, (8 * density).toInt())
                 setOnClickListener { sheet.dismiss(); switchTo(i) }
             }
@@ -323,7 +336,19 @@ class MainActivity : AppCompatActivity() {
 
     private fun syncOmnibox() {
         val wv = currentTab()
-        omnibox.setText(wv?.url ?: "")
+        val url = wv?.url ?: ""
+        omnibox.setText(if (omnibox.hasFocus()) url else displayHost(url))
+    }
+
+    private fun displayHost(url: String): String {
+        if (url.isBlank()) return ""
+        return try {
+            val uri = android.net.Uri.parse(url)
+            val host = uri.host ?: return url
+            if (uri.scheme == "https" || uri.scheme == "http") host else url
+        } catch (e: Exception) {
+            url
+        }
     }
 
     private fun openDownloads() {
@@ -350,6 +375,9 @@ class MainActivity : AppCompatActivity() {
         entries.forEach { title ->
             val row = TextView(this).apply {
                 text = title
+                isClickable = true
+                isFocusable = true
+                setBackgroundResource(selectableBackground())
                 textSize = 16f
                 val vpad = (14 * resources.displayMetrics.density).toInt()
                 setPadding(0, vpad, 0, vpad)
@@ -505,6 +533,12 @@ class MainActivity : AppCompatActivity() {
         }.start()
         // Offer the Downloads screen right away; explicit Save copies it out.
         startActivity(Intent(this, DownloadsActivity::class.java))
+    }
+
+    private fun selectableBackground(): Int {
+        val tv = TypedValue()
+        theme.resolveAttribute(android.R.attr.selectableItemBackground, tv, true)
+        return tv.resourceId
     }
 
     private fun hideKeyboard(v: android.view.View) {

@@ -6,5 +6,7 @@
         <item name="colorSecondary">@color/kas_blue</item>
         <item name="android:statusBarColor">@color/chrome_bg</item>
         <item name="android:navigationBarColor">@color/chrome_bg</item>
+        <item name="android:windowLightStatusBar">@bool/light_system_bars</item>
+        <item name="android:windowLightNavigationBar">@bool/light_system_bars</item>
     </style>
 </resources>
