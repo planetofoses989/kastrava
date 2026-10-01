@@ -298,16 +298,8 @@ footer a{color:var(--blue);text-decoration:none}
           <div class="k" id="prem-key"></div>
           <div class="tag" id="prem-renewed" style="display:none;margin-top:8px">RENEWAL APPLIED — re-activate in the app to refresh</div>
           <div style="font-size:13px;color:var(--muted)">Open <b>Settings → Kastrava Premium</b> in the app, paste this key, click Activate. That's it.</div>
-          <a id="prem-dl" class="btn btn-primary" style="display:none;margin-top:14px;width:100%;text-align:center;padding:14px 18px">Download Premium build</a>
           <button id="prem-receipt" class="btn btn-ghost" style="display:none;margin-top:10px;width:100%;text-align:center;padding:12px 18px;cursor:pointer">Download receipt (PDF)</button>
           <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted2);margin-top:10px">Key is bound to the first machine that activates it. Lose it? <a href="mailto:planetofoses989@gmail.com" style="color:var(--blue)">We re-issue</a>.</div>
-        </div>
-        <div style="margin-top:14px;padding-top:14px;border-top:1px solid rgba(255,255,255,.08)">
-          <div style="font-size:13px;color:var(--muted)">Already paid? Enter your key to download the premium build anytime:</div>
-          <div style="display:flex;gap:8px;margin-top:8px">
-            <input id="prem-dl-key" class="cmd" style="flex:1;border:none;background:#0c0e13;color:#7ee2a8;padding:12px 14px;font-size:12px;margin-top:0" placeholder="KAS-XXXX">
-            <button class="prem-buy" id="prem-dl-btn" style="width:auto;margin-top:0;padding:12px 20px;white-space:nowrap">Download</button>
-          </div>
         </div>
         <div class="prem-note">Secure checkout via Razorpay. UPI / cards / netbanking. <b>One-time $2.59 — no recurring mandate needed</b>. Instantly verified, key issued on this page.</div>
       </div>
@@ -475,7 +467,6 @@ footer a{color:var(--blue);text-decoration:none}
   var KAS_API=((window.KAS_API)||(location.search.match(/[?&]api=([^&]+)/)||[])[1]||'https://nexufog.pp.ua').replace(/\/$/,'');
   var keyout=document.getElementById('prem-keyout');
   var keyEl=document.getElementById('prem-key');
-  var dlEl=document.getElementById('prem-dl');
   var receiptBtn=document.getElementById('prem-receipt');
   var receiptData=null;
   var renewedEl=document.getElementById('prem-renewed');
@@ -504,7 +495,6 @@ footer a{color:var(--blue);text-decoration:none}
     if(keyEl)keyEl.textContent=key;
     if(keyout)keyout.style.display='block';
     if(machineInput){machineInput.value=machineInput.value?(renewed?'(machine code sent — same key extended)':'(machine code sent with purchase)'):machineInput.value;}
-    if(dlEl){dlEl.href=KAS_API+'/api/dl/'+encodeURIComponent(key);dlEl.style.display='block';}
     if(receipt){receiptData=receipt;if(receiptBtn)receiptBtn.style.display='block';}
     if(renewedEl){renewedEl.style.display=renewed?'block':'none';}
     buyBtn.style.display='none';
@@ -512,93 +502,6 @@ footer a{color:var(--blue);text-decoration:none}
   function fail(msg){alert(msg||'Something went wrong. Please try again.');setBusy(false);}
 
   function machineValue(){return machineInput&&machineInput.value?machineInput.value.trim():'';}
-
-  // Persistent premium-build download: works anytime after purchase (even
-  // after a reload), not just in the payment session. The server 403s
-  // unknown keys, but we pre-check with a 1-byte range fetch first so a
-  // typo shows an alert instead of a raw JSON error page.
-  (function(){
-    var keyInput=document.getElementById('prem-dl-key');
-    var dlBtn=document.getElementById('prem-dl-btn');
-    if(!dlBtn)return;
-    dlBtn.addEventListener('click',function(){
-      var k=keyInput&&keyInput.value.trim();
-      if(!k){alert('Enter your license key first.');return;}
-      dlBtn.disabled=true;
-      fetch(KAS_API+'/api/dl/'+encodeURIComponent(k),{headers:{Range:'bytes=0-0'}})
-      .then(function(r){
-        dlBtn.disabled=false;
-        if(r.ok){window.location.href=KAS_API+'/api/dl/'+encodeURIComponent(k);}
-        else alert('That key is not valid for downloads. Check it and try again.');
-      })
-      .catch(function(){dlBtn.disabled=false;alert('Could not reach the store. Try again.');});
-    });
-  })();
-
-  function openRazorpay(o){
-    if(!window.Razorpay){
-      fail('Razorpay checkout failed to load. Refresh and try again.');
-      return;
-    }
-    var opts={
-      key:o.key_id,
-      amount:o.amount,
-      currency:o.currency,
-      order_id:o.order_id,
-      name:'Kastrava Premium',
-      description:'One-time $2.59 · 34 days · one machine · no auto-renew',
-      prefill:{name:'',email:''},
-      theme:{color:document.documentElement.getAttribute('data-theme')==='dark'?'#f3eee4':'#16130e'},
-      handler:function(res){
-        setBusy(true);
-        fetch(KAS_API+'/api/verify',{method:'POST',headers:{'Content-Type':'application/json'},
-          body:JSON.stringify({order_id:res.razorpay_order_id,payment_id:res.razorpay_payment_id,signature:res.razorpay_signature,machine_id:machineValue()})})
-        .then(function(r){return r.json();})
-        .then(function(v){
-          if(v.ok&&v.key){showKey(v.key,!!v.renewed,{order_id:o.order_id,payment_id:res.razorpay_payment_id,amount:o.amount,currency:o.currency});setBusy(false);}
-          else fail((v&&v.msg)||'Payment could not be verified.');
-        })
-        .catch(function(){fail('Could not verify payment — your payment may still have gone through. Email the payment ID to planetofoses989@gmail.com');});
-      },
-      modal:{ondismiss:function(){setBusy(false);}}
-    };
-    var rzp=new Razorpay(opts);
-    checker.rzp=rzp;
-    rzp.on('payment.failed',function(){setBusy(false);alert('Payment failed. No charge was made.')});
-    rzp.open();
-  }
-
-  if(buyBtn)buyBtn.addEventListener('click',function(){
-    setBusy(true);
-    fetch(KAS_API+'/api/order',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({machine_id:machineValue()})})
-    .then(function(r){return r.json();})
-    .then(function(o){
-      if(!o||!o.order_id)throw new Error(o&&o.msg||'no order');
-      if(o.dev){
-        // Dev mode (no Razorpay keys configured): simulate the paid callback.
-        fetch(KAS_API+'/api/verify',{method:'POST',headers:{'Content-Type':'application/json'},
-          body:JSON.stringify({order_id:o.order_id,payment_id:'pay_dev_'+Date.now(),signature:'dev',machine_id:machineValue()})})
-        .then(function(r){return r.json();})
-        .then(function(v){if(v.ok&&v.key)showKey(v.key,!!v.renewed);setBusy(false);})
-        .catch(function(){fail('Dev checkout failed.');});
-        return;
-      }
-      if(!window.__razorpayLoaded){loadRazorpay(function(){openRazorpay(o);});}
-      else openRazorpay(o);
-    })
-    .catch(function(e){fail(e&&e.message);});
-  });
-
-  function loadRazorpay(cb){
-    if(window.__razorpayLoading){var t=checker.t||null;checker.t=setInterval(function(){if(window.__razorpayLoaded){clearInterval(checker.t);cb();}},150);return;}
-    window.__razorpayLoading=true;
-    var s=document.createElement('script');
-    s.src='https://checkout.razorpay.com/v1/checkout.js';
-    s.onload=function(){window.__razorpayLoaded=true;cb();};
-    s.onerror=function(){window.__razorpayLoaded=true;fail('Could not load Razorpay. Try again.');setBusy(false);};
-    document.head.appendChild(s);
-  }
 
   // PDF receipt, generated locally the moment payment verifies. The PDF is
   // flat content (no form fields, nothing fillable). Note: jsPDF built-in
