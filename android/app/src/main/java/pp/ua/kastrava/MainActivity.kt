@@ -9,6 +9,10 @@ import android.os.Bundle
 import android.view.GestureDetector
 import android.view.KeyEvent
 import android.view.MotionEvent
+import android.view.View
+import android.widget.GridLayout
+import android.widget.ImageView
+import android.widget.SeekBar
 import com.google.android.material.snackbar.Snackbar
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
@@ -170,6 +174,7 @@ class MainActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         refreshPremiumLine()
+        renderQuickBookmarks()
         // Settings (engine, JS) may have changed: apply JS flag live.
         tabs.forEach {
             it.view.settings.javaScriptEnabled = app.prefs.javaScript
@@ -319,6 +324,7 @@ class MainActivity : AppCompatActivity() {
         currentTab()?.visibility = WebView.GONE
         current = -1
         homeView.visibility = ScrollView.VISIBLE
+        renderQuickBookmarks()
         updateTabCount()
         omnibox.setText("")
         progress.visibility = ProgressBar.GONE
@@ -450,48 +456,160 @@ class MainActivity : AppCompatActivity() {
         startActivity(Intent(this, SettingsActivity::class.java))
     }
 
-    private fun showMenu(anchor: android.view.View) {
-        val sheet = BottomSheetDialog(this)
-        val list = LinearLayout(this).apply {
+    private fun menuIconCell(iconRes: Int, label: String, onClick: () -> Unit): LinearLayout {
+        val density = resources.displayMetrics.density
+        return LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            val pad = (20 * resources.displayMetrics.density).toInt()
-            setPadding(pad, pad / 2, pad, pad)
+            gravity = android.view.Gravity.CENTER_HORIZONTAL
+            isClickable = true
+            isFocusable = true
+            setBackgroundResource(selectableBackground())
+            setPadding(0, (10 * density).toInt(), 0, (10 * density).toInt())
+            addView(ImageView(this@MainActivity).apply {
+                layoutParams = LinearLayout.LayoutParams((28 * density).toInt(), (28 * density).toInt())
+                setImageResource(iconRes)
+            })
+            addView(TextView(this@MainActivity).apply {
+                text = label
+                textSize = 11f
+                maxLines = 1
+                setPadding(0, (6 * density).toInt(), 0, 0)
+            })
+            setOnClickListener { onClick() }
         }
-        val desktopLabel = if (currentWebTab()?.desktopMode == true) "Desktop site ✓" else "Desktop site"
-        val pageUrl = currentTab()?.url
-        val saved = pageUrl != null && BookmarkStore(this).contains(pageUrl)
-        val entries = listOf("New tab", "Set as default browser", if (saved) "★ Bookmarked" else "Bookmark this page", "Bookmarks", "Share page", "Find in page", desktopLabel, "Delete browsing data", "Downloads", "Premium", "Settings", "About")
-        entries.forEach { title ->
-            val row = TextView(this).apply {
-                text = title
-                isClickable = true
-                isFocusable = true
-                setBackgroundResource(selectableBackground())
-                textSize = 16f
-                val vpad = (14 * resources.displayMetrics.density).toInt()
-                setPadding(0, vpad, 0, vpad)
-                setOnClickListener {
-                    sheet.dismiss()
-                    when {
-                        title == "New tab" -> newTab()
-                        title == "Set as default browser" -> requestDefaultBrowser()
-                        title == "Bookmark this page" -> toggleBookmark()
-                        title == "★ Bookmarked" -> toggleBookmark()
-                        title == "Bookmarks" -> startActivity(Intent(this@MainActivity, BookmarksActivity::class.java))
-                        title == "Delete browsing data" -> wipeNow()
-                        title == "Share page" -> sharePage()
-                        title == "Find in page" -> openFindBar()
-                        title.startsWith("Desktop site") -> toggleDesktopMode()
-                        title == "Downloads" -> openDownloads()
-                        title == "Premium" -> openPremium()
-                        title == "Settings" -> openSettings()
-                        title == "About" -> showAbout()
-                    }
-                }
+    }
+
+    private fun showMenu(anchor: android.view.View) {
+        val density = resources.displayMetrics.density
+        val sheet = BottomSheetDialog(this)
+        sheet.window?.setBackgroundDrawable(
+            android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT))
+        val body = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setBackgroundResource(R.drawable.sheet_bg)
+            val m = (16 * density).toInt()
+            val params = android.widget.FrameLayout.LayoutParams(
+                android.widget.FrameLayout.LayoutParams.MATCH_PARENT,
+                android.widget.FrameLayout.LayoutParams.WRAP_CONTENT,
+            ).apply { setMargins(m, 0, m, m) }
+            layoutParams = params
+            val pad = (20 * density).toInt()
+            setPadding(pad, pad, pad, pad)
+        }
+        // page header: favicon tile + title + url + share
+        val wv = currentTab()
+        val header = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = android.view.Gravity.CENTER_VERTICAL
+        }
+        val favTile = android.widget.FrameLayout(this).apply {
+            layoutParams = LinearLayout.LayoutParams((48 * density).toInt(), (48 * density).toInt())
+            background = null
+            addView(TextView(this@MainActivity).apply {
+                layoutParams = android.widget.FrameLayout.LayoutParams(
+                    android.widget.FrameLayout.LayoutParams.MATCH_PARENT,
+                    android.widget.FrameLayout.LayoutParams.MATCH_PARENT,
+                )
+                background = null
+                gravity = android.view.Gravity.CENTER
+                textSize = 20f
+                text = (wv?.title?.trim()?.firstOrNull()?.uppercase() ?: "K")
+            })
+        }
+        val wvFav = wv?.let { t -> tabs.find { it.view == t }?.favicon }
+        if (wvFav != null) {
+            favTile.removeAllViews()
+            favTile.addView(android.widget.ImageView(this).apply {
+                layoutParams = android.widget.FrameLayout.LayoutParams(
+                    android.widget.FrameLayout.LayoutParams.MATCH_PARENT,
+                    android.widget.FrameLayout.LayoutParams.MATCH_PARENT,
+                )
+                setImageBitmap(wvFav)
+            })
+        }
+        header.addView(favTile)
+        val titleBox = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply {
+                marginStart = (12 * density).toInt()
+                marginEnd = (8 * density).toInt()
             }
-            list.addView(row)
         }
-        sheet.setContentView(list)
+        titleBox.addView(TextView(this).apply {
+            text = wv?.title?.takeIf { it.isNotBlank() } ?: "Kastrava"
+            textSize = 16f
+            maxLines = 1
+            setTypeface(typeface, android.graphics.Typeface.BOLD)
+        })
+        titleBox.addView(TextView(this).apply {
+            text = wv?.url ?: "kastrava.pp.ua"
+            textSize = 12f
+            maxLines = 1
+        })
+        header.addView(titleBox)
+        header.addView(ImageButton(this).apply {
+            layoutParams = LinearLayout.LayoutParams((44 * density).toInt(), (44 * density).toInt())
+            setImageResource(R.drawable.ic_share)
+            background = null
+            contentDescription = "Share page"
+            setOnClickListener { sheet.dismiss(); sharePage() }
+        })
+        body.addView(header)
+        body.addView(View(this).apply {
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, (1 * density).toInt(),
+            ).apply {
+                topMargin = (14 * density).toInt()
+                bottomMargin = (6 * density).toInt()
+            }
+            setBackgroundColor(0x1A000000)
+        })
+        // top row: New tab | Bookmarks | Downloads | Share | Settings
+        val row1 = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            weightSum = 5f
+        }
+        val pageUrl = currentTab()?.url
+        val saved = pageUrl != null && BookmarkStore(this@MainActivity).contains(pageUrl)
+        val row1Items = listOf(
+            Triple(R.drawable.ic_plus, "New tab", { newTab() }),
+            Triple(R.drawable.ic_star, if (saved) "Saved" else "Bookmark", { toggleBookmark() }),
+            Triple(R.drawable.ic_download, "Downloads", { openDownloads() }),
+            Triple(R.drawable.ic_share, "Share", { sharePage() }),
+            Triple(R.drawable.ic_settings, "Settings", { openSettings() }),
+        )
+        row1Items.forEach { (icon, label, action) ->
+            row1.addView(menuIconCell(icon, label) { sheet.dismiss(); action() }.apply {
+                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+            })
+        }
+        body.addView(row1)
+        // grid: find, desktop, text size, wipe, premium, default, about
+        val desktopOn = currentWebTab()?.desktopMode == true
+        val gridItems = listOf(
+            Triple(R.drawable.ic_search, "Find on page", { openFindBar() }),
+            Triple(R.drawable.ic_monitor, if (desktopOn) "Desktop ✓" else "Desktop site", { toggleDesktopMode() }),
+            Triple(R.drawable.ic_textsize, "Text size", { openTextSize() }),
+            Triple(R.drawable.ic_trash, "Delete data", { wipeNow() }),
+            Triple(R.drawable.ic_premium, "Premium", { openPremium() }),
+            Triple(R.drawable.ic_globe, "Default app", { requestDefaultBrowser() }),
+            Triple(R.drawable.ic_info, "About", { showAbout() }),
+        )
+        val grid = android.widget.GridLayout(this).apply {
+            columnCount = 4
+        }
+        val dm = resources.displayMetrics
+        gridItems.forEach { (icon, label, action) ->
+            val cell = menuIconCell(icon, label) { sheet.dismiss(); action() }
+            val cp = android.widget.GridLayout.LayoutParams().apply {
+                width = 0
+                columnSpec = android.widget.GridLayout.spec(android.widget.GridLayout.UNDEFINED, 1f)
+            }
+            cell.layoutParams = cp
+            grid.addView(cell)
+        }
+        body.addView(grid)
+        sheet.setContentView(body)
         sheet.show()
     }
 
@@ -557,6 +675,88 @@ class MainActivity : AppCompatActivity() {
             startActivity(rm.createRequestRoleIntent(android.app.role.RoleManager.ROLE_BROWSER))
         } catch (e: Exception) {
             Toast.makeText(this, "Could not open system settings", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun openTextSize() {
+        val density = resources.displayMetrics.density
+        val wrap = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding((20 * density).toInt(), (8 * density).toInt(), (20 * density).toInt(), 0)
+        }
+        val label = TextView(this).apply {
+            text = "${app.prefs.textZoom}%"
+            textSize = 16f
+            gravity = android.view.Gravity.CENTER
+        }
+        val bar = SeekBar(this).apply {
+            min = 50
+            max = 200
+            progress = app.prefs.textZoom
+        }
+        wrap.addView(label)
+        wrap.addView(bar)
+        bar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(sb: SeekBar, v: Int, fromUser: Boolean) {
+                if (!fromUser) return
+                app.prefs.textZoom = v
+                label.text = "${app.prefs.textZoom}%"
+                tabs.forEach { it.view.settings.textZoom = app.prefs.textZoom }
+            }
+            override fun onStartTrackingTouch(sb: SeekBar) {}
+            override fun onStopTrackingTouch(sb: SeekBar) {}
+        })
+        MaterialAlertDialogBuilder(this)
+            .setTitle("Text size")
+            .setView(wrap)
+            .setPositiveButton("Done", null)
+            .show()
+    }
+
+    private fun renderQuickBookmarks() {
+        val grid: GridLayout = try { findViewById(R.id.quickBookmarks) } catch (e: Exception) { return }
+        grid.removeAllViews()
+        val marks = try { BookmarkStore(this).load() } catch (e: Exception) { emptyList() }
+        if (marks.isEmpty()) {
+            findViewById<TextView>(R.id.quickLabel).visibility = View.GONE
+            grid.visibility = View.GONE
+            return
+        }
+        findViewById<TextView>(R.id.quickLabel).visibility = View.VISIBLE
+        grid.visibility = View.VISIBLE
+        val density = resources.displayMetrics.density
+        marks.take(8).forEach { bm ->
+            val cell = LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+                gravity = android.view.Gravity.CENTER_HORIZONTAL
+                isClickable = true
+                isFocusable = true
+                setBackgroundResource(selectableBackground())
+                setPadding(0, (10 * density).toInt(), 0, (10 * density).toInt())
+                setOnClickListener {
+                    if (current < 0) newTab(bm.url) else currentTab()?.loadUrl(bm.url)
+                }
+            }
+            val dot = TextView(this).apply {
+                layoutParams = LinearLayout.LayoutParams((48 * density).toInt(), (48 * density).toInt())
+                gravity = android.view.Gravity.CENTER
+                textSize = 20f
+                text = bm.title.trim().firstOrNull()?.uppercase() ?: "K"
+            }
+            dot.background = getDrawable(R.drawable.dot_bg)
+            cell.addView(dot)
+            cell.addView(TextView(this).apply {
+                text = bm.title
+                textSize = 11f
+                maxLines = 1
+                setPadding(0, (6 * density).toInt(), 0, 0)
+            })
+            val cp = GridLayout.LayoutParams().apply {
+                width = 0
+                columnSpec = GridLayout.spec(GridLayout.UNDEFINED, 1f)
+            }
+            cell.layoutParams = cp
+            grid.addView(cell)
         }
     }
 

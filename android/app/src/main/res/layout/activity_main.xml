@@ -198,6 +198,23 @@
                 </LinearLayout>
 
                 <TextView
+                    android:id="@+id/quickLabel"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="24dp"
+                    android:text="Quick access"
+                    android:textColor="@color/chrome_hint"
+                    android:textSize="12sp" />
+
+                <GridLayout
+                    android:id="@+id/quickBookmarks"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:columnCount="4"
+                    android:alignmentMode="alignMargins" />
+
+                <TextView
                     android:id="@+id/homePremium"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
