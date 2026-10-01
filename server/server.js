@@ -281,6 +281,20 @@ async function handlePost(req, res, pathname) {
       key_expires_at: lic ? (lic.expires_at || null) : null })
   }
 
+  // Re-issue a signed receipt for a past order. Public, but requires BOTH
+  // the order ID and the license key it minted — knowing only one gets nothing.
+  if (pathname === '/api/receipt/reissue') {
+    const orderId = String(body.order_id || '').trim()
+    const key = String(body.key || '').trim().toUpperCase()
+    if (!orderId || !key) return json(res, 400, { error: 'bad_request' })
+    const order = store.getOrder(orderId)
+    if (!order || order.status !== 'paid') return json(res, 404, { error: 'order_not_found' })
+    if (store.keyForOrder(orderId) !== key) return json(res, 403, { error: 'key_mismatch' })
+    const rc = makeReceipt(orderId)
+    if (!rc) return json(res, 404, { error: 'order_not_found' })
+    return json(res, 200, { ok: true, key, receipt: rc.receipt, receipt_sig: rc.receipt_sig })
+  }
+
   if (pathname === '/api/admin/issue') {
     if (!adminOk(req)) return json(res, 401, { error: 'unauthorized' })
     const machine = String(body.machine_id || '').trim().toUpperCase() || null
