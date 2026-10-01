@@ -442,7 +442,9 @@ class MainActivity : AppCompatActivity() {
             setPadding(pad, pad / 2, pad, pad)
         }
         val desktopLabel = if (currentWebTab()?.desktopMode == true) "Desktop site ✓" else "Desktop site"
-        val entries = listOf("New tab", "Share page", "Find in page", desktopLabel, "Downloads", "Premium", "Settings", "About")
+        val pageUrl = currentTab()?.url
+        val saved = pageUrl != null && BookmarkStore(this).contains(pageUrl)
+        val entries = listOf("New tab", if (saved) "★ Bookmarked" else "Bookmark this page", "Bookmarks", "Share page", "Find in page", desktopLabel, "Delete browsing data", "Downloads", "Premium", "Settings", "About")
         entries.forEach { title ->
             val row = TextView(this).apply {
                 text = title
@@ -456,6 +458,10 @@ class MainActivity : AppCompatActivity() {
                     sheet.dismiss()
                     when {
                         title == "New tab" -> newTab()
+                        title == "Bookmark this page" -> toggleBookmark()
+                        title == "★ Bookmarked" -> toggleBookmark()
+                        title == "Bookmarks" -> startActivity(Intent(this, BookmarksActivity::class.java))
+                        title == "Delete browsing data" -> wipeNow()
                         title == "Share page" -> sharePage()
                         title == "Find in page" -> openFindBar()
                         title.startsWith("Desktop site") -> toggleDesktopMode()
@@ -482,6 +488,38 @@ class MainActivity : AppCompatActivity() {
             )
             .setPositiveButton("OK", null)
             .show()
+    }
+
+    private fun toggleBookmark() {
+        val wv = currentTab() ?: return
+        val url = wv.url ?: return
+        val store = BookmarkStore(this)
+        if (store.contains(url)) {
+            store.remove(url)
+            Toast.makeText(this, "Bookmark removed", Toast.LENGTH_SHORT).show()
+        } else {
+            val title = wv.title?.takeIf { it.isNotBlank() } ?: url
+            store.add(title, url)
+            Toast.makeText(this, "Bookmarked", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun wipeNow() {
+        try {
+            CookieManager.getInstance().removeAllCookies(null)
+            CookieManager.getInstance().flush()
+        } catch (e: Exception) { }
+        try {
+            android.webkit.WebStorage.getInstance().deleteAllData()
+        } catch (e: Exception) { }
+        tabs.forEach {
+            try {
+                it.view.clearCache(true)
+                it.view.clearHistory()
+                it.view.clearFormData()
+            } catch (e: Exception) { }
+        }
+        Toast.makeText(this, "Browsing data deleted", Toast.LENGTH_SHORT).show()
     }
 
     private fun sharePage() {
@@ -529,16 +567,27 @@ class MainActivity : AppCompatActivity() {
 
     private fun showLinkMenu(url: String?, isImage: Boolean) {
         if (url.isNullOrBlank()) return
+        val saved = BookmarkStore(this).contains(url)
         val items = if (isImage) {
             arrayOf("Open image in new tab", "Download image", "Share link", "Copy link")
+        } else if (saved) {
+            arrayOf("Open in new tab", "Remove bookmark", "Share link", "Copy link")
         } else {
-            arrayOf("Open in new tab", "Share link", "Copy link")
+            arrayOf("Open in new tab", "Bookmark link", "Share link", "Copy link")
         }
         MaterialAlertDialogBuilder(this)
             .setItems(items) { _, which ->
                 val action = items[which]
                 when {
                     action.startsWith("Open") -> newTab(url)
+                    action.startsWith("Bookmark") -> {
+                        BookmarkStore(this@MainActivity).add(url, url)
+                        Toast.makeText(this@MainActivity, "Bookmarked", Toast.LENGTH_SHORT).show()
+                    }
+                    action.startsWith("Remove bookmark") -> {
+                        BookmarkStore(this@MainActivity).remove(url)
+                        Toast.makeText(this@MainActivity, "Bookmark removed", Toast.LENGTH_SHORT).show()
+                    }
                     action.startsWith("Download") -> startSessionDownload(url, null)
                     action.startsWith("Share") -> {
                         val send = Intent(Intent.ACTION_SEND).apply {
