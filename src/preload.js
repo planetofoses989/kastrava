@@ -74,6 +74,7 @@ contextBridge.exposeInMainWorld('api', {
   licMachine: () => ipcRenderer.invoke('lic-machine'),
   licStatus: () => ipcRenderer.invoke('lic-status'),
   licActivate: (key) => ipcRenderer.invoke('lic-activate', key),
+  licCancel: () => ipcRenderer.invoke('lic-cancel'),
 
   // Auto-update (NSIS installer + AppImage; no-op elsewhere)
   checkUpdates: () => ipcRenderer.invoke('check-updates')

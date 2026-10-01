@@ -21,6 +21,7 @@ class PremiumActivity : AppCompatActivity() {
         val msg: TextView = findViewById(R.id.premMsg)
         val activate: Button = findViewById(R.id.premActivate)
         val buy: Button = findViewById(R.id.premBuy)
+        val stop: Button = findViewById(R.id.premStop)
 
         machine.text = app.license.machineCode()
 
@@ -59,6 +60,36 @@ class PremiumActivity : AppCompatActivity() {
                     }
                 }
             }.start()
+        }
+
+        stop.setOnClickListener {
+            val st0 = app.license.status()
+            if (!st0.activated) {
+                msg.text = "No active Premium on this device."
+                return@setOnClickListener
+            }
+            androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle("Stop Premium?")
+                .setMessage("This ends Premium on this device immediately. No refund is issued.")
+                .setPositiveButton("Stop") { _, _ ->
+                    msg.text = "Stopping Premium…"
+                    stop.isEnabled = false
+                    Thread {
+                        val err = app.license.cancel()
+                        runOnUiThread {
+                            stop.isEnabled = true
+                            if (err == null) {
+                                msg.text = "Premium stopped. No refund was issued."
+                                key.text.clear()
+                                refresh()
+                            } else {
+                                msg.text = err
+                            }
+                        }
+                    }.start()
+                }
+                .setNegativeButton("Keep", null)
+                .show()
         }
 
         buy.setOnClickListener {

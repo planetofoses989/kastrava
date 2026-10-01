@@ -69,6 +69,13 @@
                 android:text="Get key — $2.59" />
         </LinearLayout>
 
+        <Button
+            android:id="@+id/premStop"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Stop Premium (no refund)" />
+
         <TextView
             android:id="@+id/premMsg"
             android:layout_width="wrap_content"

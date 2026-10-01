@@ -112,6 +112,46 @@ class LicenseManager(private val context: Context) {
         }
     }
 
+    /** Stop Premium without refund. Returns null on success. Must run off the main thread. */
+    fun cancel(): String? {
+        val prefsKey = prefs.getString("key", null)
+            ?: return "No active license on this device."
+        val machine = machineCode()
+        return try {
+            val url = URL("$API/api/cancel")
+            val conn = (url.openConnection() as HttpURLConnection).apply {
+                requestMethod = "POST"
+                setRequestProperty("Content-Type", "application/json")
+                connectTimeout = 20000
+                readTimeout = 20000
+                doOutput = true
+            }
+            val body = JSONObject()
+                .put("key", prefsKey)
+                .put("machine_id", machine)
+                .toString()
+            conn.outputStream.use { it.write(body.toByteArray(Charsets.UTF_8)) }
+            val code = conn.responseCode
+            val text = try {
+                (if (code in 200..299) conn.inputStream else conn.errorStream)
+                    ?.bufferedReader()?.readText() ?: ""
+            } catch (e: Exception) { "" }
+            if (code !in 200..299) {
+                val err = try { JSONObject(text).optString("error") } catch (e: Exception) { "" }
+                return when (err) {
+                    "machine_mismatch" -> "Only the bound device can stop this license."
+                    "not_active" -> "This license is not active."
+                    "invalid_key" -> "Unknown license key."
+                    else -> "Could not stop Premium (HTTP $code)."
+                }
+            }
+            prefs.edit().clear().apply()
+            null
+        } catch (e: Exception) {
+            "Could not reach the Kastrava license server. Check your connection."
+        }
+    }
+
     /** Network call — must run off the main thread. Returns null on success. */
     fun activate(key: String): String? {
         val machine = machineCode()

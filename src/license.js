@@ -129,6 +129,7 @@ async function activate(key) {
       if (body.error === 'machine_mismatch') return { ok: false, error: 'machine_mismatch', msg }
       if (body.error === 'invalid_key') return { ok: false, error: 'invalid_key', msg }
       if (body.error === 'license_revoked') return { ok: false, error: 'license_revoked', msg }
+      if (body.error === 'license_cancelled') return { ok: false, error: 'license_cancelled', msg }
       return { ok: false, error: 'server', msg }
     }
     if (!body.license) return { ok: false, error: 'server', msg: 'Empty activation response' }
@@ -137,6 +138,31 @@ async function activate(key) {
     return { ok: true, license: lic }
   } catch (e) {
     return { ok: false, error: 'network', msg: 'Could not reach the Kastrava license server. Check your connection (' + API + ').' }
+  }
+}
+
+// Stop Premium without refund: server marks the key cancelled (bound
+// machine only), then the local copy is dropped so features switch off.
+async function cancel() {
+  const lic = loadLicense()
+  if (!lic || !lic.key) return { ok: false, error: 'no_license', msg: 'No active license on this machine.' }
+  const machine = machineCode()
+  try {
+    const res = await fetch(API.replace(/\/$/, '') + '/api/cancel', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ key: lic.key, machine_id: machine }),
+      signal: AbortSignal.timeout(20000)
+    })
+    const body = await res.json().catch(() => ({}))
+    if (!res.ok || !body.ok) {
+      const msg = body.msg || 'Could not stop Premium (' + res.status + ').'
+      return { ok: false, error: body.error || 'server', msg }
+    }
+    try { clear() } catch {}
+    return { ok: true }
+  } catch (e) {
+    return { ok: false, error: 'network', msg: 'Could not reach the Kastrava license server.' }
   }
 }
 
@@ -157,8 +183,8 @@ async function refreshIfLicensed() {
     const r = await activate(lic.key)
     // Revoked server-side: drop the local copy so Premium switches off
     // even before the signed payload itself expires.
-    if (r && !r.ok && r.error === 'license_revoked') { try { clear() } catch {} }
+    if (r && !r.ok && (r.error === 'license_revoked' || r.error === 'license_cancelled')) { try { clear() } catch {} }
   } catch {}
 }
 
-module.exports = { machineCode, machineIdRaw, status, activate, verifyPayload, loadLicense, refreshIfLicensed, clear, API }
+module.exports = { machineCode, machineIdRaw, status, activate, cancel, verifyPayload, loadLicense, refreshIfLicensed, clear, API }

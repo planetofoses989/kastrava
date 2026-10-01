@@ -291,6 +291,7 @@ footer a{color:var(--blue);text-decoration:none}
         </ul>
         <input id="prem-machine" class="cmd" style="width:100%;border:none;background:#0c0e13;color:#7ee2a8;padding:12px 14px;font-size:12px" placeholder="Machine code (auto-filled — and locked — when you click from the app)">
         <button class="prem-buy" id="prem-buy" style="margin-top:12px">Pay $2.59 with Razorpay — 34 days</button>
+        <p style="margin-top:10px;font-size:13px;color:var(--muted)">Already Premium and want out? <a href="#" id="prem-stop" style="color:var(--blue)">Stop Premium</a> — ends immediately, no refund.</p>
         <p style="font-size:12px;color:var(--muted2);margin-top:8px">Charged in INR (₹248) — your bank converts the $2.59 at checkout.</p>
         <div class="prem-keyout" id="prem-keyout">
           <div class="tag" style="color:var(--key-c)">PAYMENT VERIFIED</div>
@@ -512,6 +513,30 @@ footer a{color:var(--blue);text-decoration:none}
   function fail(msg){alert(msg||'Something went wrong. Please try again.');setBusy(false);}
 
   function machineValue(){return machineInput&&machineInput.value?machineInput.value.trim():'';}
+
+  // Stop Premium without refund: needs the license key + the machine it is
+  // bound to. No money moves; the key can never be re-activated afterwards.
+  (function(){
+    var stopLink=document.getElementById('prem-stop');
+    if(!stopLink)return;
+    stopLink.addEventListener('click',function(e){
+      e.preventDefault();
+      var k=prompt('License key to stop (e.g. KAS-XXXX-...):');
+      if(!k||!k.trim())return;
+      var m=machineValue();
+      if(!m||m.charAt(0)==='('){alert('Enter your machine code in the box above first.');return;}
+      if(!confirm('Stop Premium on this machine now? No refund will be issued.'))return;
+      fetch(KAS_API+'/api/cancel',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({key:k.trim(),machine_id:m})})
+      .then(function(r){return r.json().then(function(j){return {status:r.status,json:j};});})
+      .then(function(r){
+        var j=r.json||{};
+        if(!j.ok){alert(j.error==='machine_mismatch'?'That key is bound to a different machine.':(j.error==='not_active'?'That key is not active.':(j.msg||'Could not stop Premium.')));return;}
+        alert('Premium stopped. No refund was issued.');
+      })
+      .catch(function(){alert('Could not reach the store. Try again.');});
+    });
+  })();
 
   // Preload the receipt lib the moment the buyer clicks Pay, so the PDF
   // can save straight after verification (closer to the user gesture =

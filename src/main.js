@@ -716,6 +716,7 @@ ipcMain.handle('set-referrer', (_, value) => {
 ipcMain.handle('lic-machine', () => license.machineCode())
 ipcMain.handle('lic-status', () => license.status())
 ipcMain.handle('lic-activate', async (_, key) => license.activate(key))
+ipcMain.handle('lic-cancel', async () => license.cancel())
 ipcMain.handle('lic-verify', (_, payload, sig) => license.verifyPayload(payload, sig))
 
 ipcMain.handle('get-bookmarks', () => {

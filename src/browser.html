@@ -690,6 +690,16 @@ function applyEditionUI(){
   }
 }
 function openPremiumSection(){openSettings();var item=document.querySelector('.settings-nav .sn-item[data-s="premium"]');if(item)item.click();else renderSettingsSection("premium");}
+async function stopPremium(){
+  if(!api||!api.licCancel)return;
+  toast("Stopping Premium...");
+  var res=await api.licCancel().catch(function(){return null;});
+  if(!res||!res.ok){toast(res&&res.msg?res.msg:"Could not stop Premium.");return;}
+  try{await loadLicense();}catch(e){}
+  try{applyEditionUI();}catch(e){}
+  try{renderSettingsSection("premium");}catch(e){}
+  toast("Premium stopped. No refund was issued.");
+}
 async function activatePremium(key){
   if(!api||!api.licActivate)return;
   toast("Activating…");
@@ -3537,7 +3547,7 @@ function renderSettingsSection(id){
       var stColor=LIC.grace?"#e65100":"#2e7d32";
       var stText=LIC.grace?"\u26A0 Your 34 days ended \u2014 grace until "+(LIC.expiresAt?new Date(LIC.expiresAt).toLocaleDateString():"soon")+". Renew to keep Premium.":"\u2713 Premium active on this machine.";
       h+="<div class=\"sg\"><div class=\"lbl\">Status</div><div class=\"desc\" style=\"font-weight:600;color:"+stColor+"\">"+stText+"</div><div class=\"desc\">Key: <code style=\"font-size:12px\">"+(LIC.key||"")+"</code>"+(LIC.expiresAt?" &middot; unlocked until "+new Date(LIC.expiresAt).toLocaleDateString():"")+"</div></div>";
-      h+="<div class=\"sg\" style=\"display:flex;gap:8px;flex-wrap:wrap\"><button class=\"btn-sm btn-accent\" id=\"s-licrenew\">Renew \u2014 \u20B9248/34d</button><button class=\"btn-sm\" id=\"s-liccopy\">Copy machine code</button></div>";
+      h+="<div class=\"sg\" style=\"display:flex;gap:8px;flex-wrap:wrap\"><button class=\"btn-sm btn-accent\" id=\"s-licrenew\">Renew \u2014 \u20B9248/34d</button><button class=\"btn-sm\" id=\"s-liccopy\">Copy machine code</button><button class=\"btn-sm btn-danger\" id=\"s-licstop\">Stop Premium</button></div>";
     }else{
       if(LIC.reason==="expired"){
         h+="<div class=\"sg\"><div class=\"lbl\">Status</div><div class=\"desc\" style=\"font-weight:600;color:#c62828\">\u2716 Premium expired \u2014 pay \u20B9248 once to renew for 34 more days. No auto-renew \u2014 that's why this popup exists.</div></div>";
@@ -3865,6 +3875,7 @@ function bindSettingsEvents(id){
       var renew=$("s-licrenew");if(renew)renew.addEventListener("click",function(){openOobBuy(LIC.machine);});
       var buylink=$("s-licbuylink");if(buylink)buylink.addEventListener("click",function(e){e.preventDefault();openOobBuy(LIC.machine);});
       var ccm=$("s-liccopy");if(ccm)ccm.addEventListener("click",function(){copyText(LIC.machine);toast("Machine code copied");});
+      var stp=$("s-licstop");if(stp)stp.addEventListener("click",function(){showConfirmModal(function(){stopPremium();},{title:"Stop Premium?",desc:"This ends Premium on this machine immediately. No refund is issued. You can buy again any time."});});
     }else if(id==="reset"){
       function doResetSettings(){settings={setupDone:"1",searchEngine:"kastravasearch",accent:"#4fc3f7",fontSize:"12",reduceAnimations:"off",hwAcc:"on",dnt:"on",tracking:"strict",suggest:"off",bookmarkBar:"auto",startup:"last",confirmClose:"off",historyEnabled:"on",bookmarksEnabled:"on",cookies:"off",location:"block",zoom:"100",uiRadius:"medium",speedDial:"comfortable",showHomeBtn:"off",showCopyBtn:"on",showNtpClock:"on",showNtpLogo:"on",tabLayout:"horizontal",vtabsCollapsed:"off",shortcuts:{},maxSuggestions:"8",launchMaximized:"off",sendReferrer:"off",cursorFx:"off",cursorFxMode:"color",cursorFxColor:"#4fc3f7",cursorFxForce:"medium",cursorFxSize:"medium",blobFx:"off",blobColor:"#2f6fed",blobCount:"3",blobSize:"medium",blobOpacity:"0.6",blobShape:"circle",glassFx:"off",glassColor:"#3b82f6",glassShape:"sphere",glassSize:"medium",glassOpacity:"0.5",particleFx:"off",particleColor:"#3b82f6",particleSize:"medium",particleDensity:"medium",clickSparkFx:"off",clickSparkColor:"#ffffff",clickSparkSize:"medium",clickSparkCount:"8",clickSparkDuration:"400",pixelTrailFx:"off",pixelTrailColor:"#ffffff",pixelTrailGrid:"medium",pixelTrailTrail:"medium",ribbonsFx:"off",ribbonsColor:"#2f6fed",ribbonsThickness:"medium",ribbonsPoints:"50",cursorStyle:"system",cursorStyleColor:"#ffffff"};if(api&&api.setSetting){Object.keys(settings).forEach(function(k){api.setSetting(k,settings[k]);});}document.documentElement.style.cssText="";applyFontSize("12");applyReduceAnim("off");applyUiRadius("medium");applySpeedDial("comfortable");applyHomeBtn("off");applyCopyBtn("on");applyNtpClock("on");applyNtpLogo("on");applyTabLayout("horizontal");applyVtabsCollapsed("off");applyBookmarkBar("auto");applyHistoryEnabled("on");applyBookmarksEnabled("on");applyAllFx();toast("Settings reset.");}
       var rs=$("s-reset");if(rs)rs.addEventListener("click",function(){showConfirmModal(function(){doResetSettings();},{title:"Reset all settings?",desc:"Restore all settings to defaults. This cannot be reverted!"});});

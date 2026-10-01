@@ -275,6 +275,31 @@ async function handlePost(req, res, pathname) {
     return json(res, 200, { ok: true, key, receipt: rc.receipt, receipt_sig: rc.receipt_sig })
   }
 
+  // Stop Premium without refund: the bound machine ends its own license.
+  // No money moves (Razorpay is never touched). Cancelled keys cannot be
+  // re-activated or renewed; paying again mints a fresh key.
+  if (pathname === '/api/cancel') {
+    const key = String(body.key || '').trim().toUpperCase()
+    const machineId = String(body.machine_id || '').trim().toUpperCase()
+    if (!key || !machineId) return json(res, 400, { error: 'bad_request' })
+    const lic = store.getLicense(key)
+    if (!lic) return json(res, 404, { error: 'invalid_key', msg: 'No such license key.' })
+    if (lic.status !== 'activated' && lic.status !== 'issued') {
+      return json(res, 400, { error: 'not_active', msg: 'This license is not active.' })
+    }
+    // Fresh keys are not bound yet (binding happens at activation), so fall
+    // back to the checkout machine recorded on the order.
+    const order = store.getOrder(lic.order_id)
+    const bound = ((lic.machine_id || (order && order.machine_id)) || '').toUpperCase()
+    if (bound !== machineId) {
+      return json(res, 403, { error: 'machine_mismatch', msg: 'Only the bound machine can stop this license.' })
+    }
+    lic.status = 'cancelled'
+    lic.cancelled_at = new Date().toISOString()
+    store.save()
+    return json(res, 200, { ok: true, key })
+  }
+
   if (pathname === '/api/admin/issue') {
     if (!adminOk(req)) return json(res, 401, { error: 'unauthorized' })
     const machine = String(body.machine_id || '').trim().toUpperCase() || null
@@ -310,6 +335,9 @@ async function handlePost(req, res, pathname) {
     if (!lic) return json(res, 404, { error: 'invalid_key', msg: 'No such license key.' })
     if (lic.status === 'revoked') {
       return json(res, 403, { error: 'license_revoked', msg: 'This license was revoked. Contact support.' })
+    }
+    if (lic.status === 'cancelled') {
+      return json(res, 403, { error: 'license_cancelled', msg: 'This license was cancelled. Buy again to restart Premium.' })
     }
     if (lic.status === 'activated' && lic.machine_id !== machineId) {
       return json(res, 403, { error: 'machine_mismatch', msg: 'This key is already activated on another machine.' })
