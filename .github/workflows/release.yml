@@ -58,6 +58,7 @@ jobs:
             release/*.msix
             release/*.appx
             release/latest.yml
+            release/*.blockmap
           if-no-files-found: error
 
   linux:
@@ -93,6 +94,8 @@ jobs:
             release/*.rpm
             release/*.AppImage
             release/kastrava-*.pkg.tar.zst
+            release/latest-linux.yml
+            release/*.blockmap
           if-no-files-found: error
 
   android:

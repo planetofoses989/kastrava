@@ -393,16 +393,23 @@ function initElectronUpdater() {
     updater.on('error', (e) => {
       try { console.error('[update] error', String((e && e.message) || e)) } catch {}
     })
-    updater.on('update-downloaded', () => {
+    updater.on('update-downloaded', (event, info) => {
       try {
         if (!mainWindow || mainWindow.isDestroyed()) {
           try { updater.quitAndInstall(false, true) } catch {}
           return
         }
+        let notes = ''
+        try {
+          const rn = info && info.releaseNotes
+          const raw = Array.isArray(rn) ? rn.map((n) => (n && n.note) || '').join('\n') : String(rn || '')
+          notes = raw.replace(/\r/g, '').trim().slice(0, 500)
+        } catch {}
         dialog.showMessageBox(mainWindow, {
           type: 'info',
           title: 'Kastrava update ready',
-          message: 'A new Kastrava version downloaded. Restart now to apply it?',
+          message: 'Kastrava ' + ((info && info.version) || 'new version') + ' downloaded.'
+            + (notes ? '\n\n' + notes : '') + '\n\nRestart now to apply it?',
           buttons: ['Restart now', 'On next quit'],
           defaultId: 0,
           cancelId: 1
@@ -481,20 +488,32 @@ async function linuxUpdateCheck(manual) {
     const asset = sysPkgAsset(type, rel.assets)
     if (!asset || !asset.browser_download_url || !asset.size) return
     const parent = mainWindow && !mainWindow.isDestroyed() ? mainWindow : undefined
+    let notes = ''
+    try { notes = String((rel && rel.body) || '').replace(/\r/g, '').trim().slice(0, 400) } catch {}
     const { response } = await dialog.showMessageBox(parent || undefined, {
       type: 'info',
       title: 'Kastrava update ready',
-      message: 'Kastrava ' + tag + ' is available (you have ' + app.getVersion() + '). Download and install it now? System password will be asked once.',
+      message: 'Kastrava ' + tag + ' is available (you have ' + app.getVersion() + ').'
+        + (notes ? '\n\n' + notes : '')
+        + '\n\nDownload and install it now? System password will be asked once.',
       buttons: ['Update now', 'Later'],
       defaultId: 0,
       cancelId: 1
     }).catch(() => ({ response: 1 }))
     if (response !== 0) return
-    const buf = Buffer.from(await (await fetch(asset.browser_download_url, {
-      headers: { 'User-Agent': 'Kastrava' },
-      signal: AbortSignal.timeout(300000)
-    })).arrayBuffer())
-    if (!buf.length || buf.length !== asset.size) throw new Error('size mismatch')
+    let buf = null
+    for (let attempt = 1; attempt <= 2; attempt++) {
+      try {
+        const data = Buffer.from(await (await fetch(asset.browser_download_url, {
+          headers: { 'User-Agent': 'Kastrava' },
+          signal: AbortSignal.timeout(300000)
+        })).arrayBuffer())
+        if (data.length && data.length === asset.size) { buf = data; break }
+      } catch (e) {
+        if (attempt === 2) throw e
+      }
+    }
+    if (!buf) throw new Error('size mismatch')
     const file = path.join(os.tmpdir(), 'kastrava-update-' + Date.now() + sysPkgExt(type))
     fs.writeFileSync(file, buf, { mode: 0o600 })
     const args = type === 'pacman' ? ['pacman', '-U', '--noconfirm', file]
@@ -512,6 +531,24 @@ async function linuxUpdateCheck(manual) {
       await dialog.showMessageBox(parent || undefined, {
         type: 'warning', title: 'Kastrava update',
         message: 'Automatic install did not complete. Update any time with your package manager.'
+      }).catch(() => {})
+      return
+    }
+    // Confirm the new version actually landed before offering restart —
+    // a silent no-op install must never pass itself off as an update.
+    let installedOk = false
+    try {
+      const q = type === 'pacman' ? ['pacman', ['-Q', 'kastrava']]
+        : type === 'deb' ? ['dpkg-query', ['-W', '-f=${Version}', 'kastrava']]
+        : ['rpm', ['-q', '--queryformat', '%{VERSION}', 'kastrava']]
+      const out = execFileSync(q[0], q[1], { stdio: 'pipe', timeout: 15000 }).toString()
+      const m = out.match(/(\d+\.\d+\.\d+)/)
+      installedOk = !!m && cmpVer(m[1], tag) >= 0
+    } catch { installedOk = true }
+    if (!installedOk) {
+      await dialog.showMessageBox(parent || undefined, {
+        type: 'warning', title: 'Kastrava update',
+        message: 'Install reported success but version ' + tag + ' was not detected. Please update with your package manager.'
       }).catch(() => {})
       return
     }
