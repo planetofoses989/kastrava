@@ -27,6 +27,10 @@ class Prefs(context: Context) {
         get() = p.getBoolean("javascript", true)
         set(v) { p.edit().putBoolean("javascript", v).apply() }
 
+    var textZoom: Int
+        get() = p.getInt("textZoom", 100).coerceIn(50, 200)
+        set(v) { p.edit().putInt("textZoom", v.coerceIn(50, 200)).apply() }
+
     companion object {
         const val KASTRA_SEARCH = "https://kastravasearch.pp.ua/search?q="
         val ENGINES = mapOf(

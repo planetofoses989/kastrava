@@ -2,6 +2,8 @@ package pp.ua.kastrava
 
 import android.os.Bundle
 import android.widget.CheckBox
+import android.widget.SeekBar
+import android.widget.TextView
 import android.widget.RadioButton
 import android.widget.RadioGroup
 import android.widget.Toast
@@ -50,6 +52,22 @@ class SettingsActivity : AppCompatActivity() {
         val cbBlockers: CheckBox = findViewById(R.id.cbBlockers)
         cbBlockers.isChecked = app.prefs.blockers
         cbBlockers.setOnCheckedChangeListener { _, v -> app.prefs.blockers = v }
+
+        val sbZoom: SeekBar = findViewById(R.id.sbTextZoom)
+        val tvZoom: TextView = findViewById(R.id.tvTextZoom)
+        sbZoom.progress = app.prefs.textZoom
+        tvZoom.text = "${app.prefs.textZoom}%"
+        sbZoom.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(sb: SeekBar, v: Int, fromUser: Boolean) {
+                if (!fromUser) return
+                app.prefs.textZoom = v
+                tvZoom.text = "${app.prefs.textZoom}%"
+            }
+            override fun onStartTrackingTouch(sb: SeekBar) {}
+            override fun onStopTrackingTouch(sb: SeekBar) {
+                Toast.makeText(this@SettingsActivity, "Applies to tabs", Toast.LENGTH_SHORT).show()
+            }
+        })
 
         val cbJs: CheckBox = findViewById(R.id.cbJs)
         cbJs.isChecked = app.prefs.javaScript

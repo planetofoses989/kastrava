@@ -6,7 +6,9 @@ import android.content.ClipboardManager
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.view.GestureDetector
 import android.view.KeyEvent
+import android.view.MotionEvent
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import android.webkit.CookieManager
@@ -101,6 +103,24 @@ class MainActivity : AppCompatActivity() {
         findViewById<ImageButton>(R.id.btnReload).setOnClickListener { currentTab()?.reload() }
         btnTabs.setOnClickListener { showTabs() }
         findViewById<ImageButton>(R.id.btnMenu).setOnClickListener { showMenu(it) }
+        val bottomBar: LinearLayout = findViewById(R.id.bottomBar)
+        val swipes = GestureDetector(this, object : GestureDetector.SimpleOnGestureListener() {
+            override fun onFling(e1: MotionEvent?, e2: MotionEvent, vx: Float, vy: Float): Boolean {
+                if (e1 == null) return false
+                val dx = e2.x - e1.x
+                if (kotlin.math.abs(dx) > 120 && kotlin.math.abs(vx) > 200 &&
+                    kotlin.math.abs(dx) > 2 * kotlin.math.abs(e2.y - e1.y)
+                ) {
+                    cycleTab(if (dx < 0) 1 else -1)
+                    return true
+                }
+                return false
+            }
+        })
+        bottomBar.setOnTouchListener { _, ev -> swipes.onTouchEvent(ev) }
+        btnTabs.setOnLongClickListener { newTab(); true }
+        findViewById<ImageButton>(R.id.btnBack).setOnLongClickListener { showHistory(backward = true); true }
+        findViewById<ImageButton>(R.id.btnForward).setOnLongClickListener { showHistory(backward = false); true }
 
         val go = { query: String -> openQuery(query); true }
         omnibox.setOnFocusChangeListener { v, focused ->
@@ -150,7 +170,10 @@ class MainActivity : AppCompatActivity() {
         super.onResume()
         refreshPremiumLine()
         // Settings (engine, JS) may have changed: apply JS flag live.
-        tabs.forEach { it.view.settings.javaScriptEnabled = app.prefs.javaScript }
+        tabs.forEach {
+            it.view.settings.javaScriptEnabled = app.prefs.javaScript
+            it.view.settings.textZoom = app.prefs.textZoom
+        }
     }
 
     // ----- tabs -----
@@ -160,6 +183,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun newTab(url: String? = null, desktopMode: Boolean = false) {
         val wv = buildWebView(this, app.prefs.javaScript)
+        wv.settings.textZoom = app.prefs.textZoom
         val tab = WebTab(wv)
         tab.defaultUa = wv.settings.userAgentString
         wv.webViewClient = KastraWebClient(app.filters, { app.prefs.blockers })
@@ -211,6 +235,39 @@ class MainActivity : AppCompatActivity() {
         updateTabCount()
         switchTo(tabs.size - 1)
         if (url != null) wv.loadUrl(url) else showHome()
+    }
+
+    private fun cycleTab(dir: Int) {
+        if (tabs.size < 2) return
+        val next = ((current + dir) % tabs.size + tabs.size) % tabs.size
+        switchTo(next)
+    }
+
+    private fun closeAllTabs() {
+        tabs.toList().indices.reversed().forEach { closeTab(it) }
+    }
+
+    private fun showHistory(backward: Boolean) {
+        val wv = currentTab() ?: return
+        val hist = try { wv.copyBackForwardList() } catch (e: Exception) { return }
+        val idx = hist.currentIndex
+        val range = if (backward) (idx - 1) downTo 0 else (idx + 1) until hist.size
+        val items = range.mapNotNull { i ->
+            try {
+                hist.getItemAtIndex(i)?.let { it.title?.takeIf { t -> t.isNotBlank() } ?: it.url }?.let { t -> t to (hist.getItemAtIndex(i)?.url ?: "") }
+            } catch (e: Exception) { null }
+        }
+        if (items.isEmpty()) {
+            Toast.makeText(this, "No history", Toast.LENGTH_SHORT).show()
+            return
+        }
+        MaterialAlertDialogBuilder(this)
+            .setTitle(if (backward) "Back" else "Forward")
+            .setItems(items.map { it.first }.toTypedArray()) { _, which ->
+                val url = items[which].second
+                if (url.isNotBlank()) currentTab()?.loadUrl(url)
+            }
+            .show()
     }
 
     private fun updateTabCount() {
@@ -306,6 +363,20 @@ class MainActivity : AppCompatActivity() {
             row.addView(close)
             if (i == current) row.setBackgroundColor(0x140288D1)
             list.addView(row)
+        }
+        if (tabs.size > 1) {
+            val closeAllRow = TextView(this).apply {
+                text = "Close all tabs"
+                textSize = 16f
+                val vpad = (14 * density).toInt()
+                setPadding(0, vpad, 0, vpad)
+                setTextColor(0xFFD32F2F.toInt())
+                isClickable = true
+                isFocusable = true
+                setBackgroundResource(selectableBackground())
+                setOnClickListener { sheet.dismiss(); closeAllTabs() }
+            }
+            list.addView(closeAllRow)
         }
         val newTabRow = TextView(this).apply {
             text = "+ New tab"
