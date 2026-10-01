@@ -299,6 +299,7 @@ footer a{color:var(--blue);text-decoration:none}
           <div class="tag" id="prem-renewed" style="display:none;margin-top:8px">RENEWAL APPLIED — re-activate in the app to refresh</div>
           <div style="font-size:13px;color:var(--muted)">Open <b>Settings → Kastrava Premium</b> in the app, paste this key, click Activate. That's it.</div>
           <a id="prem-dl" class="btn btn-primary" style="display:none;margin-top:14px;width:100%;text-align:center;padding:14px 18px">Download Premium build</a>
+          <button id="prem-receipt" class="btn btn-ghost" style="display:none;margin-top:10px;width:100%;text-align:center;padding:12px 18px;cursor:pointer">Download receipt (PDF)</button>
           <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted2);margin-top:10px">Key is bound to the first machine that activates it. Lose it? <a href="mailto:planetofoses989@gmail.com" style="color:var(--blue)">We re-issue</a>.</div>
         </div>
         <div style="margin-top:14px;padding-top:14px;border-top:1px solid rgba(255,255,255,.08)">
@@ -475,6 +476,8 @@ footer a{color:var(--blue);text-decoration:none}
   var keyout=document.getElementById('prem-keyout');
   var keyEl=document.getElementById('prem-key');
   var dlEl=document.getElementById('prem-dl');
+  var receiptBtn=document.getElementById('prem-receipt');
+  var receiptData=null;
   var renewedEl=document.getElementById('prem-renewed');
   var checker={};
 
@@ -497,11 +500,12 @@ footer a{color:var(--blue);text-decoration:none}
     buyBtn.disabled=on;
     buyBtn.textContent=on?'Contacting store…':'Pay $2.59 with Razorpay — 34 days';
   }
-  function showKey(key,renewed){
+  function showKey(key,renewed,receipt){
     if(keyEl)keyEl.textContent=key;
     if(keyout)keyout.style.display='block';
     if(machineInput){machineInput.value=machineInput.value?(renewed?'(machine code sent — same key extended)':'(machine code sent with purchase)'):machineInput.value;}
     if(dlEl){dlEl.href=KAS_API+'/api/dl/'+encodeURIComponent(key);dlEl.style.display='block';}
+    if(receipt){receiptData=receipt;if(receiptBtn)receiptBtn.style.display='block';}
     if(renewedEl){renewedEl.style.display=renewed?'block':'none';}
     buyBtn.style.display='none';
   }
@@ -551,7 +555,7 @@ footer a{color:var(--blue);text-decoration:none}
           body:JSON.stringify({order_id:res.razorpay_order_id,payment_id:res.razorpay_payment_id,signature:res.razorpay_signature,machine_id:machineValue()})})
         .then(function(r){return r.json();})
         .then(function(v){
-          if(v.ok&&v.key){showKey(v.key,!!v.renewed);setBusy(false);}
+          if(v.ok&&v.key){showKey(v.key,!!v.renewed,{order_id:o.order_id,payment_id:res.razorpay_payment_id,amount:o.amount,currency:o.currency});setBusy(false);}
           else fail((v&&v.msg)||'Payment could not be verified.');
         })
         .catch(function(){fail('Could not verify payment — your payment may still have gone through. Email the payment ID to planetofoses989@gmail.com');});
@@ -595,6 +599,70 @@ footer a{color:var(--blue);text-decoration:none}
     s.onerror=function(){window.__razorpayLoaded=true;fail('Could not load Razorpay. Try again.');setBusy(false);};
     document.head.appendChild(s);
   }
+
+  // PDF receipt, generated locally the moment payment verifies. The PDF is
+  // flat content (no form fields, nothing fillable). Note: jsPDF built-in
+  // fonts are WinAnsi-only, so rupee signs and fancy punctuation are mapped
+  // to ASCII — amounts print as "INR 248.00".
+  function receiptText(t){
+    return String(t==null?'':t)
+      .replace(/[\u20B9]/g,'Rs.').replace(/[\u2014\u2013]/g,'-').replace(/[\u2018\u2019]/g,"'").replace(/[\u201C\u201D]/g,'"')
+      .replace(/[^\x20-\x7E\n]/g,'?');
+  }
+  function loadJsPdf(cb){
+    if(window.jspdf&&window.jspdf.jsPDF)return cb();
+    if(window.__jspdfLoading){var t=setInterval(function(){if(window.jspdf&&window.jspdf.jsPDF){clearInterval(t);cb();}},150);return;}
+    window.__jspdfLoading=true;
+    var s=document.createElement('script');
+    s.src='https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+    s.onload=function(){window.__jspdfLoading=false;cb();};
+    s.onerror=function(){window.__jspdfLoading=false;alert('Could not load the receipt generator. Try again.');};
+    document.head.appendChild(s);
+  }
+  function buildReceipt(){
+    var d=receiptData||{};
+    var now=new Date();
+    var amt=(d.amount!=null&&d.currency==='INR')?('INR '+(d.amount/100).toFixed(2)):receiptText(d.currency||'INR')+' '+receiptText(d.amount==null?'':d.amount);
+    var doc=new window.jspdf.jsPDF({unit:'pt',format:'a4'});
+    var x=56,y=72;
+    doc.setFont('helvetica','bold');doc.setFontSize(20);
+    doc.text(receiptText('Kastrava Premium - Payment Receipt'),x,y);y+=16;
+    doc.setFont('helvetica','normal');doc.setFontSize(11);
+    doc.text(receiptText('Kastrasoft - planetofoses989@gmail.com'),x,y);y+=30;
+    doc.setFont('courier','normal');doc.setFontSize(11);
+    var rows=[
+      ['Date',now.toLocaleString()],
+      ['Plan','Premium - 34 days, one machine, no auto-renew'],
+      ['Order ID',d.order_id||'-'],
+      ['Payment ID',d.payment_id||'-'],
+      ['License key',keyEl?keyEl.textContent:'-'],
+      ['Machine code',machineValue()||'-'],
+      ['Amount charged',amt]
+    ];
+    rows.forEach(function(r){
+      doc.setFont('helvetica','bold');doc.text(receiptText(r[0]+':'),x,y);
+      doc.setFont('courier','normal');
+      var lines=doc.splitTextToSize(receiptText(r[1]),468);
+      doc.text(lines,x+130,y);y+=lines.length*14+6;
+    });
+    y+=10;
+    doc.setFont('helvetica','normal');doc.setFontSize(10);
+    doc.text(receiptText('One license, one machine. The key above is bound to the machine code shown.'),x,y);y+=14;
+    doc.text(receiptText('Support: planetofoses989@gmail.com - keep this receipt with your key.'),x,y);
+    var oid=receiptText(d.order_id||'receipt').replace(/[^A-Za-z0-9_-]/g,'');
+    doc.save('kastrava-receipt-'+oid+'.pdf');
+  }
+  if(receiptBtn)receiptBtn.addEventListener('click',function(){
+    if(!receiptData){alert('No payment details for a receipt yet.');return;}
+    receiptBtn.disabled=true;
+    loadJsPdf(function(){
+      receiptBtn.disabled=false;
+      try{
+        if(!(window.jspdf&&window.jspdf.jsPDF)){alert('Receipt generator unavailable.');return;}
+        buildReceipt();
+      }catch(e){alert('Could not build the receipt.');}
+    });
+  });
 })();
 </script>
 </body>
