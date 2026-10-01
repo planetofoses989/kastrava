@@ -10,7 +10,6 @@
 //   GRACE_DAYS            days past expiry before access is revoked, default 3
 //   RAZORPAY_WEBHOOK_SECRET  secret for /api/webhook signature verification
 //   LICENSE_YEARS         legacy fallback for old one-time keys, default 10
-//   PREMIUM_BUILD         filesystem path to the premium install package served after payment
 //   DATA_DIR              store location, default ../data
 const http = require('http')
 const fs = require('fs')
@@ -28,7 +27,6 @@ const PRICE_INR = parseInt(process.env.PRICE_INR || '248', 10)
 const PERIOD_DAYS = parseInt(process.env.PERIOD_DAYS || '34', 10)
 const GRACE_DAYS = parseInt(process.env.GRACE_DAYS || '3', 10)
 const LICENSE_YEARS = parseInt(process.env.LICENSE_YEARS || '10', 10)
-const PREMIUM_BUILD = process.env.PREMIUM_BUILD || ''
 const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, 'data')
 const ADMIN_TOKEN = process.env.ADMIN_TOKEN || ''
 const SITE_DIR = path.join(__dirname, '..', 'site')
@@ -153,24 +151,6 @@ function serveStatic(req, res, pathname) {
       'X-Content-Type-Options': 'nosniff'
     })
     fs.createReadStream(p).pipe(res)
-  })
-}
-
-function servePremium(res, key) {
-  const lic = store.getLicense(key)
-  if (!lic || (lic.status !== 'issued' && lic.status !== 'activated')) {
-    return json(res, 403, { error: 'invalid_key', msg: 'Valid paid key required.' })
-  }
-  if (!PREMIUM_BUILD) return json(res, 404, { error: 'no_artifact', msg: 'Premium build not configured on this server yet.' })
-  const file = path.resolve(PREMIUM_BUILD)
-  fs.stat(file, (err, st) => {
-    if (err || !st.isFile()) return json(res, 404, { error: 'no_artifact', msg: 'Premium build file missing.' })
-    res.writeHead(200, {
-      'Content-Type': MIME[path.extname(file).toLowerCase()] || 'application/octet-stream',
-      'Content-Length': st.size,
-      'Content-Disposition': 'attachment; filename="' + path.basename(file) + '"'
-    })
-    fs.createReadStream(file).pipe(res)
   })
 }
 
@@ -387,8 +367,6 @@ const server = http.createServer((req, res) => {
     if (pathname === '/api/health') {
       return json(res, 200, { ok: true, dev: razorpay.isDev(), host: HOST, price: PRICE_INR, period_days: PERIOD_DAYS, grace_days: GRACE_DAYS, version: '101.2.0', codename: 'Starship Wonders' })
     }
-    const dl = pathname.match(/^\/api\/dl\/(.+)$/)
-    if (dl) return servePremium(res, decodeURIComponent(dl[1]))
     if (pathname === '/api/admin/list') {
       if (!adminOk(req)) return json(res, 401, { error: 'unauthorized' })
       return json(res, 200, store.all())
@@ -402,5 +380,4 @@ const server = http.createServer((req, res) => {
 server.listen(port, BIND_HOST, () => {
   console.log('[kastrava-licenses] listening on http://' + BIND_HOST + ':' + port)
   console.log('[kastrava-licenses] host=' + HOST + ' price=INR ' + PRICE_INR + '/' + PERIOD_DAYS + 'd one-time grace=' + GRACE_DAYS + 'd dev=' + razorpay.isDev())
-  console.log('[kastrava-licenses] premium_build=' + (PREMIUM_BUILD || '(not configured — set PREMIUM_BUILD)'))
 })

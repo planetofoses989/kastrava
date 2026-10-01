@@ -12,7 +12,7 @@ Target state after this runbook:
 - `curl https://nexufog.pp.ua/api/health` → `{"dev":false,"price":248,"period_days":34,"grace_days":3,…}`
 - A real ₹248 purchase mints a 34-day license, activation binds it to the first
   machine, a second ₹248 payment with the same machine code **extends the same
-  key**, and `/api/dl/<key>` serves the premium installer.
+  key**.
 
 ---
 
@@ -127,7 +127,6 @@ sudo systemctl status kastrava-license      # active (running)
      picks it up on next startup/re-activate.
    - **Machine lock**: the key must refuse to activate on a second machine
      (`machine_mismatch`).
-   - **Download**: `https://nexufog.pp.ua/api/dl/<key>` serves
      `kastrava_101.2.0_amd64.deb`.
 
 5. **Optional store cleanup** — if you want zero test artifacts mixed with
@@ -155,7 +154,6 @@ so reverting is safe at any time.
 - **Optional hardening backlog** (offered, not requested): record
   `payment.failed` orders + an order-status recovery endpoint, so an edge-case
   payment that Razorpay marks failed after capture can be reconciled.
-- `HEAD` on `/api/dl` returns 405 (route is GET-only) — cosmetic; browsers use
   GET.
 - electron-builder advisory: `desktopName` not set in package.json (cosmetic
   WM_CLASS/window association) — optional one-liner in the next build.
