@@ -674,7 +674,7 @@ class MainActivity : AppCompatActivity() {
                 Toast.makeText(this, "Not supported on this device", Toast.LENGTH_SHORT).show()
                 return
             }
-            if (rm.isRoleHeldByApp(android.app.role.RoleManager.ROLE_BROWSER)) {
+            if (rm.isRoleHeld(android.app.role.RoleManager.ROLE_BROWSER)) {
                 Toast.makeText(this, "Already the default browser", Toast.LENGTH_SHORT).show()
                 return
             }
