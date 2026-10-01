@@ -495,13 +495,95 @@ footer a{color:var(--blue);text-decoration:none}
     if(keyEl)keyEl.textContent=key;
     if(keyout)keyout.style.display='block';
     if(machineInput){machineInput.value=machineInput.value?(renewed?'(machine code sent — same key extended)':'(machine code sent with purchase)'):machineInput.value;}
-    if(receipt){receiptData=receipt;if(receiptBtn)receiptBtn.style.display='block';}
+    if(receipt){receiptData=receipt;if(receiptBtn)receiptBtn.style.display='block';
+      // Auto-download the PDF immediately (jsPDF was preloaded at Pay time);
+      // the button stays as a fallback if the browser blocks the auto-save.
+      try{
+        loadJsPdf(function(){
+          try{if(window.jspdf&&window.jspdf.jsPDF)buildReceipt();}catch(e){}
+        });
+      }catch(e){}
+    }
     if(renewedEl){renewedEl.style.display=renewed?'block':'none';}
     buyBtn.style.display='none';
   }
   function fail(msg){alert(msg||'Something went wrong. Please try again.');setBusy(false);}
 
   function machineValue(){return machineInput&&machineInput.value?machineInput.value.trim():'';}
+
+  // Preload the receipt lib the moment the buyer clicks Pay, so the PDF
+  // can save straight after verification (closer to the user gesture =
+  // less chance the browser blocks the programmatic download).
+  function primeReceiptLib(){try{loadJsPdf(function(){});}catch(e){}}
+
+  function openRazorpay(o){
+    if(!window.Razorpay){
+      fail('Razorpay checkout failed to load. Refresh and try again.');
+      return;
+    }
+    primeReceiptLib();
+    var opts={
+      key:o.key_id,
+      amount:o.amount,
+      currency:o.currency,
+      order_id:o.order_id,
+      name:'Kastrava Premium',
+      description:'One-time $2.59 - 34 days - one machine - no auto-renew',
+      prefill:{name:'',email:''},
+      theme:{color:document.documentElement.getAttribute('data-theme')==='dark'?'#f3eee4':'#16130e'},
+      handler:function(res){
+        setBusy(true);
+        var mach=machineValue();
+        fetch(KAS_API+'/api/verify',{method:'POST',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({order_id:res.razorpay_order_id,payment_id:res.razorpay_payment_id,signature:res.razorpay_signature,machine_id:mach})})
+        .then(function(r){return r.json();})
+        .then(function(v){
+          if(v.ok&&v.key){showKey(v.key,!!v.renewed,{order_id:res.razorpay_order_id,payment_id:res.razorpay_payment_id,amount:o.amount,currency:o.currency,machine_id:mach});setBusy(false);}
+          else fail((v&&v.msg)||'Payment could not be verified.');
+        })
+        .catch(function(){fail('Could not verify payment - your payment may still have gone through. Email the payment ID to planetofoses989@gmail.com');});
+      },
+      modal:{ondismiss:function(){setBusy(false);}}
+    };
+    var rzp=new Razorpay(opts);
+    checker.rzp=rzp;
+    rzp.on('payment.failed',function(){setBusy(false);alert('Payment failed. No charge was made.');});
+    rzp.open();
+  }
+
+  if(buyBtn)buyBtn.addEventListener('click',function(){
+    setBusy(true);
+    primeReceiptLib();
+    fetch(KAS_API+'/api/order',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({machine_id:machineValue()})})
+    .then(function(r){return r.json();})
+    .then(function(o){
+      if(!o||!o.order_id)throw new Error(o&&o.msg||'no order');
+      if(o.dev){
+        // Dev mode (no Razorpay keys configured): simulate the paid callback.
+        var mach=machineValue();
+        fetch(KAS_API+'/api/verify',{method:'POST',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({order_id:o.order_id,payment_id:'pay_dev_'+Date.now(),signature:'dev',machine_id:mach})})
+        .then(function(r){return r.json();})
+        .then(function(v){if(v.ok&&v.key){showKey(v.key,!!v.renewed,{order_id:o.order_id,payment_id:'pay_dev',amount:o.amount,currency:o.currency,machine_id:mach});}setBusy(false);})
+        .catch(function(){fail('Dev checkout failed.');});
+        return;
+      }
+      if(!window.__razorpayLoaded){loadRazorpay(function(){openRazorpay(o);});}
+      else openRazorpay(o);
+    })
+    .catch(function(e){fail(e&&e.message);});
+  });
+
+  function loadRazorpay(cb){
+    if(window.__razorpayLoading){var t=checker.t||null;checker.t=setInterval(function(){if(window.__razorpayLoaded){clearInterval(t);cb();}},150);return;}
+    window.__razorpayLoading=true;
+    var s=document.createElement('script');
+    s.src='https://checkout.razorpay.com/v1/checkout.js';
+    s.onload=function(){window.__razorpayLoaded=true;cb();};
+    s.onerror=function(){window.__razorpayLoaded=true;fail('Could not load Razorpay. Try again.');setBusy(false);};
+    document.head.appendChild(s);
+  }
 
   // PDF receipt, generated locally the moment payment verifies. The PDF is
   // flat content (no form fields, nothing fillable). Note: jsPDF built-in
@@ -539,7 +621,7 @@ footer a{color:var(--blue);text-decoration:none}
       ['Order ID',d.order_id||'-'],
       ['Payment ID',d.payment_id||'-'],
       ['License key',keyEl?keyEl.textContent:'-'],
-      ['Machine code',machineValue()||'-'],
+      ['Machine code',(d.machine_id||machineValue())||'-'],
       ['Amount charged',amt]
     ];
     rows.forEach(function(r){
