@@ -8,7 +8,6 @@ import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
 import java.security.KeyFactory
-import java.security.Security
 import java.security.Signature
 import java.security.spec.X509EncodedKeySpec
 
@@ -97,16 +96,38 @@ class LicenseManager(private val context: Context) {
     }
 
     fun verifySignature(payload: JSONObject, sigB64: String): Boolean {
-        return try {
-            if (Security.getProvider("BC") == null)
-                Security.addProvider(BouncyCastleProvider())
-            val keyBytes = Base64.decode(PUBLIC_KEY_B64, Base64.DEFAULT)
-            val pub = KeyFactory.getInstance("Ed25519", "BC")
+        val msg = canonicalPayloadBytes(payload)
+        val sigBytes = try {
+            Base64.decode(sigB64, Base64.DEFAULT)
+        } catch (e: Exception) {
+            return false
+        }
+        val keyBytes = try {
+            Base64.decode(PUBLIC_KEY_B64, Base64.DEFAULT)
+        } catch (e: Exception) {
+            return false
+        }
+        // Never look Ed25519 up by the "BC" provider *name*: Android already
+        // registers its own stripped platform provider under "BC" (no
+        // Ed25519), so a name lookup silently hit the platform provider and
+        // every activation failed. Pass our bundled provider by instance.
+        try {
+            val bc = BouncyCastleProvider()
+            val pub = KeyFactory.getInstance("Ed25519", bc)
                 .generatePublic(X509EncodedKeySpec(keyBytes))
-            val sig = Signature.getInstance("Ed25519", "BC")
+            val sig = Signature.getInstance("Ed25519", bc)
             sig.initVerify(pub)
-            sig.update(canonicalPayloadBytes(payload))
-            sig.verify(Base64.decode(sigB64, Base64.DEFAULT))
+            sig.update(msg)
+            if (sig.verify(sigBytes)) return true
+        } catch (e: Exception) { }
+        // Platform fallback (API 33+ ships Ed25519).
+        return try {
+            val pub = KeyFactory.getInstance("Ed25519")
+                .generatePublic(X509EncodedKeySpec(keyBytes))
+            val sig = Signature.getInstance("Ed25519")
+            sig.initVerify(pub)
+            sig.update(msg)
+            sig.verify(sigBytes)
         } catch (e: Exception) {
             false
         }
@@ -186,7 +207,7 @@ class LicenseManager(private val context: Context) {
                 ?: return "Empty activation response."
             val payload = lic.getJSONObject("payload")
             val sig = lic.getString("sig")
-            if (!verifySignature(payload, sig)) return "Server signature invalid."
+            if (!verifySignature(payload, sig)) return "License check failed on this device. Update Kastrava to the latest version and retry — if it persists, send your machine code to support."
             if (!payload.optString("mid").equals(machine, ignoreCase = true))
                 return "License is bound to a different device."
             prefs.edit()

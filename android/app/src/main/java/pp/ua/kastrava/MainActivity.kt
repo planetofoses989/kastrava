@@ -374,12 +374,14 @@ class MainActivity : AppCompatActivity() {
                 text = title
                 textSize = 15f
                 maxLines = 1
+                setTextColor(getColor(R.color.chrome_text))
                 setTypeface(typeface, android.graphics.Typeface.BOLD)
             })
             texts.addView(TextView(this).apply {
                 text = wv.url ?: ""
                 textSize = 12f
                 maxLines = 1
+                setTextColor(getColor(R.color.chrome_hint))
             })
             row.addView(texts)
             val close = ImageButton(this).apply {
@@ -389,7 +391,7 @@ class MainActivity : AppCompatActivity() {
                 setOnClickListener { closeTab(i); sheet.dismiss(); if (tabs.isNotEmpty()) showTabs() }
             }
             row.addView(close)
-            if (i == current) row.setBackgroundColor(0x140288D1)
+            if (i == current) row.setBackgroundColor(getColor(R.color.chrome_pill))
             list.addView(row)
         }
         if (tabs.size > 1) {
@@ -411,7 +413,7 @@ class MainActivity : AppCompatActivity() {
             textSize = 16f
             val vpad = (14 * density).toInt()
             setPadding(0, vpad, 0, vpad)
-            setTextColor(0xFF0288D1.toInt())
+            setTextColor(getColor(R.color.kas_blue))
             setOnClickListener { sheet.dismiss(); newTab() }
         }
         list.addView(newTabRow)
@@ -479,6 +481,7 @@ class MainActivity : AppCompatActivity() {
                 text = label
                 textSize = 11f
                 maxLines = 1
+                setTextColor(getColor(R.color.chrome_text))
                 setPadding(0, (6 * density).toInt(), 0, 0)
             })
             setOnClickListener { onClick() }
@@ -510,15 +513,15 @@ class MainActivity : AppCompatActivity() {
         }
         val favTile = android.widget.FrameLayout(this).apply {
             layoutParams = LinearLayout.LayoutParams((48 * density).toInt(), (48 * density).toInt())
-            background = null
+            background = getDrawable(R.drawable.dot_bg)
             addView(TextView(this@MainActivity).apply {
                 layoutParams = android.widget.FrameLayout.LayoutParams(
                     android.widget.FrameLayout.LayoutParams.MATCH_PARENT,
                     android.widget.FrameLayout.LayoutParams.MATCH_PARENT,
                 )
-                background = null
                 gravity = android.view.Gravity.CENTER
                 textSize = 20f
+                setTextColor(getColor(R.color.chrome_text))
                 text = (wv?.title?.trim()?.firstOrNull()?.uppercase() ?: "K")
             })
         }
@@ -545,12 +548,14 @@ class MainActivity : AppCompatActivity() {
             text = wv?.title?.takeIf { it.isNotBlank() } ?: "Kastrava"
             textSize = 16f
             maxLines = 1
+            setTextColor(getColor(R.color.chrome_text))
             setTypeface(typeface, android.graphics.Typeface.BOLD)
         })
         titleBox.addView(TextView(this).apply {
             text = wv?.url ?: "kastrava.pp.ua"
             textSize = 12f
             maxLines = 1
+            setTextColor(getColor(R.color.chrome_hint))
         })
         header.addView(titleBox)
         header.addView(ImageButton(this).apply {
@@ -568,7 +573,7 @@ class MainActivity : AppCompatActivity() {
                 topMargin = (14 * density).toInt()
                 bottomMargin = (6 * density).toInt()
             }
-            setBackgroundColor(0x1A000000)
+            setBackgroundColor(getColor(R.color.chrome_divider))
         })
         // top row: New tab | Bookmarks | Downloads | Share | Settings
         val row1 = LinearLayout(this).apply {
@@ -621,7 +626,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun showAbout() {
         MaterialAlertDialogBuilder(this)
-            .setTitle("Kastrava 101.0.0")
+            .setTitle("Kastrava " + BuildConfig.VERSION_NAME)
             .setMessage(
                 "Private browser · zero telemetry.\n" +
                     "Website data lives in memory and is wiped on exit.\n" +

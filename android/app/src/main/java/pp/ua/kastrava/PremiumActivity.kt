@@ -1,11 +1,15 @@
 package pp.ua.kastrava
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.widget.Button
 import android.widget.EditText
 import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 
 class PremiumActivity : AppCompatActivity() {
@@ -24,6 +28,11 @@ class PremiumActivity : AppCompatActivity() {
         val stop: Button = findViewById(R.id.premStop)
 
         machine.text = app.license.machineCode()
+        machine.setOnClickListener {
+            val cm = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+            cm.setPrimaryClip(ClipData.newPlainText("machine", machine.text.toString()))
+            Toast.makeText(this, "Machine code copied", Toast.LENGTH_SHORT).show()
+        }
 
         fun refresh() {
             val st = app.license.status()
