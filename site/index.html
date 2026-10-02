@@ -300,7 +300,7 @@ footer a{color:var(--blue);text-decoration:none}
           <div class="tag" id="prem-renewed" style="display:none;margin-top:8px">RENEWAL APPLIED — re-activate in the app to refresh</div>
           <div style="font-size:13px;color:var(--muted)">Open <b>Settings → Kastrava Premium</b> in the app, paste this key, click Activate. That's it.</div>
           <button id="prem-receipt" class="btn btn-ghost" style="margin-top:10px;width:100%;text-align:center;padding:12px 18px;cursor:pointer">Download receipt (PDF)</button>
-          <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted2);margin-top:10px">Key is bound to the first machine that activates it. Lose it? <a href="mailto:planetofoses989@gmail.com" style="color:var(--blue)">We re-issue</a>.</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted2);margin-top:10px">Key is bound to the first machine that activates it. Lose it? <a href="mailto:khannatejas989@gmail.com" style="color:var(--blue)">We re-issue</a>.</div>
         </div>
         <div class="prem-note">Secure checkout via Razorpay. UPI / cards / netbanking. <b>One-time $2.59 — no recurring mandate needed</b>. Instantly verified, key issued on this page.</div>
       </div>
@@ -427,7 +427,7 @@ footer a{color:var(--blue);text-decoration:none}
       <details><summary>Is the core really free? What's the catch?</summary><p>Free forever, no accounts, no telemetry to monetize. Premium ($2.59 / 34 days, no auto-renew) is a one-time payment per cycle that powers development — but everything below is free: session isolation (website data never touches disk), blockers, tracking protection, downloads, Reader Mode, default keyboard shortcuts, KastravaSearch + DuckDuckGo, themes 1 light + 1 dark.</p></details>
       <details><summary>What does Premium actually unlock?</summary><p>Tracking Radar (live per-tab privacy score), the full Cursor FX suite (all 8 effects + custom arrow), Workspaces, Split View, all 20 themes, extra search engines (Brave, Google, Ecosia), Picture-in-Picture, Screenshot, the Localhost Dashboard, bookmark import/export, vertical tabs, and custom shortcut remapping. One license, one machine. No auto-renew — the app reminds you when it's time to renew.</p></details>
       <details><summary>Why is it bound to one machine?</summary><p>Each license key is cryptographically signed to the machine code of the PC that activates it. That's the whole "one copy, one owner" idea — you can't share one purchase across machines. Hardware changes break it on purpose. Same-PC Linux reinstalls keep working.</p></details>
-      <details><summary>I changed PCs / lost my key. What now?</summary><p>Email <a href="mailto:planetofoses989@gmail.com" style="color:var(--blue)">planetofoses989@gmail.com</a> with your order payment ID. We verify and re-issue / unbind your key. We'd rather re-key you than argue.</p></details>
+      <details><summary>I changed PCs / lost my key. What now?</summary><p>Email <a href="mailto:khannatejas989@gmail.com" style="color:var(--blue)">khannatejas989@gmail.com</a> with your order payment ID. We verify and re-issue / unbind your key. We'd rather re-key you than argue.</p></details>
       <details><summary>Does activation phone home my browsing data?</summary><p>No. Activation sends only a one-way hash of your hardware identifiers (a machine code) plus your license key — once. No history, no pages, no keystrokes, nothing you browse ever leaves the machine. And once activated, the app works even fully offline.</p></details>
       <details><summary>Why does it say Beta?</summary><p>Because it is. Kastrava (originally AnterSurf) is under active development — features land fast and rough edges exist. The privacy guarantees above are already enforced.</p></details>
       <details><summary>Which platforms are supported?</summary><p>Linux (Arch, Debian/Ubuntu, AppImage, Fedora/RHEL rpm), Windows (installer + portable, plus the Microsoft Store build) and Android (direct APK sideload; Play Store listing in progress). macOS builds are discontinued.</p></details>
@@ -450,7 +450,7 @@ footer a{color:var(--blue);text-decoration:none}
       </div>
       <div>
         <p style="font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:700;color:var(--ink)">Support</p>
-        <p style="margin-top:6px"><a href="mailto:planetofoses989@gmail.com">planetofoses989@gmail.com</a></p>
+        <p style="margin-top:6px"><a href="mailto:khannatejas989@gmail.com">khannatejas989@gmail.com</a></p>
       </div>
     </div>
   </div>
@@ -568,7 +568,7 @@ footer a{color:var(--blue);text-decoration:none}
           if(v.ok&&v.key){showKey(v.key,!!v.renewed,{order_id:res.razorpay_order_id,payment_id:res.razorpay_payment_id,amount:o.amount,currency:o.currency,machine_id:mach,server_receipt:v.receipt||null,receipt_sig:v.receipt_sig||null});setBusy(false);}
           else fail((v&&v.msg)||'Payment could not be verified.');
         })
-        .catch(function(){fail('Could not verify payment - your payment may still have gone through. Email the payment ID to planetofoses989@gmail.com');});
+        .catch(function(){fail('Could not verify payment - your payment may still have gone through. Email the payment ID to khannatejas989@gmail.com');});
       },
       modal:{ondismiss:function(){setBusy(false);}}
     };
@@ -641,7 +641,7 @@ footer a{color:var(--blue);text-decoration:none}
     doc.setFont('helvetica','bold');doc.setFontSize(20);
     doc.text(receiptText('Kastrava Premium - Payment Receipt'),x,y);y+=16;
     doc.setFont('helvetica','normal');doc.setFontSize(11);
-    doc.text(receiptText('Kastrasoft - planetofoses989@gmail.com'),x,y);y+=30;
+    doc.text(receiptText('Kastrasoft - khannatejas989@gmail.com'),x,y);y+=30;
     doc.setFont('courier','normal');doc.setFontSize(11);
     var rows=[
       ['Date',now.toLocaleString()],
@@ -663,7 +663,7 @@ footer a{color:var(--blue);text-decoration:none}
     y+=10;
     doc.setFont('helvetica','normal');doc.setFontSize(10);
     doc.text(receiptText('One license, one machine. The key above is bound to the machine code shown.'),x,y);y+=14;
-    doc.text(receiptText('Support: planetofoses989@gmail.com - keep this receipt with your key.'),x,y);y+=20;
+    doc.text(receiptText('Support: khannatejas989@gmail.com - keep this receipt with your key.'),x,y);y+=20;
     if(sr&&d.receipt_sig){
       doc.setFont('helvetica','bold');doc.setFontSize(11);
       doc.text('Receipt signature (Ed25519 - verifiable):',x,y);y+=14;
