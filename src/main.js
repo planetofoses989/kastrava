@@ -5,6 +5,7 @@ const os = require('os')
 const { execFileSync, spawn } = require('child_process')
 const backend = require('./backend')
 const license = require('./license')
+const privacy = require('./privacy')
 
 // Serve the browser UI over kastrava:// instead of file:// so no
 // filesystem paths leak (e.g. in DevTools titles) and the shell has a
@@ -247,6 +248,9 @@ function createWindow() {
   })
 
   mainWindow.loadURL('kastrava://app/browser.html')
+  // privacy.js skips the shell window via this handle when injecting page
+  // spoofs (canvas noise must never touch our own UI).
+  global.mainWindow = mainWindow
 
 function sendShortcut(action) {
   try { if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send('menu-shortcut', action) } catch {}
@@ -585,8 +589,20 @@ app.whenReady().then(async () => {
   initBackend()
   wipeLegacyWebData()
   initAutoUpdate()
+  // Strip the Electron token from the User-Agent on every session the app
+  // uses. Without this, HTTP headers and navigator.userAgent fingerprint
+  // the app as Electron on every request.
+  try {
+    const { session } = require('electron')
+    privacy.applyUserAgent(session.fromPartition('kastrava'))
+    privacy.applyUserAgent(session.fromPartition('kastrava-shell'))
+    privacy.applyUserAgent(session.defaultSession)
+  } catch {}
 
   app.on('web-contents-created', (_, wc) => {
+    // Privacy spoofs (UA already set per-session below; page-level props
+    // like connection/battery are neutered per document here).
+    try { privacy.installPrivacyProtections(wc) } catch {}
     // Cover any session a guest/popup ends up with, so downloads from
     // popups (payment flows, drive links, blob: URLs) can't miss the
     // will-download handler and silently do nothing.

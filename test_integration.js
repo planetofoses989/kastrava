@@ -92,8 +92,8 @@ app.whenReady().then(async () => {
   const ses = session.fromPartition('test-privacy-' + Date.now());
   privacy.applyUserAgent(ses);
   const ua = ses.getUserAgent();
-  if (ua.includes('Chrome/131')) pass('UA spoofed to Chrome 131', ua.substring(0, 80) + '...');
-  else fail('UA spoofed to Chrome 131', ua);
+  if (/Chrome\/\d+/.test(ua) && !/Electron\//i.test(ua)) pass('UA spoofed to Chrome, no Electron token', ua.substring(0, 80) + '...');
+  else fail('UA spoofed to Chrome, no Electron token', ua);
 
   // HTTPS upgrade
   if (privacy.shouldUpgradeHttps('http://example.com/page')) pass('HTTPS upgrade for http://example.com', 'upgrades');

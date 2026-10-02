@@ -6,7 +6,12 @@ const http = require('http')
 const { execSync } = require('child_process')
 const adblock = require('./adblock')
 
-const CHROME_UA = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36'
+const CHROME_FULL = (process.versions && process.versions.chrome) || '131.0.0.0'
+const CHROME_MAJOR = String(CHROME_FULL).split('.')[0] || '131'
+// Built from the running engine's real Chromium version (never hardcoded),
+// minus the Electron token. A hardcoded version would itself be a
+// fingerprint signal the moment Electron upgrades underneath it.
+const CHROME_UA = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/' + CHROME_FULL + ' Safari/537.36'
 
 // === TRACKER BLOCKING (Privacy Badger / ClearURLs) ===
 const TRACKER_DOMAINS = [
@@ -371,8 +376,17 @@ const NAVIGATOR_SPOOF_SCRIPT = `
     window.chrome.runtime=window.chrome.runtime||{};
     window.chrome.loadTimes=window.chrome.loadTimes||function(){return{};};
     window.chrome.csi=window.chrome.csi||function(){return{};};
-    try{Object.defineProperty(navigator,'userAgentData',{get:function(){return{brands:[{brand:"Chromium",version:"131"},{brand:"Not_A Brand",version:"24"},{brand:"Google Chrome",version:"131"}],mobile:false,platform:"Linux",getHighEntropyValues:function(){return Promise.resolve({});}};}});}catch(e){}
+    try{Object.defineProperty(navigator,'userAgentData',{get:function(){return{brands:[{brand:"Chromium",version:"${CHROME_MAJOR}"},{brand:"Not_A Brand",version:"24"},{brand:"Google Chrome",version:"${CHROME_MAJOR}"}],mobile:false,platform:"Linux",getHighEntropyValues:function(){return Promise.resolve({});}};}});}catch(e){}
     Object.defineProperty(navigator,'maxTouchPoints',{get:function(){return 0;}});
+    Object.defineProperty(navigator,'userAgent',{get:function(){return '${CHROME_UA}';},configurable:true});
+    // Network Information API leaks connection type, bandwidth and RTT.
+    // Firefox/Safari don't implement it at all, so hiding it breaks nothing
+    // well-built: the data is gone, not faked (fake values are detectable).
+    Object.defineProperty(navigator,'connection',{get:function(){return undefined;},configurable:true});
+    // Battery Status API leaks charge level and charging state — a known
+    // fingerprinting vector with zero legitimate use in a browser UI.
+    // Frozen generic full-charge profile, matching function shape exactly.
+    Object.defineProperty(navigator,'getBattery',{value:function(){return Promise.resolve(Object.freeze({charging:true,chargingTime:0,dischargingTime:Number.POSITIVE_INFINITY,level:1,addEventListener:function(){},removeEventListener:function(){},dispatchEvent:function(){return false;}}));},configurable:true});
   }
 })();
 `
