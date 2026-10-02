@@ -170,6 +170,9 @@ body.no-logo .ntp-logo,body.no-logo .ntp-brand{display:none}
 .sn-item{display:flex;align-items:center;gap:8px;padding:9px 12px;font-size:12.5px;color:var(--c-text2);cursor:pointer;transition:background .15s,color .15s;border-radius:9px;margin-bottom:2px}
 .sn-item:hover{background:var(--c-hover);color:var(--c-text)}
 .sn-item.active{color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent)}
+.sn-search{width:100%;background:var(--c-surface);border:1px solid var(--c-border);border-radius:8px;color:var(--c-text);font-size:12px;padding:7px 10px;margin-bottom:8px;font-family:inherit;outline:none}
+.sn-search:focus{border-color:var(--accent)}
+.sn-search::placeholder{color:var(--c-text2)}
 .settings-main{flex:1;padding:24px 26px 60px;overflow-y:auto;max-width:480px}
 .settings-main h3{font-size:19px;font-weight:600;margin-bottom:20px;color:var(--c-text)}
 .sg{margin-bottom:24px}
@@ -434,16 +437,26 @@ body.chrome-dark{--c-bg:#202124;--c-toolbar:#35363a;--c-tab-active:#35363a;--c-o
 /* ===== VERTICAL TABS ===== */
 #vtabs-bar{display:none;width:232px;flex-direction:column;background:var(--c-bg);border-right:1px solid var(--c-border);flex-shrink:0;min-height:0;min-width:0}
 body.vertical-tabs #vtabs-bar{display:flex}
-body.vertical-tabs .titlebar .tab-strip{display:none}
-body.vertical-tabs .titlebar #new-tab-btn{display:none}
-body.vertical-tabs .titlebar{-webkit-app-region:drag}
-body.vertical-tabs .titlebar .win-ctrls{-webkit-app-region:no-drag}
+body.vertical-tabs .titlebar{display:none}
+.win-ctrls.mini{display:none;align-self:stretch;margin-left:2px}
+body.vertical-tabs .win-ctrls.mini{display:flex}
+body.vertical-tabs .win-mini-sep{display:block!important}
+.win-ctrls.mini .win-btn{width:40px}
 .vtabs-header{display:flex;align-items:center;gap:6px;padding:10px 10px 6px;flex-shrink:0}
 .vtabs-title{flex:1;font-size:11px;font-weight:600;letter-spacing:.8px;text-transform:uppercase;color:var(--c-text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .vtabs-count{font-size:10px;font-weight:600;color:var(--c-text2);background:var(--c-surface);border:1px solid var(--c-border);border-radius:10px;padding:1px 7px;flex-shrink:0}
 .vtabs-tool{width:26px;height:26px;border:none;background:none;color:var(--c-text2);cursor:pointer;border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .12s,color .12s}
 .vtabs-tool:hover{background:var(--c-hover);color:var(--c-text)}
 .vtabs-tool svg{width:14px;height:14px}
+.vtabs-search{flex:1;min-width:0;background:var(--c-surface);border:1px solid var(--c-border);border-radius:8px;color:var(--c-text);font-size:12px;padding:5px 9px;font-family:inherit;outline:none;margin:6px 8px 2px;width:auto}
+.vtabs-search:focus{border-color:var(--accent)}
+.vtabs-search::placeholder{color:var(--c-text2)}
+.about-link{display:flex;align-items:center;justify-content:space-between;padding:11px 2px;font-size:13.5px;color:var(--c-text);cursor:pointer;border-bottom:1px solid var(--c-line)}
+.about-link.last{border-bottom:none}
+.about-link span{color:var(--c-text2);font-size:15px}
+.about-link:hover{color:var(--accent)}
+body.vtabs-collapsed .vtabs-search{display:none}
+body.vtabs-collapsed .vtabs-header{justify-content:center;padding:10px 0 6px}
 #vtabs-list{flex:1;overflow-y:auto;overflow-x:hidden;padding:2px 8px 8px;display:flex;flex-direction:column;gap:3px;min-height:0}
 #vtabs-list::-webkit-scrollbar{width:0}
 #vtabs-list:hover::-webkit-scrollbar{width:8px}
@@ -502,7 +515,7 @@ body.vtabs-collapsed .vtabs-new{border-style:solid}
     <button class="tb-btn" id="btn-more" title="More"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="12" cy="19" r="1.6"/></svg></button>
     <div class="tb-sep"></div>
     <button class="tb-btn" id="btn-menu" title="Settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg></button>
-  </div>
+  <div class="tb-sep win-mini-sep" style="display:none"></div><div class="win-ctrls mini"><button class="win-btn" data-act="min"><svg viewBox="0 0 12 12"><rect x="1" y="5.5" width="10" height="1" fill="currentColor"/></svg></button><button class="win-btn" data-act="max"><svg viewBox="0 0 12 12"><rect x="1.5" y="1.5" width="9" height="9" rx="1" fill="none" stroke="currentColor" stroke-width="1"/></svg></button><button class="win-btn wc-close" data-act="close"><svg viewBox="0 0 12 12"><path d="M2 2l8 8M10 2l-8 8" stroke="currentColor" stroke-width="1.2"/></svg></button></div></div>
 </div>
 <div class="more-menu" id="more-menu">
   <div class="mm-item" data-act="home">Home</div>
@@ -533,6 +546,7 @@ body.vtabs-collapsed .vtabs-new{border-style:solid}
     <span class="vtabs-count" id="vtabs-count">0</span>
     <button class="vtabs-tool" id="vtabs-collapse" title="Collapse sidebar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg></button>
   </div>
+  <input type="text" class="vtabs-search" id="vtabs-search" placeholder="Search tabs" spellcheck="false" autocomplete="off">
   <div id="vtabs-list"></div>
   <div class="vtabs-footer">
     <button class="vtabs-new" id="vtabs-new" title="New tab"><svg viewBox="0 0 24 24" stroke-width="1.5" stroke-linecap="round"><path d="M12 22C17.5 22 22 17.5 22 12C22 6.5 17.5 2 12 2C6.5 2 2 6.5 2 12C2 17.5 6.5 22 12 22Z"/><path d="M8 12H16"/><path d="M12 16V8"/></svg><span>New tab</span></button>
@@ -843,6 +857,16 @@ function toggleTabLayout(){
   saveSetting("tabLayout",next);applyTabLayout(next);
   toast(next==="vertical"?"Vertical tabs on":"Horizontal tabs on");
 }
+var vtabFilter="";
+function matchVTab(t){
+  if(!vtabFilter)return true;
+  return ((t.title||"")+" "+(t.url||"")).toLowerCase().indexOf(vtabFilter)>=0;
+}
+function bindVtabSearch(){
+  var inp=$("vtabs-search");if(!inp||inp._bound)return;inp._bound=true;
+  inp.addEventListener("input",function(){vtabFilter=inp.value.trim().toLowerCase();renderTabs();});
+  inp.addEventListener("keydown",function(e){if(e.key==="Escape"){inp.value="";vtabFilter="";renderTabs();inp.blur();}e.stopPropagation();});
+}
 function scrollVTabIntoView(id){
   var list=$("vtabs-list");if(!list)return;
   var el=list.querySelector('.tab-item[data-id="'+id+'"]');
@@ -1149,7 +1173,8 @@ function renderTabs(){
   var list=$("tab-list");if(list){list.innerHTML=html;bindTabList(list);}
   var vlist=$("vtabs-list");
   if(vlist){
-    vlist.innerHTML=html;bindTabList(vlist);
+    bindVtabSearch();
+    vlist.innerHTML=tabs.filter(matchVTab).map(tabHTML).join("");bindTabList(vlist);
     try{
       var c=$("vtabs-count");if(c)c.textContent=String(tabs.length);
       if(activeTab)scrollVTabIntoView(activeTab.id);
@@ -3543,10 +3568,26 @@ function closeSettings(){
 function renderSettingsNav(){
   var nav=$("settings-nav");
   var secs=[{id:"premium",l:"Kastrava Premium"},{id:"general",l:"General"},{id:"appearance",l:"Appearance"},{id:"search",l:"Search Engine"},{id:"privacy",l:"Privacy & Security"},{id:"shortcuts",l:"Shortcuts"},{id:"accessibility",l:"Accessibility"},{id:"system",l:"System"},{id:"reset",l:"Reset Settings"},{id:"about",l:"About"}];
-  nav.innerHTML=secs.map(function(s){return "<div class=\"sn-item\" data-s=\""+s.id+"\">"+s.l+"</div>";}).join("");
+  nav.innerHTML="<input type=\"text\" class=\"sn-search\" id=\"sn-search\" placeholder=\"Search settings\" spellcheck=\"false\" autocomplete=\"off\">"+secs.map(function(s){return "<div class=\"sn-item\" data-s=\""+s.id+"\">"+s.l+"</div>";}).join("");
+  var snInp=$("sn-search");
+  if(snInp)snInp.addEventListener("input",function(){
+    var q=snInp.value.trim().toLowerCase();
+    var vis=[];
+    nav.querySelectorAll(".sn-item").forEach(function(el){
+      var show=!q||el.textContent.toLowerCase().indexOf(q)>=0;
+      el.style.display=show?"":"none";
+      if(show)vis.push(el);
+    });
+    var cur=nav.querySelector(".sn-item.active");
+    if(cur&&cur.style.display==="none"&&vis.length){
+      nav.querySelectorAll(".sn-item").forEach(function(x){x.classList.remove("active");});
+      vis[0].classList.add("active");renderSettingsSection(vis[0].dataset.s);
+    }
+  });
   nav.querySelectorAll(".sn-item").forEach(function(el){el.addEventListener("click",function(){nav.querySelectorAll(".sn-item").forEach(function(x){x.classList.remove("active");});el.classList.add("active");renderSettingsSection(el.dataset.s);});});
   nav.querySelector(".sn-item").classList.add("active");renderSettingsSection("general");
 }
+try{if(!window.__chromeVer){var m=navigator.userAgent.match(/Chrome\/([\d.]+)/);if(m)window.__chromeVer=m[1];}}catch(e){}
 function renderSettingsSection(id){
   var p=$("settings-panel");var h="";
   if(id==="premium"){h="<h3>Kastrava Premium</h3>";
@@ -3690,14 +3731,27 @@ function renderSettingsSection(id){
     h+="<div class=\"sg\"><button class=\"btn-sm btn-accent\" id=\"s-setupreplay\">Replay Welcome Setup</button><div class=\"desc\">Show the first-run setup wizard again.</div></div>";
   }
   else if(id==="about"){h="<h3>About</h3>";
-    h+="<div class=\"about-card\"><img src=\"logo.png\"><div><div class=\"name\">Kastrava <span style=\"font-size:10px;font-weight:700;background:rgba(245,158,11,.15);color:#f59e0b;padding:2px 8px;border-radius:10px;vertical-align:2px;letter-spacing:.5px\">BETA</span></div><div class=\"ver\">Version 101.2.0 &mdash; Starship Wonders &mdash; the most private browser &mdash; "+editionLabel()+"</div></div></div>";
-    h+="<div class=\"sg\"><div class=\"lbl\">A new voyage through the web</div><div class=\"desc\">Kastrava 101 &ldquo;Starship Wonders&rdquo; is a fast, privacy-first browser designed for a cleaner web. It ships with an ad and tracker radar, cookie controls, fluid cursor effects, a redesigned new-tab experience, and deep theming &mdash; all tuned to stay out of your way.</div></div>";
+    h+="<div class=\"about-card\"><img src=\"logo.png\"><div><div class=\"name\">Kastrava <span style=\"font-size:10px;font-weight:700;background:rgba(245,158,11,.15);color:#f59e0b;padding:2px 8px;border-radius:10px;vertical-align:2px;letter-spacing:.5px\">BETA</span></div><div class=\"ver\">Version 101.2.0 &mdash; Starship Wonders ("+editionLabel()+")</div><div class=\"ver\" style=\"margin-top:2px\">Chromium "+(window.__chromeVer||"")+" · volatile sessions · zero telemetry</div></div></div>";
+    h+="<div class=\"sg\" style=\"border:1px solid var(--c-border);border-radius:12px;padding:6px 16px;margin-top:4px\">"
+      +"<div class=\"about-link\" data-link=\"help\">Get help with Kastrava<span>\u203a</span></div>"
+      +"<div class=\"about-link\" data-link=\"issue\">Report an issue<span>\u203a</span></div>"
+      +"<div class=\"about-link\" data-link=\"source\">Open source (GPLv3)<span>\u203a</span></div>"
+      +"<div class=\"about-link last\" data-link=\"privacy\">Privacy &amp; data<span>\u203a</span></div></div>";
     h+="<div class=\"sg\"><div class=\"lbl\">Updates</div><div class=\"desc\">Kastrava checks automatically. You can also check right now:</div><div style=\"margin-top:8px\"><button class=\"btn-sm btn-accent\" id=\"s-checkupd\">Check for updates</button></div></div>";
-    h+="<div class=\"sg\"><div class=\"lbl\">Made by the community</div><div class=\"desc\">Built for absolute privacy.<br>Email: planetofoses989@gmail.com</div></div>";
-    h+="<div class=\"sg\" style=\"border:1px solid var(--c-border);border-radius:12px;padding:14px;margin-top:4px\"><div class=\"lbl\" style=\"font-weight:700;font-size:13px\">★ 100% Open Source — GPLv3</div><div class=\"desc\">Every line of Kastrava is public on GitHub — the browser, the license server, the storefront. Audit the privacy claims, report issues, fork it and build your own copy: <b>github.com/planetofoses989/kastrava</b></div><div style=\"margin-top:12px;display:flex;gap:8px;flex-wrap:wrap\"><a class=\"btn-sm btn-accent\" href=\"https://github.com/planetofoses989/kastrava\" target=\"_blank\" rel=\"noopener\" style=\"text-decoration:none;padding:8px 18px\">View source on GitHub</a></div></div>";
+    h+="<div class=\"sg\"><div class=\"desc\" style=\"font-size:12px\">Kastrava 101 &ldquo;Starship Wonders&rdquo; &mdash; Built By The Community for the Community.<br>Privacy-first fork of Chromium, GPLv3.</div></div>";
   }
   p.innerHTML=h;
-    (function(){var b=document.getElementById("s-checkupd");if(b)b.addEventListener("click",function(){
+    (function(){
+      document.querySelectorAll(".about-link").forEach(function(el){
+        el.addEventListener("click",function(){
+          var k=el.dataset.link;
+          if(k==="help"){if(api&&api.openExternal)api.openExternal("mailto:planetofoses989@gmail.com");}
+          else if(k==="issue"){if(api&&api.openExternal)api.openExternal("https://discord.gg/UsgF73RJbx");}
+          else if(k==="source"){if(api&&api.openExternal)api.openExternal("https://github.com/planetofoses989/kastrava");}
+          else if(k==="privacy"){try{renderSettingsSection("privacy");}catch(e){}}
+        });
+      });
+      var b=document.getElementById("s-checkupd");if(b)b.addEventListener("click",function(){
       b.disabled=true;toast("Checking for updates…");
       try{
         var p=api.checkUpdates();
